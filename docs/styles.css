@@ -269,6 +269,22 @@ main {
   margin-top: 12px;
 }
 
+.steps-list {
+  display: grid;
+  gap: 16px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(77, 179, 255, 0.1);
+  border: 1px solid rgba(126, 191, 255, 0.28);
+  font-size: 0.82em;
+  font-family: monospace;
+  color: var(--accent-strong);
+}
+
 .timeline {
   display: grid;
   gap: 16px;
@@ -305,7 +321,7 @@ main {
 /* ====================================================
    Particle canvas background
    ==================================================== */
-#particle-canvas {
+#dragon-canvas {
   position: fixed;
   inset: 0;
   z-index: 0;

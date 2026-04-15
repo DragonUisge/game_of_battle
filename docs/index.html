@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+  <canvas id="dragon-canvas" aria-hidden="true"></canvas>
 
   <header class="site-header">
     <div class="page-shell">
@@ -181,82 +181,9 @@
     </div>
   </footer>
 
+  <script src="dragon-bg.js"></script>
   <script>
-  /* =====================================================
-     Particle canvas
-     ===================================================== */
-  (function () {
-    const canvas = document.getElementById('particle-canvas');
-    const ctx    = canvas.getContext('2d');
-    const COUNT  = 70;
-    let W, H, particles = [];
-
-    function resize() {
-      W = canvas.width  = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    for (let i = 0; i < COUNT; i++) {
-      particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.38,
-        vy: (Math.random() - 0.5) * 0.38,
-        r: 1.2 + Math.random() * 2,
-      });
-    }
-
-    function tick() {
-      ctx.clearRect(0, 0, W, H);
-      for (let i = 0; i < COUNT; i++) {
-        const a = particles[i];
-        for (let j = i + 1; j < COUNT; j++) {
-          const b   = particles[j];
-          const dx  = a.x - b.x, dy = a.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 150) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(77,179,255,${(1 - dist / 150) * 0.16})`;
-            ctx.lineWidth = 0.7;
-            ctx.stroke();
-          }
-        }
-      }
-      for (const p of particles) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(135,210,255,0.42)';
-        ctx.fill();
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < -10) p.x = W + 10;
-        if (p.x > W + 10) p.x = -10;
-        if (p.y < -10) p.y = H + 10;
-        if (p.y > H + 10) p.y = -10;
-      }
-      requestAnimationFrame(tick);
-    }
-    tick();
-  })();
-
-  /* =====================================================
-     Scroll reveal
-     ===================================================== */
-  (function () {
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
-      });
-    }, { threshold: 0.10 });
-    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-  })();
-
-  /* =====================================================
-     Boss HP bars — animate when section scrolls into view
-     ===================================================== */
+  /* Boss HP bars */
   (function () {
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => {
@@ -268,12 +195,10 @@
         }
       });
     }, { threshold: 0.2 });
-    document.querySelectorAll('.boss-grid') .forEach(el => obs.observe(el));
+    document.querySelectorAll('.boss-grid').forEach(el => obs.observe(el));
   })();
 
-  /* =====================================================
-     Live commit count from GitHub API
-     ===================================================== */
+  /* Live commit count */
   (function () {
     const el = document.getElementById('stat-commits');
     if (!el) return;
@@ -283,10 +208,8 @@
       const link  = r.headers.get('Link') || '';
       const match = link.match(/[?&]page=(\d+)>; rel="last"/);
       const total = match ? parseInt(match[1]) : null;
-      if (total) animate(total);
-      else el.textContent = '?';
+      if (total) animate(total); else el.textContent = '?';
     }).catch(() => { el.textContent = '?'; });
-
     function animate(target) {
       let cur = 0;
       const step = Math.max(1, Math.ceil(target / 55));

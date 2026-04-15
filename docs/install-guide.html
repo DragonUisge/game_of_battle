@@ -4,10 +4,170 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Memento Mori | Install Guide</title>
-  <meta name="description" content="Installation guide for Memento Mori on GitHub Pages.">
+  <meta name="description" content="Step-by-step installation guide for Memento Mori — Minetest / Luanti game.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <canvas id="dragon-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <div class="page-shell">
+      <a class="brand" href="index.html" aria-label="Memento Mori home page">
+        <div>
+          <img class="brand-mark" src="assets/image15.png" alt="logo">
+        </div>
+        <div class="brand-copy">
+          <strong>Memento Mori</strong>
+          <span>GitHub Pages site</span>
+        </div>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="updates.html">Updates</a>
+        <a class="active" href="install-guide.html">Install Guide</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-shell">
+
+      <section class="hero">
+        <div class="eyebrow">Setup</div>
+        <h1>Up and running in three steps.</h1>
+        <p>
+          Download Luanti, drop the game folder in the right place, and you're in.
+          No build tools, no dependencies — just copy and play.
+        </p>
+        <div class="hero-actions">
+          <a class="button" href="game_of_battle.zip" download>Download game_of_battle.zip</a>
+          <a class="button-secondary" href="https://luanti.org/" target="_blank" rel="noopener">Get Luanti (luanti.org)</a>
+        </div>
+      </section>
+
+      <!-- Steps -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Steps</div>
+            <h2>Installation flow</h2>
+          </div>
+          <p>Follow in order. The whole process takes about two minutes.</p>
+        </div>
+
+        <div class="steps-list">
+
+          <article class="step">
+            <div class="step-number">Step 1 — Get the engine</div>
+            <h3>Download and install Luanti</h3>
+            <p>
+              Luanti (formerly Minetest) is the free, open-source engine that runs Memento Mori.
+              Grab the latest stable release for your operating system from the official site.
+            </p>
+            <div class="hero-actions" style="margin-top:1rem;">
+              <a class="button-secondary" href="https://luanti.org/" target="_blank" rel="noopener">luanti.org →</a>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-number">Step 2 — Download the game</div>
+            <h3>Get the game_of_battle archive</h3>
+            <p>
+              Download the zip below, then unpack it. You will get a folder called
+              <code>game_of_battle</code>. Keep it intact — do not rename it.
+            </p>
+            <div class="hero-actions" style="margin-top:1rem;">
+              <a class="button" href="game_of_battle.zip" download>Download game_of_battle.zip</a>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-number">Step 3 — Place it in the right folder</div>
+            <h3>Copy into your Luanti games directory</h3>
+            <p>Move the unpacked <code>game_of_battle</code> folder into the <strong>games</strong> sub-folder for your OS:</p>
+            <div class="grid grid-3" style="margin-top:1rem;">
+              <div class="card">
+                <h4>Windows</h4>
+                <code>%APPDATA%\minetest\games</code>
+                <p style="margin-top:.5rem;font-size:.82rem;">Press <kbd>Win + R</kbd>, paste the path, press Enter.</p>
+              </div>
+              <div class="card">
+                <h4>Linux</h4>
+                <code>~/.minetest/games</code>
+                <p style="margin-top:.5rem;font-size:.82rem;">Or <code>~/.var/app/net.minetest.Minetest/data/minetest/games</code> for the Flatpak.</p>
+              </div>
+              <div class="card">
+                <h4>macOS</h4>
+                <code>~/Library/Application Support/minetest/games</code>
+                <p style="margin-top:.5rem;font-size:.82rem;">Open Finder, press <kbd>⇧⌘G</kbd> and paste the path.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step-number">Step 4 — Launch</div>
+            <h3>Start Luanti and select the game</h3>
+            <p>
+              Open Luanti. On the main screen, click <strong>Start Game</strong>, then pick
+              <em>Memento Mori / game_of_battle</em> from the game list.
+              Create a new world (any map generator works) and hit <strong>Play</strong>.
+            </p>
+            <p>
+              The first wave starts immediately. Boss fights begin at the end of each wave.
+              Good luck.
+            </p>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- Requirements + Troubleshooting -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Reference</div>
+            <h2>Requirements &amp; troubleshooting</h2>
+          </div>
+          <p>Everything you need to know if something goes wrong.</p>
+        </div>
+        <div class="grid grid-2">
+
+          <article class="card">
+            <h3>Requirements</h3>
+            <ul class="list-clean">
+              <li><strong>Engine:</strong> Luanti 5.7.0 or newer (Minetest 5.7+)</li>
+              <li><strong>OS:</strong> Windows 10+, any modern Linux distro, macOS 11+</li>
+              <li><strong>Disk:</strong> ~50 MB unpacked</li>
+              <li><strong>RAM:</strong> 512 MB minimum (1 GB recommended)</li>
+              <li><strong>Dependencies:</strong> none — all mods are bundled inside the game folder</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h3>Troubleshooting</h3>
+            <ul class="list-clean">
+              <li><strong>Game not in list:</strong> make sure the folder name is exactly <code>game_of_battle</code> and it sits directly inside <code>games/</code>, not in a sub-folder</li>
+              <li><strong>Missing textures:</strong> re-extract the zip — partial extractions skip files silently</li>
+              <li><strong>Bosses not spawning:</strong> enemies only appear after the wave counter starts — create a fresh world</li>
+              <li><strong>Bugs / crashes:</strong> open an issue on <a href="https://github.com/DragonUisge/game_of_battle/issues" target="_blank" rel="noopener" style="color:var(--accent-strong)">GitHub Issues</a></li>
+            </ul>
+          </article>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell">
+      <p>Memento Mori — a Luanti game. Made with Lua, love, and too many boss fights.</p>
+    </div>
+  </footer>
+
+  <script src="dragon-bg.js"></script>
+</body>
+</html>
   <header class="site-header">
     <div class="page-shell">
       <a class="brand" href="index.html" aria-label="Memento Mori home page">
