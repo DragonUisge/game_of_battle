@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
   <header class="site-header">
     <div class="page-shell">
       <a class="brand" href="index.html" aria-label="Memento Mori home page">
@@ -38,11 +40,11 @@
         </p>
         <div class="hero-actions">
           <a class="button" href="install-guide.html">Start Installation</a>
-          <a class="button-secondary" href="updates.html">Read Recent Updates</a>
+          <a class="button-secondary" href="updates.html">Download Recent Updates</a>
         </div>
       </section>
 
-      <section class="section">
+      <section class="section reveal">
         <div class="section-head">
           <div>
             <div class="eyebrow">Overview</div>
@@ -69,7 +71,7 @@
         </div>
       </section>
 
-      <section class="section">
+      <section class="section reveal">
         <div class="section-head">
           <div>
             <div class="eyebrow">Quick Access</div>
@@ -92,6 +94,84 @@
           </article>
         </div>
       </section>
+
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Enemies</div>
+            <h2>Meet the bosses</h2>
+          </div>
+          <p>Seven teachers stand between you and graduation. HP bars show relative strength.</p>
+        </div>
+        <div class="boss-grid">
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 1</div>
+            <p class="boss-name">Bram</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="22"></div></div>
+            <p class="boss-hp-label">100 HP</p>
+          </article>
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 2</div>
+            <p class="boss-name">Hugo</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="33"></div></div>
+            <p class="boss-hp-label">150 HP</p>
+          </article>
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 3</div>
+            <p class="boss-name">Joachim</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="44"></div></div>
+            <p class="boss-hp-label">200 HP</p>
+          </article>
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 4</div>
+            <p class="boss-name">Julian</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="56"></div></div>
+            <p class="boss-hp-label">250 HP</p>
+          </article>
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 5</div>
+            <p class="boss-name">Rosanne</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="67"></div></div>
+            <p class="boss-hp-label">300 HP</p>
+          </article>
+          <article class="boss-card">
+            <div class="boss-lvl">Lvl 6</div>
+            <p class="boss-name">Jan Willem</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="78"></div></div>
+            <p class="boss-hp-label">350 HP</p>
+          </article>
+          <article class="boss-card final">
+            <div class="boss-lvl">Lvl 7</div>
+            <p class="boss-name">Margriet</p>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" data-hp="100"></div></div>
+            <p class="boss-hp-label">450 HP &mdash; FINAL</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Project Stats</div>
+            <h2>By the numbers</h2>
+          </div>
+          <p>Live data pulled from the GitHub repository.</p>
+        </div>
+        <div class="stat-strip">
+          <div class="stat-tile">
+            <span class="stat-number" id="stat-commits">…</span>
+            <span class="stat-label">Commits</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-number">7</span>
+            <span class="stat-label">Bosses</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-number">450</span>
+            <span class="stat-label">Max boss HP</span>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -100,5 +180,123 @@
       <p>Memento Mori GitHub Pages site. Static layout in docs/ for direct publishing.</p>
     </div>
   </footer>
+
+  <script>
+  /* =====================================================
+     Particle canvas
+     ===================================================== */
+  (function () {
+    const canvas = document.getElementById('particle-canvas');
+    const ctx    = canvas.getContext('2d');
+    const COUNT  = 70;
+    let W, H, particles = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (let i = 0; i < COUNT; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.38,
+        vy: (Math.random() - 0.5) * 0.38,
+        r: 1.2 + Math.random() * 2,
+      });
+    }
+
+    function tick() {
+      ctx.clearRect(0, 0, W, H);
+      for (let i = 0; i < COUNT; i++) {
+        const a = particles[i];
+        for (let j = i + 1; j < COUNT; j++) {
+          const b   = particles[j];
+          const dx  = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(77,179,255,${(1 - dist / 150) * 0.16})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+      }
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(135,210,255,0.42)';
+        ctx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < -10) p.x = W + 10;
+        if (p.x > W + 10) p.x = -10;
+        if (p.y < -10) p.y = H + 10;
+        if (p.y > H + 10) p.y = -10;
+      }
+      requestAnimationFrame(tick);
+    }
+    tick();
+  })();
+
+  /* =====================================================
+     Scroll reveal
+     ===================================================== */
+  (function () {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+      });
+    }, { threshold: 0.10 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  })();
+
+  /* =====================================================
+     Boss HP bars — animate when section scrolls into view
+     ===================================================== */
+  (function () {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.querySelectorAll('.hp-bar-fill').forEach(bar => {
+            bar.style.width = bar.dataset.hp + '%';
+          });
+          obs.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.boss-grid') .forEach(el => obs.observe(el));
+  })();
+
+  /* =====================================================
+     Live commit count from GitHub API
+     ===================================================== */
+  (function () {
+    const el = document.getElementById('stat-commits');
+    if (!el) return;
+    fetch('https://api.github.com/repos/DragonUisge/game_of_battle/commits?sha=scathach&per_page=1', {
+      headers: { Accept: 'application/vnd.github+json' }
+    }).then(r => {
+      const link  = r.headers.get('Link') || '';
+      const match = link.match(/[?&]page=(\d+)>; rel="last"/);
+      const total = match ? parseInt(match[1]) : null;
+      if (total) animate(total);
+      else el.textContent = '?';
+    }).catch(() => { el.textContent = '?'; });
+
+    function animate(target) {
+      let cur = 0;
+      const step = Math.max(1, Math.ceil(target / 55));
+      const id = setInterval(() => {
+        cur = Math.min(cur + step, target);
+        el.textContent = cur;
+        if (cur >= target) clearInterval(id);
+      }, 22);
+    }
+  })();
+  </script>
 </body>
 </html>

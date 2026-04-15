@@ -302,6 +302,149 @@ main {
   color: var(--muted);
 }
 
+/* ====================================================
+   Particle canvas background
+   ==================================================== */
+#particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.site-header { z-index: 20; }
+main, .site-footer { position: relative; z-index: 1; }
+
+/* ====================================================
+   Scroll-reveal
+   ==================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ====================================================
+   Boss showcase
+   ==================================================== */
+.boss-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.boss-card {
+  padding: 20px 16px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(126, 191, 255, 0.18);
+  background: rgba(4, 14, 30, 0.72);
+  text-align: center;
+  cursor: default;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.boss-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(77, 179, 255, 0.12), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.boss-card:hover { transform: translateY(-7px) scale(1.04); border-color: var(--accent); box-shadow: 0 22px 56px rgba(77, 179, 255, 0.24); }
+.boss-card:hover::before { opacity: 1; }
+
+.boss-lvl {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: rgba(77, 179, 255, 0.13);
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.boss-name {
+  font-size: 0.97rem;
+  font-weight: 700;
+  margin: 0 0 14px;
+  line-height: 1.2;
+}
+
+.hp-bar-bg {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(126, 191, 255, 0.1);
+  overflow: hidden;
+}
+
+.hp-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+  transition: width 1.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.boss-hp-label {
+  margin-top: 7px;
+  font-size: 0.73rem;
+  color: var(--muted);
+}
+
+.boss-card.final { border-color: rgba(255, 195, 60, 0.32); background: rgba(18, 8, 2, 0.78); }
+.boss-card.final .boss-lvl { background: rgba(255, 195, 60, 0.15); color: #ffd166; }
+.boss-card.final .hp-bar-fill { background: linear-gradient(90deg, #ff7030, #ffd166); }
+.boss-card.final:hover { border-color: #ffd166; box-shadow: 0 22px 56px rgba(255, 160, 30, 0.22); }
+
+/* ====================================================
+   Live stats strip
+   ==================================================== */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.stat-tile {
+  padding: 26px 20px;
+  border-radius: 22px;
+  text-align: center;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.stat-tile:hover { transform: translateY(-4px); box-shadow: 0 18px 50px rgba(77, 179, 255, 0.14); }
+
+.stat-number {
+  display: block;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  color: var(--accent-strong);
+  line-height: 1;
+  margin-bottom: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 0.86rem;
+  color: var(--muted);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
 @media (max-width: 900px) {
   .site-header .page-shell,
   .section-head {
@@ -318,7 +461,8 @@ main {
   }
 
   .grid-3,
-  .grid-2 {
+  .grid-2,
+  .stat-strip {
     grid-template-columns: 1fr;
   }
 }
