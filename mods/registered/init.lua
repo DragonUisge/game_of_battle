@@ -127,6 +127,30 @@ minetest.register_tool("registered:sword_ancient", {
 		max_drop_level = 3,
 		damage_groups = {fleshy = 50},
 	},
+	on_secondary_use = function(itemstack, user, pointed_thing)
+		if not user:is_player() then return end
+		local pos = user:get_pos()
+		pos.y = pos.y + 1.4
+		local yaw   = user:get_look_horizontal()
+		local pitch = user:get_look_vertical()
+		for i = 1, 5 do
+			local sy = yaw   + (math.random() - 0.5) * math.pi * 0.5
+			local sp = pitch + (math.random() - 0.5) * 0.35
+			local dir = vector.new(
+				-math.sin(sy) * math.cos(sp),
+				-math.sin(sp),
+				-math.cos(sy) * math.cos(sp)
+			)
+			local speed = 22 + math.random() * 12
+			local raisin = minetest.add_entity(pos, "boss:raisin")
+			if raisin then
+				raisin:set_velocity(vector.multiply(dir, speed))
+				local ent = raisin:get_luaentity()
+				if ent then ent._owner = user:get_player_name() end
+			end
+		end
+		return itemstack
+	end,
 })
 
 minetest.register_tool("registered:sword_dragonpower", {
@@ -147,6 +171,11 @@ minetest.register_tool("registered:sword_elements", {
 		max_drop_level = 4,
 		damage_groups = {fleshy = 80},
 	},
+})
+
+minetest.register_craftitem("registered:drumstick", {
+	description = "Trommelstok",
+	inventory_image = "registered_sword_bronze.png^[colorize:#4A2000:200",
 })
 
 -- Food items

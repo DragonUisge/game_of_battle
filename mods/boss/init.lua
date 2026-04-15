@@ -247,7 +247,80 @@ local function hugo_linked(self, dtime, pos, nearest)
 end
 
 -- ============================================================
--- Generic boss on_step (non-Hugo levels)
+-- Bram (level 1) — drumstick rage phase
+-- "normal"   : standard walk + swing
+-- "pullout"  : freezes, theatrically pulls drumsticks from ears
+-- "drumstick": fast furious drumstick attacks
+-- ============================================================
+
+local function bram_normal_step(self, dtime, pos, nearest, nearest_dist)
+	local ppos = nearest:get_pos()
+	local dir = vector.direction(pos, ppos)
+	self.object:set_yaw(minetest.dir_to_yaw(dir))
+	self.object:set_velocity(vector.new(dir.x * 1.8, -9.81, dir.z * 1.8))
+	self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+
+	self._attack_cooldown = self._attack_cooldown - dtime
+	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+		if nearest:is_player() then
+			nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+		else
+			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+		end
+		self._attack_cooldown = 1.5
+		self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+	end
+end
+
+local function bram_pullout_step(self, dtime, pos)
+	self.object:set_velocity(vector.new(0, -9.81, 0))
+	self._bram_timer = self._bram_timer - dtime
+
+	-- Idle "rummaging" animation
+	self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+
+	if self._bram_timer <= 0 then
+		self._bram_phase = "drumstick"
+		self._attack_cooldown = 0
+		-- Spawn drumstick and attach to right arm
+		if not self._drumstick_entity then
+			local ds = minetest.add_entity(pos, "boss:drumstick_visual")
+			if ds then
+				ds:set_attach(self.object, "Arm_Right", vector.new(0, -6, 0), vector.new(90, 0, 0))
+				self._drumstick_entity = ds
+			end
+		end
+		self.object:set_properties({
+			nametag = "Bram [TROMMELSTOKKEN!!!]",
+			nametag_color = "#FF8800",
+		})
+	end
+end
+
+local function bram_drumstick_step(self, dtime, pos, nearest, nearest_dist)
+	local ppos = nearest:get_pos()
+	local dir = vector.direction(pos, ppos)
+	self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+	-- Faster charge
+	self.object:set_velocity(vector.new(dir.x * 3.5, -9.81, dir.z * 3.5))
+	self.object:set_animation({x = 168, y = 187}, 55, 0, true)
+
+	self._attack_cooldown = self._attack_cooldown - dtime
+	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+		local dmg = math.ceil(self._damage * 1.5)
+		if nearest:is_player() then
+			nearest:set_hp(nearest:get_hp() - dmg, {type = "punch"})
+		else
+			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = dmg}}, vector.new(0,0,0))
+		end
+		self._attack_cooldown = 0.5 -- rapid drumstick cadence
+		self.object:set_animation({x = 189, y = 198}, 65, 0, false)
+	end
+end
+
+-- ============================================================
+-- Generic boss on_step (non-Hugo, non-Bram levels)
 -- ============================================================
 local function generic_on_step(self, dtime, pos, nearest, nearest_dist)
 	local ppos = nearest:get_pos()
@@ -276,6 +349,156 @@ local function generic_on_step(self, dtime, pos, nearest, nearest_dist)
 end
 
 -- ============================================================
+-- Raisin projectile (Ancient Sword right-click ability)
+-- Bounces off walls; explodes on the 3rd bounce
+-- ============================================================
+local function raisin_explode(pos, owner)
+	for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.5)) do
+		if obj:is_player() then
+			if not owner or obj:get_player_name() ~= owner then
+				obj:set_hp(math.max(0, obj:get_hp() - 8), {type = "punch"})
+			end
+		else
+			local ent = obj:get_luaentity()
+			if ent and ent._hp and ent._level then
+				ent._hp = ent._hp - 15
+				if ent._hp <= 0 then
+					local bpos = obj:get_pos()
+					local bdata = BOSSES[ent._level] or BOSSES[1]
+					if bpos and bdata.drop then minetest.add_item(bpos, bdata.drop) end
+					if ent._drumstick_entity and ent._drumstick_entity:get_pos() then
+						ent._drumstick_entity:remove()
+					end
+					enemy.boss_alive = nil
+					obj:remove()
+					enemy.check_wave_clear()
+				end
+			end
+		end
+	end
+	minetest.add_particlespawner({
+		amount = 30,
+		time = 0.4,
+		minpos = vector.add(pos, vector.new(-0.4, -0.4, -0.4)),
+		maxpos = vector.add(pos, vector.new( 0.4,  0.4,  0.4)),
+		minvel = vector.new(-6, -4, -6),
+		maxvel = vector.new( 6,  5,  6),
+		minacc = vector.new(0, -6, 0),
+		maxacc = vector.new(0, -3, 0),
+		minexptime = 0.15,
+		maxexptime = 0.45,
+		minsize = 2,
+		maxsize = 5,
+		texture = "draconis_fire_particle.png^[colorize:#111111:220",
+		glow = 2,
+	})
+	minetest.sound_play("default_explode", {pos = pos, gain = 0.5, max_hear_distance = 20})
+end
+
+minetest.register_entity("boss:raisin", {
+	initial_properties = {
+		visual = "cube",
+		visual_size = {x = 0.15, y = 0.15, z = 0.15},
+		textures = {
+			"draconis_fire_particle.png^[colorize:#111111:255",
+			"draconis_fire_particle.png^[colorize:#111111:255",
+			"draconis_fire_particle.png^[colorize:#111111:255",
+			"draconis_fire_particle.png^[colorize:#111111:255",
+			"draconis_fire_particle.png^[colorize:#111111:255",
+			"draconis_fire_particle.png^[colorize:#111111:255",
+		},
+		physical = true,
+		collide_with_objects = false,
+		collisionbox = {-0.07, -0.07, -0.07, 0.07, 0.07, 0.07},
+		static_save = false,
+	},
+
+	_bounces = 0,
+	_prev_vel = nil,
+	_bounce_cd = 0,
+	_exploded = false,
+	_owner = nil,
+	_lifetime = 0,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime)
+		if self._exploded then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		-- Auto-remove after 8 seconds
+		self._lifetime = self._lifetime + dtime
+		if self._lifetime > 8 then
+			self._exploded = true
+			self.object:remove()
+			return
+		end
+
+		self._bounce_cd = math.max(0, self._bounce_cd - dtime)
+		local vel = self.object:get_velocity()
+
+		if self._prev_vel and self._bounce_cd <= 0 then
+			local pv = self._prev_vel
+			local nv = {x = vel.x, y = vel.y, z = vel.z}
+			local hit = false
+
+			if math.abs(pv.x) > 2 and math.abs(vel.x) < 0.5 then
+				nv.x = -pv.x * 0.85
+				hit = true
+			end
+			if math.abs(pv.y) > 2 and math.abs(vel.y) < 0.5 then
+				nv.y = math.abs(pv.y) * 0.75
+				hit = true
+			end
+			if math.abs(pv.z) > 2 and math.abs(vel.z) < 0.5 then
+				nv.z = -pv.z * 0.85
+				hit = true
+			end
+
+			if hit then
+				self._bounces = self._bounces + 1
+				self._bounce_cd = 0.15
+				if self._bounces >= 3 then
+					raisin_explode(pos, self._owner)
+					self._exploded = true
+					self.object:remove()
+					return
+				end
+				self.object:set_velocity(vector.new(nv.x, nv.y, nv.z))
+			end
+		end
+
+		self._prev_vel = vector.new(vel.x, vel.y, vel.z)
+	end,
+})
+
+-- ============================================================
+-- Drumstick visual (attached to Bram during rage phase)
+-- ============================================================
+minetest.register_entity("boss:drumstick_visual", {
+	initial_properties = {
+		visual = "wielditem",
+		wield_item = "registered:drumstick",
+		visual_size = {x = 0.5, y = 0.5},
+		physical = false,
+		collisionbox = {0, 0, 0, 0, 0, 0},
+		static_save = false,
+		pointable = false,
+	},
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+	on_step = function(self, dtime)
+		if not self.object:get_attach() then
+			self.object:remove()
+		end
+	end,
+})
+
+-- ============================================================
 -- Boss entity
 -- ============================================================
 minetest.register_entity("boss:teacher", {
@@ -298,6 +521,11 @@ minetest.register_entity("boss:teacher", {
 	_damage = 2,
 	_attack_cooldown = 0,
 	_level = 1,
+
+	-- Bram-specific state
+	_bram_phase = "normal",
+	_bram_timer = 0,
+	_drumstick_entity = nil,
 
 	-- Hugo-specific state
 	_hugo_phase = "stalk",
@@ -363,6 +591,13 @@ minetest.register_entity("boss:teacher", {
 			nametag = data.name .. " [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "]",
 		})
 
+		-- Bram: trigger drumstick rage at 50% HP
+		if self._level == 1 and self._bram_phase == "normal"
+		   and self._hp > 0 and self._hp <= self._max_hp * 0.5 then
+			self._bram_phase = "pullout"
+			self._bram_timer = 1.8 -- seconds of ear-rummaging theatre
+		end
+
 		-- Hugo: trigger dragon summon at 25% HP
 		if self._level == 2 and self._hugo_phase ~= "summon" and self._hugo_phase ~= "linked"
 		   and self._hp > 0 and self._hp <= self._max_hp * 0.25 then
@@ -375,6 +610,9 @@ minetest.register_entity("boss:teacher", {
 			local data = BOSSES[self._level] or BOSSES[1]
 			if pos and data.drop then
 				minetest.add_item(pos, data.drop)
+			end
+			if self._drumstick_entity and self._drumstick_entity:get_pos() then
+				self._drumstick_entity:remove()
 			end
 			enemy.boss_alive = nil
 			self.object:remove()
@@ -389,6 +627,18 @@ minetest.register_entity("boss:teacher", {
 
 		local nearest, nearest_dist = find_nearest_player(pos)
 		if not nearest then return end
+
+		-- Bram (level 1): drumstick phases
+		if self._level == 1 then
+			if self._bram_phase == "pullout" then
+				bram_pullout_step(self, dtime, pos)
+			elseif self._bram_phase == "drumstick" then
+				bram_drumstick_step(self, dtime, pos, nearest, nearest_dist)
+			else
+				bram_normal_step(self, dtime, pos, nearest, nearest_dist)
+			end
+			return
+		end
 
 		-- Hugo (level 2): special kung fu behavior
 		if self._level == 2 then
