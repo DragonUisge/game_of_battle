@@ -42,28 +42,14 @@
         <div class="section-head">
           <div>
             <div class="eyebrow">Latest</div>
-            <h2>Highlighted changes</h2>
+            <h2>Commits from GitHub</h2>
           </div>
           <p>
-            The current layout includes example entries so the page already looks finished. Replace them with exact release dates when needed.
+            Pulled live from the <strong>scathach</strong> branch. Each entry links directly to that version of the project.
           </p>
         </div>
-        <div class="timeline">
-          <article>
-            <time>April 2026</time>
-            <h3>Trailer mode camera pass</h3>
-            <p>Camera framing moved closer to the action with softer center tracking and lower shake for a more controlled cinematic result.</p>
-          </article>
-          <article>
-            <time>April 2026</time>
-            <h3>Boss encounter flow cleanup</h3>
-            <p>Fight progression now waits for the full Hugo encounter to end correctly, including the dragon phase, before moving on.</p>
-          </article>
-          <article>
-            <time>April 2026</time>
-            <h3>Audio and collision polish</h3>
-            <p>Trailer background music was replaced and movement logic was adjusted so staged characters approach each other more naturally.</p>
-          </article>
+        <div class="timeline" id="commit-timeline">
+          <p id="commit-loading" style="opacity:.6;">Loading commits…</p>
         </div>
       </section>
 
@@ -100,5 +86,63 @@
       <p>Updates page for Memento Mori. Replace the sample notes with release-specific entries as development continues.</p>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      const REPO  = "DragonUisge/game_of_battle";
+      const BRANCH = "scathach";
+      const API   = `https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=30`;
+
+      const timeline = document.getElementById("commit-timeline");
+      const loader   = document.getElementById("commit-loading");
+
+      function fmt(iso) {
+        const d = new Date(iso);
+        return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+      }
+
+      fetch(API, { headers: { Accept: "application/vnd.github+json" } })
+        .then(r => {
+          if (!r.ok) throw new Error("GitHub API " + r.status);
+          return r.json();
+        })
+        .then(commits => {
+          loader.remove();
+          if (!commits.length) {
+            timeline.innerHTML = "<p style='opacity:.6'>No commits found.</p>";
+            return;
+          }
+          commits.forEach(c => {
+            const msg   = c.commit.message || "";
+            const lines = msg.split("\n").map(l => l.trim()).filter(Boolean);
+            const title = lines[0] || c.sha.slice(0, 7);
+            const body  = lines.slice(1).join(" ");
+            const date  = fmt(c.commit.committer.date);
+            const zip   = `https://github.com/${REPO}/archive/${c.sha}.zip`;
+
+            const art = document.createElement("article");
+            art.innerHTML = `
+              <time>${date}</time>
+              <h3>${escHtml(title)}</h3>
+              ${body ? `<p>${escHtml(body)}</p>` : ""}
+              <div style="margin-top:.75rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+                <a class="button" href="${zip}" download style="font-size:.85rem;padding:.45rem 1.1rem;">
+                  Download this version
+                </a>
+                <a href="https://github.com/${REPO}/commit/${c.sha}" target="_blank" rel="noopener"
+                   style="font-size:.8rem;opacity:.55;font-family:monospace;">${c.sha.slice(0,7)}</a>
+              </div>`;
+            timeline.appendChild(art);
+          });
+        })
+        .catch(err => {
+          loader.textContent = "⚠ Could not load commits: " + err.message;
+        });
+
+      function escHtml(s) {
+        return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      }
+    })();
+  </script>
 </body>
 </html>
