@@ -1,5 +1,6 @@
 -- map: place arena schematic and handle player spawning
 
+-- ── Arena 1 ─────────────────────────────────────────────────────────────────
 local SCHEM_PATH = minetest.get_modpath("map") .. "/schems/fietsarena.mts"
 
 -- Place the schematic at origin
@@ -15,19 +16,33 @@ local SPAWN_POS = vector.new(
 
 local schematic_placed = false
 
--- Place schematic once when the area is generated
+-- ── Arena 2 ─────────────────────────────────────────────────────────────────
+local SCHEM2_PATH = minetest.get_modpath("map") .. "/schems/barlaeus_arena.mts"
+local ORIGIN2     = vector.new(-330, 177, -440)
+local schem2_placed = false
+
+-- Place schematics once when their area is generated
 minetest.register_on_generated(function(minp, maxp)
-	if schematic_placed then
-		return
+	-- Arena 1
+	if not schematic_placed then
+		if ORIGIN.x >= minp.x and ORIGIN.x <= maxp.x
+		and ORIGIN.y >= minp.y and ORIGIN.y <= maxp.y
+		and ORIGIN.z >= minp.z and ORIGIN.z <= maxp.z then
+			minetest.place_schematic(ORIGIN, SCHEM_PATH, "0", nil, true)
+			schematic_placed = true
+			minetest.log("action", "[map] Arena 1 placed at " .. minetest.pos_to_string(ORIGIN))
+		end
 	end
 
-	-- Check if the origin is within this mapblock
-	if ORIGIN.x >= minp.x and ORIGIN.x <= maxp.x
-	and ORIGIN.y >= minp.y and ORIGIN.y <= maxp.y
-	and ORIGIN.z >= minp.z and ORIGIN.z <= maxp.z then
-		minetest.place_schematic(ORIGIN, SCHEM_PATH, "0", nil, true)
-		schematic_placed = true
-		minetest.log("action", "[map] Arena schematic placed at " .. minetest.pos_to_string(ORIGIN))
+	-- Arena 2
+	if not schem2_placed then
+		if ORIGIN2.x >= minp.x and ORIGIN2.x <= maxp.x
+		and ORIGIN2.y >= minp.y and ORIGIN2.y <= maxp.y
+		and ORIGIN2.z >= minp.z and ORIGIN2.z <= maxp.z then
+			minetest.place_schematic(ORIGIN2, SCHEM2_PATH, "0", nil, true)
+			schem2_placed = true
+			minetest.log("action", "[map] Arena 2 placed at " .. minetest.pos_to_string(ORIGIN2))
+		end
 	end
 end)
 
@@ -53,4 +68,11 @@ end)
 minetest.register_on_respawnplayer(function(player)
 	player:set_pos(SPAWN_POS)
 	return true
+end)
+
+-- Auto-place arena 2 on every server start (force_placement=false = don't overwrite existing blocks)
+minetest.register_on_mods_loaded(function()
+	minetest.place_schematic(ORIGIN2, SCHEM2_PATH, "0", nil, false)
+	schem2_placed = true
+	minetest.log("action", "[map] Arena 2 auto-placed at " .. minetest.pos_to_string(ORIGIN2))
 end)

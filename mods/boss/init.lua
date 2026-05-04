@@ -1,9 +1,12 @@
 -- boss: Teacher boss entity
 -- Each wave has one boss (teacher). Higher levels = more HP and damage.
 -- Level 7 boss is the "Directeur" (principal) — final boss.
--- Hugo (level 2) has kung fu abilities and summons a dragon at low HP.
+-- Hugo (level 2) has kung fu abilities and summons a Dragon at low HP.
 
 boss = {}
+
+-- Singleton reference to the victory dragon (Teinetarnagh); nil when not active
+local _victory_dragon_obj = nil
 
 -- Boss data per level: name, HP, damage, texture
 local BOSSES = {
@@ -40,10 +43,10 @@ end
 -- ============================================================
 -- Hugo (level 2) — kung fu phases
 -- "stalk"   : circle around player, sizing them up
--- "dash"    : explosive rush with dragon cry
+-- "dash"    : explosive rush with Dragon cry
 -- "recover" : brief pause after dash
--- "summon"  : retreating + channeling dragon at low HP
--- "linked"  : invulnerable while dragon lives
+-- "summon"  : retreating + channeling Dragon at low HP
+-- "linked"  : invulnerable while Dragon lives
 -- ============================================================
 
 -- Hugo stalk: move sideways around the player at medium distance
@@ -130,7 +133,7 @@ local function enemy_boss_dragoncall_recover(self, dtime)
 	end
 end
 
--- Hugo summon: retreat + channel dragon
+-- Hugo summon: retreat + channel Dragon
 local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
 
@@ -191,6 +194,8 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 		-- Summon the Dragon!
 		self.object:set_velocity(vector.new(0, -9.81, 0))
 		local spawn_pos = vector.add(pos, vector.new(0, 2, 3))
+		-- Block summon while victory dragon is alive
+		if _victory_dragon_obj and _victory_dragon_obj:get_pos() then return end
 		local dragon = minetest.add_entity(spawn_pos, "boss:summoned_dragon")
 		if dragon then
 			self._summoned_dragon = dragon
@@ -228,9 +233,9 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 	end
 end
 
--- Hugo linked: invulnerable while dragon lives, stands still
+-- Hugo linked: invulnerable while Dragon lives, stands still
 local function enemy_boss_dragoncall_linked(self, dtime, pos, nearest)
-	-- Check if dragon is still alive
+	-- Check if Dragon is still alive
 	if not self._summoned_dragon or not self._summoned_dragon:get_pos() then
 		-- Dragon died — Hugo dies too
 		enemy.boss_alive = nil
@@ -690,7 +695,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			self.object:set_velocity(vector.new(0, 5, 0))
 			for _, p in ipairs(minetest.get_connected_players()) do
 				minetest.chat_send_player(p:get_player_name(),
-					"Rosanne pakt haar potlood... ze tekent iets!")
+					"Rosanne pakt haar potlood... ze tekent haar nieuwe wapen!")
 			end
 		end
 
@@ -882,10 +887,10 @@ minetest.register_entity("boss:teacher", {
 		local is_stunt = puncher:get_luaentity() and puncher:get_luaentity().name == "trailer:stunt_double"
 		if not puncher:is_player() and not is_stunt then return end
 
-		-- Hugo linked phase: invulnerable while dragon lives
+		-- Hugo linked phase: invulnerable while Dragon lives
 		if self._level == 2 and self._enemy_boss_dragoncall_phase == "linked" then
 			minetest.chat_send_player(puncher:get_player_name(),
-				"Hugo is beschermd! Versla eerst de draak!")
+				"Hugo is beschermd! Versla eerst de Draak!")
 			return true
 		end
 
@@ -936,7 +941,7 @@ minetest.register_entity("boss:teacher", {
 			self._bram_timer = 1.8 -- seconds of ear-rummaging theatre
 		end
 
-		-- Hugo: trigger dragon summon at 25% HP
+		-- Hugo: trigger Dragon summon at 25% HP
 		if self._level == 2 and self._enemy_boss_dragoncall_phase ~= "summon" and self._enemy_boss_dragoncall_phase ~= "linked"
 		   and self._hp > 0 and self._hp <= self._max_hp * 0.25 then
 			self._enemy_boss_dragoncall_phase = "summon"
@@ -1018,20 +1023,20 @@ minetest.register_entity("boss:teacher", {
 })
 
 -- ============================================================
--- Summoned Dragon entity (Hugo's dragon)
+-- Summoned Dragon entity (Hugo's Dragon)
 -- ============================================================
 minetest.register_entity("boss:summoned_dragon", {
 	initial_properties = {
 		visual = "mesh",
 		mesh = "draconis_fire_dragon.b3d",
-		textures = {"draconis_fire_dragon_black.png^draconis_baked_in_shading.png"},
+		textures = {"blue_dragon.png^draconis_baked_in_shading.png"},
 		physical = true,
 		collide_with_objects = false,
 		collisionbox = {-0.5, 0.0, -0.5, 0.5, 2.5, 0.5},
 		visual_size = {x = 6, y = 6, z = 6},
 		makes_footstep_sound = false,
 		static_save = false,
-		nametag = "Duistere Draak",
+		nametag = "Kearach",
 		nametag_color = "#ff7700",
 		glow = 8,
 		backface_culling = false,
@@ -1134,7 +1139,7 @@ minetest.register_entity("boss:summoned_dragon", {
 		self._hp = self._hp - dmg
 
 		self.object:set_properties({
-			nametag = "Duistere Draak",
+			nametag = "Skarathos",
 		})
 
 		-- Roar when hit
@@ -1371,7 +1376,7 @@ end
 -- Despawns when the owner drops/switches the sword or dies.
 -- ============================================================
 
--- Track one companion dragon per player: { [player_name] = objectref }
+-- Track one companion Dragon per player: { [player_name] = objectref }
 boss.companion_dragons = {}
 
 -- Find the nearest enemy entity (student or boss teacher) within radius
@@ -1396,14 +1401,14 @@ minetest.register_entity("boss:companion_dragon", {
 	initial_properties = {
 		visual        = "mesh",
 		mesh          = "draconis_fire_dragon.b3d",
-		textures      = {"draconis_fire_dragon_black.png^draconis_baked_in_shading.png"},
+		textures      = {"slate_dragon.png^slate_eyes.png^draconis_baked_in_shading.png"},
 		physical      = false,
 		collide_with_objects = false,
 		collisionbox  = {-0.4, 0.0, -0.4, 0.4, 2.0, 0.4},
 		visual_size   = {x = 6, y = 6, z = 6},
 		makes_footstep_sound = false,
 		static_save   = false,
-		nametag       = "Duistere Draak",
+		nametag       = "Caeltaroch",
 		nametag_color = "#FF8800",
 		glow          = 10,
 		backface_culling = false,
@@ -1617,7 +1622,8 @@ minetest.register_globalstep(function(dtime)
 
 		if wielded == "registered:sword_dragonpower" then
 			-- Spawn if not yet present (or the old one disappeared)
-			if not dragon or not dragon:get_pos() then
+			if (not dragon or not dragon:get_pos())
+					and not (_victory_dragon_obj and _victory_dragon_obj:get_pos()) then
 				local ppos = player:get_pos()
 				local spawn_pos = vector.add(ppos, vector.new(2, 1, 0))
 				local obj = minetest.add_entity(spawn_pos, "boss:companion_dragon")
@@ -1644,7 +1650,7 @@ minetest.register_globalstep(function(dtime)
 				end
 			end
 		else
-			-- Player switched sword — dragon will self-remove in its own on_step
+			-- Player switched sword — Dragon will self-remove in its own on_step
 			-- just nil the table entry if it's already gone
 			if dragon and not dragon:get_pos() then
 				boss.companion_dragons[pname] = nil
@@ -1653,7 +1659,7 @@ minetest.register_globalstep(function(dtime)
 	end
 end)
 
--- Clean up companion dragon when a player leaves
+-- Clean up companion Dragon when a player leaves
 minetest.register_on_leaveplayer(function(player)
 	local pname = player:get_player_name()
 	local dragon = boss.companion_dragons[pname]
@@ -1719,5 +1725,382 @@ minetest.register_chatcommand("spawn", {
 
 		local data = BOSSES[level]
 		return true, "Baas gespawnd: " .. data.name .. " (level " .. level .. ")"
+	end,
+})
+
+-- ============================================================
+-- Victory Dragon (Teinetarnagh) — spawns after all 7 waves are beaten.
+-- Phases: intro → waiting → takeoff → flying → landing → landed
+-- Carries the rider autonomously to ARENA2_POS.
+-- Rider has no manual controls — just holds on.
+-- Right-click to mount; right-click again or arrive = dismount.
+-- ============================================================
+
+local ARENA2_POS   = vector.new(-330, 177, -440)  -- arena center (not used for flight)
+local ARENA2_ENTRY = vector.new(-303, 179, -439)  -- entrance — dragon lands here
+
+local VICTORY_LINES = {
+	"De strijd is gestreden. Beklim mijn rug.",
+	"Uw vijanden liggen geveld. Ik zal u dragen door de lucht.",
+	"Het vuur is geblust. Tijd om te vliegen.",
+	"Moed overwint alles. Kom, laat ons de horizon zoeken.",
+}
+
+-- Mounted player data per player name
+local victory_riders = {}
+
+local function victory_attach(dragon_obj, player)
+	local pname = player:get_player_name()
+	if victory_riders[pname] then return end
+
+	local props = player:get_properties()
+	local eye   = player:get_eye_offset()
+	victory_riders[pname] = {
+		collisionbox  = table.copy(props.collisionbox),
+		visual_size   = table.copy(props.visual_size or {x=1, y=1}),
+		eye_first     = eye.offset_first  or vector.new(0, 0, 0),
+		eye_third     = eye.offset_third  or vector.new(0, 0, 0),
+	}
+
+	-- Hide player model while riding; zero collisionbox prevents clipping
+	player:set_properties({
+		collisionbox = {0, 0, 0, 0, 0, 0},
+		visual_size  = {x = 0, y = 0},
+	})
+	player:set_attach(dragon_obj, "Torso.2", vector.new(0, 0, 0), vector.new(0, 0, 0))
+
+	-- Camera: 1/5 of waterdragon formula (scale=8): y=115*8/5=184, z=-280*8/5=-448
+	local scale = 8
+	player:set_eye_offset(
+		vector.new(0, 115 * scale / 5, -280 * scale / 5),
+		vector.new(0, 0, 0)
+	)
+	player:set_look_horizontal(dragon_obj:get_yaw() or 0)
+end
+
+local function victory_detach(dragon_ent, player)
+	local pname = player:get_player_name()
+	local data  = victory_riders[pname]
+	if not data then return end
+
+	player:set_detach()
+	player:set_properties({
+		collisionbox = data.collisionbox,
+		visual_size  = data.visual_size,
+	})
+	player:set_eye_offset(data.eye_first, data.eye_third)
+	victory_riders[pname] = nil
+
+	if dragon_ent and dragon_ent.rider == player then
+		dragon_ent.rider = nil
+	end
+end
+
+minetest.register_entity("boss:victory_dragon", {
+	initial_properties = {
+		visual               = "mesh",
+		mesh                 = "draconis_fire_dragon.b3d",
+		textures             = {"black_dragon.png^draconis_baked_in_shading.png"},
+		physical             = false,   -- manual velocity, no gravity
+		collide_with_objects = false,
+		collisionbox         = {-0.8, 0.0, -0.8, 0.8, 3.0, 0.8},
+		visual_size          = {x = 8, y = 8, z = 8},
+		makes_footstep_sound = false,
+		static_save          = false,
+		nametag              = "Teinetarnagh",
+		nametag_color        = "#FFD700",
+		glow                 = 8,
+	},
+
+	rider         = nil,
+	_phase        = "intro",   -- intro / waiting / takeoff / flying / landing / landed
+	_phase_timer  = 2.5,       -- intro duration
+	_anim_timer   = 0,
+	_current_anim = "hover",
+	_flight_height = 0,        -- target y during flight
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+		self.object:set_animation({x = 321, y = 359}, 30, 0, true)  -- hover
+		self.object:set_velocity(vector.new(0, 0, 0))
+	end,
+
+	on_rightclick = function(self, clicker)
+		if not clicker or not clicker:is_player() then return end
+		local pname = clicker:get_player_name()
+
+		if self.rider == clicker then
+			victory_detach(self, clicker)
+			self._phase = "waiting"
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
+
+		if self.rider then
+			minetest.chat_send_player(pname, "Teinetarnagh heeft al een ruiter.")
+			return
+		end
+
+		if self._phase ~= "waiting" and self._phase ~= "landed" then
+			minetest.chat_send_player(pname, "Teinetarnagh is nog niet klaar om te rijden.")
+			return
+		end
+
+		self.rider     = clicker
+		victory_attach(self.object, clicker)
+		self._phase    = "flying"
+		self._flight_height = (self.object:get_pos() or vector.new(0,0,0)).y + 22
+		minetest.chat_send_player(pname, "Hou vast!")
+	end,
+
+	on_step = function(self, dtime)
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		self._phase_timer  = (self._phase_timer  or 0) - dtime
+		self._anim_timer   = (self._anim_timer   or 0) - dtime
+
+		local function set_anim(name, frames, speed)
+			if self._current_anim ~= name and self._anim_timer <= 0 then
+				self._current_anim = name
+				self._anim_timer   = 0.4
+				self.object:set_animation(frames, speed, 0, true)
+			end
+		end
+
+		-- ── INTRO: hover in place, say something ─────────────────────
+		if self._phase == "intro" then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			set_anim("hover", {x = 321, y = 359}, 30)
+			if self._phase_timer <= 0 then
+				self._phase      = "waiting"
+				self._phase_timer = 0
+
+				local line = VICTORY_LINES[math.random(#VICTORY_LINES)]
+				for _, p in ipairs(minetest.get_connected_players()) do
+					minetest.chat_send_player(p:get_player_name(), "[Teinetarnagh] " .. line)
+				end
+				minetest.sound_play("dragon_roar3",
+					{pos = pos, gain = 1.2, max_hear_distance = 60})
+
+				-- Descend to just above ground (~3 nodes)
+				self._phase = "descend_wait"
+				self._phase_timer = 999  -- no timer, descend until close to ground
+			end
+			return
+		end
+
+		-- ── DESCEND after intro: sink until near ground ───────────────
+		if self._phase == "descend_wait" then
+			-- Check ground below
+			local below = minetest.get_node(vector.new(pos.x, pos.y - 2, pos.z))
+			if below.name ~= "air" then
+				self._phase = "waiting"
+				self.object:set_velocity(vector.new(0, 0, 0))
+				self.object:set_animation({x = 481, y = 509}, 25, 0, false)  -- land
+				minetest.after(1.0, function()
+					if self.object and self.object:get_pos() then
+						self.object:set_animation({x = 321, y = 359}, 25, 0, true)  -- hover idle
+					end
+				end)
+			else
+				self.object:set_velocity(vector.new(0, -2.5, 0))
+				set_anim("hover", {x = 321, y = 359}, 25)
+			end
+			return
+		end
+
+		-- ── WAITING: hover gently, wait for rider ────────────────────
+		if self._phase == "waiting" then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			set_anim("hover", {x = 321, y = 359}, 25)
+			return
+		end
+
+		-- ── LANDED: stay still ───────────────────────────────────────
+		if self._phase == "landed" then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			set_anim("hover", {x = 321, y = 359}, 20)
+			return
+		end
+
+		-- All phases below require rider
+		local rider = self.rider
+		if not rider or not rider:get_pos() then
+			self.rider = nil
+			self._phase = "waiting"
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
+
+		-- Face toward destination (entrance, not arena center)
+		local dest = ARENA2_ENTRY
+		local dir  = vector.direction(pos, dest)
+		local target_yaw = minetest.dir_to_yaw(dir)
+		local cur_yaw    = self.object:get_yaw() or 0
+		local dyaw = target_yaw - cur_yaw
+		while dyaw >  math.pi do dyaw = dyaw - 2 * math.pi end
+		while dyaw < -math.pi do dyaw = dyaw + 2 * math.pi end
+		self.object:set_yaw(cur_yaw + dyaw * math.min(dtime * 3, 1))
+
+		-- ── FLYING: diagonal autopilot toward entrance (waterdragon-style) ──
+		if self._phase == "flying" then
+			local hdist = vector.distance(
+				vector.new(pos.x, 0, pos.z),
+				vector.new(dest.x, 0, dest.z)
+			)
+
+			if hdist < 8 then
+				-- Close enough horizontally — start descent
+				self._phase = "landing"
+				return
+			end
+
+			-- Obstacle avoidance: raycast 7 nodes ahead, climb if blocked
+			local ahead = vector.add(pos, vector.multiply(dir, 7))
+			local clear = minetest.line_of_sight(pos, ahead)
+			if not clear then
+				self._flight_height = math.max(self._flight_height, pos.y + 5)
+			end
+
+			-- Waterdragon-style diagonal flight: climb to cruise height, then level toward dest
+			local target_y = (pos.y < self._flight_height - 1) and self._flight_height or (dest.y + 2)
+			local vel_y = (target_y - pos.y) * 0.15 * 12
+			local vx = dir.x * 12
+			local vz = dir.z * 12
+			self.object:set_velocity(vector.new(vx, vel_y, vz))
+			set_anim("fly", {x = 401, y = 439}, 35)
+
+			-- Particles: wind/embers behind Dragon
+			self._aura_timer = (self._aura_timer or 0) - dtime
+			if self._aura_timer <= 0 then
+				self._aura_timer = 0.25
+				minetest.add_particlespawner({
+					amount = 5, time = 0.25,
+					minpos = vector.add(pos, vector.new(-0.5, 0.5, -0.5)),
+					maxpos = vector.add(pos, vector.new(0.5, 2.0, 0.5)),
+					minvel = vector.new(-1, -0.5, -1), maxvel = vector.new(1, 0.5, 1),
+					minacc = vector.new(0, -0.5, 0),  maxacc = vector.new(0, 0, 0),
+					minexptime = 0.3, maxexptime = 0.8,
+					minsize = 2, maxsize = 4,
+					texture = "draconis_fire_particle.png^[colorize:#FFD700:160",
+					glow = 8,
+				})
+			end
+			return
+		end
+
+		-- ── LANDING at arena 2 ────────────────────────────────────────
+		if self._phase == "landing" then
+			local target_y = dest.y + 1
+			local dy = target_y - pos.y
+
+			if math.abs(dy) < 1.5 then
+				-- Arrived
+				self.object:set_velocity(vector.new(0, 0, 0))
+				self.object:set_animation({x = 481, y = 509}, 25, 0, false)  -- land
+				self._phase = "landed"
+
+				-- Roar and dismount rider
+				minetest.sound_play("dragon_roar3",
+					{pos = pos, gain = 1.0, max_hear_distance = 40})
+				for _, p in ipairs(minetest.get_connected_players()) do
+					minetest.chat_send_player(p:get_player_name(),
+						"[Teinetarnagh] Wij zijn er. Ga.")
+				end
+				if self.rider then
+					victory_detach(self, self.rider)
+				end
+
+				minetest.after(1.5, function()
+					if self.object and self.object:get_pos() then
+						self.object:set_animation({x = 321, y = 359}, 25, 0, true)
+					end
+				end)
+			else
+				set_anim("hover", {x = 321, y = 359}, 25)
+				self.object:set_velocity(vector.new(0, dy * 3, 0))
+			end
+			return
+		end
+	end,
+
+	on_punch = function(self, puncher)
+		if puncher and puncher:is_player() then
+			minetest.sound_play("dragon_roar1",
+				{pos = self.object:get_pos(), gain = 0.8, max_hear_distance = 30})
+		end
+	end,
+
+	on_deactivate = function(self)
+		-- Clear singleton so a new dragon can be spawned later
+		if _victory_dragon_obj == self.object then
+			_victory_dragon_obj = nil
+		end
+		-- Detach any rider
+		if self.rider then
+			victory_detach(self, self.rider)
+		end
+	end,
+})
+
+-- Detach rider when player dies or leaves
+minetest.register_on_dieplayer(function(player)
+	local pname = player:get_player_name()
+	if victory_riders[pname] then
+		player:set_detach()
+		local data = victory_riders[pname]
+		player:set_properties({ collisionbox = data.collisionbox })
+		player:set_eye_offset(data.eye_first, data.eye_third)
+		victory_riders[pname] = nil
+	end
+end)
+
+minetest.register_on_leaveplayer(function(player)
+	local pname = player:get_player_name()
+	if victory_riders[pname] then
+		player:set_detach()
+		victory_riders[pname] = nil
+	end
+end)
+function boss.spawn_victory_dragon(near_pos)
+	-- Only one Teinetarnagh at a time
+	if _victory_dragon_obj and _victory_dragon_obj:get_pos() then
+		return
+	end
+
+	local center = near_pos or vector.new(42, 14, 31)
+
+	minetest.after(2.5, function()
+		-- Double-check: still no Dragon?
+		if _victory_dragon_obj and _victory_dragon_obj:get_pos() then return end
+
+		-- Dramatic entry: spawn 20 blocks above the given position
+		local spawn_pos = vector.add(center, vector.new(0, 20, 0))
+		local obj = minetest.add_entity(spawn_pos, "boss:victory_dragon")
+		if not obj then return end
+		_victory_dragon_obj = obj
+
+		-- Entity handles its own descent via intro phase
+
+		-- Announce
+		for _, p in ipairs(minetest.get_connected_players()) do
+			minetest.chat_send_player(p:get_player_name(),
+				"*** Een schaduw daalt neer...***")
+		end
+
+		minetest.sound_play("dragon_roar2",
+			{pos = spawn_pos, gain = 1.0, max_hear_distance = 80})
+	end)
+end
+
+minetest.register_chatcommand("spawn_victory_dragon", {
+	privs = {server = true},
+	description = "Spawn de Overwinnings-Draak voor test (spawnt naast jou)",
+	func = function(name)
+		local player = minetest.get_player_by_name(name)
+		if not player then return false, "Speler niet gevonden." end
+		boss.spawn_victory_dragon(player:get_pos())
+		return true, "De Draak is onderweg..."
 	end,
 })

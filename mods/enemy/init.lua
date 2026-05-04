@@ -366,6 +366,10 @@ function enemy.check_wave_clear()
 				minetest.chat_send_player(player:get_player_name(),
 					"*** GEFELICITEERD! Je hebt alle golven verslagen! ***")
 			end
+			-- Spawn the victory dragon
+			if boss and boss.spawn_victory_dragon then
+				boss.spawn_victory_dragon()
+			end
 		end
 	end
 end

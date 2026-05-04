@@ -60,11 +60,41 @@ minetest.register_node("registered:meselamp", {
 	light_source = minetest.LIGHT_MAX,
 })
 
+-- Wood planks
+local function sound_wood()
+	return {
+		footstep = {name = "default_wood_footstep", gain = 0.3},
+		place    = {name = "default_place_node",      gain = 1.0},
+		dug      = {name = "default_dug_node",        gain = 0.5},
+	}
+end
+
+minetest.register_node("registered:wood", {
+	description = "Houten Plank",
+	tiles = {"default_wood.png"},
+	groups = {choppy = 3, oddly_breakable_by_hand = 2, flammable = 3, wood = 1},
+	sounds = sound_wood(),
+})
+
+-- Computer (decorative block)
+minetest.register_node("registered:cobble", {
+	description = "Computer",
+	tiles = {
+		"default_steel_block.png",            -- top / bottom
+		"default_steel_block.png",            -- sides
+		"default_steel_block.png^[colorize:#222222:160",  -- front face (screen)
+	},
+	paramtype2 = "facedir",
+	groups = {cracky = 2, oddly_breakable_by_hand = 1},
+	sounds = sound_stone(),
+})
+
 -- Aliases so the .mts schematic (which uses default: names) resolves correctly
-minetest.register_alias("default:stone", "registered:stone")
-minetest.register_alias("default:diamondblock", "registered:diamondblock")
-minetest.register_alias("default:glass", "registered:glass")
-minetest.register_alias("default:meselamp", "registered:meselamp")
+minetest.register_alias("default:stone",       "registered:stone")
+minetest.register_alias("default:diamondblock","registered:diamondblock")
+minetest.register_alias("default:glass",       "registered:glass")
+minetest.register_alias("default:meselamp",    "registered:meselamp")
+minetest.register_alias("default:wood",        "registered:wood")
 
 -- Swords
 
