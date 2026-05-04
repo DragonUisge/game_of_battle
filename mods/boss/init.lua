@@ -1415,6 +1415,7 @@ minetest.register_entity("boss:companion_dragon", {
 	_current_anim   = "walk",
 	_aura_timer     = 0,
 	_roar_timer     = 5.0,
+	_was_attacking  = false,
 
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 321, y = 359}, 35, 0, true) -- hover
@@ -1485,6 +1486,7 @@ minetest.register_entity("boss:companion_dragon", {
 		local enemy_obj, enemy_dist = find_nearest_enemy(pos, 18)
 
 		if enemy_obj and enemy_obj:get_pos() then
+			self._was_attacking = true
 			-- ── ATTACK MODE ──────────────────────────────────────────
 			local epos = enemy_obj:get_pos()
 			local etarget = vector.add(epos, vector.new(0, 2, 0)) -- 2 blocks above enemy
@@ -1563,6 +1565,11 @@ minetest.register_entity("boss:companion_dragon", {
 			end
 		else
 			-- ── FOLLOW MODE ──────────────────────────────────────────
+			if self._was_attacking then
+				self._was_attacking = false
+				minetest.sound_play("dragon_roar3",
+					{pos = pos, gain = 1.0, max_hear_distance = 30})
+			end
 			local otarget = vector.add(opos, vector.new(0, 2, 0)) -- 2 blocks above owner
 			local follow_dist = vector.distance(pos, otarget)
 			local dir = vector.direction(pos, otarget)
@@ -1655,3 +1662,62 @@ minetest.register_on_leaveplayer(function(player)
 	end
 	boss.companion_dragons[pname] = nil
 end)
+
+-- ============================================================
+-- /spawn <technical_name> — spawn a boss to fight the caller
+-- ============================================================
+local SPAWN_BY_NAME = {
+	enemy_boss_dragoncall = 2,
+	enemy_boss_gladiator  = 3,
+	bram                  = 1,
+	julian                = 4,
+	rosanne               = 5,
+	jan_willem            = 6,
+	margriet              = 7,
+}
+
+minetest.register_chatcommand("spawn", {
+	params      = "<boss_name>",
+	description = "Spawn a boss at your position (server only). Names: " ..
+		table.concat((function()
+			local t = {}
+			for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
+			table.sort(t)
+			return t
+		end)(), ", "),
+	privs = {server = true},
+	func = function(name, param)
+		local pname = param:match("^%s*(.-)%s*$")  -- trim whitespace
+		local level = SPAWN_BY_NAME[pname]
+		if not level then
+			return false, "Onbekende baas. Gebruik: " ..
+				table.concat((function()
+					local t = {}
+					for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
+					table.sort(t)
+					return t
+				end)(), ", ")
+		end
+
+		local player = minetest.get_player_by_name(name)
+		if not player then return false, "Speler niet gevonden." end
+
+		local pos = player:get_pos()
+		-- Spawn 3 blocks in front of the player
+		local yaw = player:get_look_horizontal()
+		local spawn_pos = vector.add(pos, vector.new(
+			-math.sin(yaw) * 3,
+			0,
+			 math.cos(yaw) * 3
+		))
+
+		local obj = minetest.add_entity(spawn_pos, "boss:teacher")
+		if not obj then return false, "Kon de baas niet spawnen." end
+
+		boss.set_level(obj, level)
+		enemy.boss_alive = obj
+
+		local data = BOSSES[level]
+		return true, "Baas gespawnd: " .. data.name .. " (level " .. level .. ")"
+	end,
+})
