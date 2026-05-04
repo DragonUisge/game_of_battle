@@ -16,6 +16,10 @@ local SPAWN_POS = vector.new(
 
 local schematic_placed = false
 
+-- Export spawn position for other mods (e.g. boss reaction)
+map = map or {}
+map.SPAWN_POS = SPAWN_POS
+
 -- ── Arena 2 ─────────────────────────────────────────────────────────────────
 local SCHEM2_PATH = minetest.get_modpath("map") .. "/schems/barlaeus_arena.mts"
 local ORIGIN2     = vector.new(-330, 177, -440)
@@ -70,9 +74,18 @@ minetest.register_on_respawnplayer(function(player)
 	return true
 end)
 
--- Auto-place arena 2 on every server start (force_placement=false = don't overwrite existing blocks)
+-- Auto-place arena 2 on every server start using emerge_area so mapblocks exist first
 minetest.register_on_mods_loaded(function()
-	minetest.place_schematic(ORIGIN2, SCHEM2_PATH, "0", nil, false)
-	schem2_placed = true
-	minetest.log("action", "[map] Arena 2 auto-placed at " .. minetest.pos_to_string(ORIGIN2))
+	local minp = ORIGIN2
+	local maxp = vector.add(ORIGIN2, vector.new(51, 9, 62))
+	minetest.emerge_area(minp, maxp, function(blockpos, action, calls_remaining)
+		if calls_remaining == 0 then
+			minetest.after(0.1, function()
+				minetest.place_schematic(ORIGIN2, SCHEM2_PATH, "0", nil, true)
+				schem2_placed = true
+				minetest.log("action", "[map] Arena 2 placed after emerge at "
+					.. minetest.pos_to_string(ORIGIN2))
+			end)
+		end
+	end)
 end)

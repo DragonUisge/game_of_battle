@@ -6,7 +6,7 @@
 boss = {}
 
 -- Singleton reference to the victory dragon (Teinetarnagh); nil when not active
-local _victory_dragon_obj = nil
+boss._victory_dragon_obj = nil
 
 -- Boss data per level: name, HP, damage, texture
 local BOSSES = {
@@ -161,7 +161,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 		maxexptime = 0.7,
 		minsize = 2,
 		maxsize = 4,
-		texture = "draconis_fire_particle.png^[colorize:#AA00FF:200",
+		texture = "draconis_fire_particle.png^[colorize:#386dff:200",
 		glow = 12,
 	})
 
@@ -185,7 +185,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 			maxexptime = 1.0,
 			minsize = 3,
 			maxsize = 6,
-			texture = "draconis_fire_particle.png^[colorize:#220044:200",
+			texture = "draconis_fire_particle.png^[colorize:#1a3888:200",
 			glow = 10,
 		})
 	end
@@ -195,7 +195,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 		self.object:set_velocity(vector.new(0, -9.81, 0))
 		local spawn_pos = vector.add(pos, vector.new(0, 2, 3))
 		-- Block summon while victory dragon is alive
-		if _victory_dragon_obj and _victory_dragon_obj:get_pos() then return end
+		if boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos() then return end
 		local dragon = minetest.add_entity(spawn_pos, "boss:summoned_dragon")
 		if dragon then
 			self._summoned_dragon = dragon
@@ -1076,7 +1076,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.5,
 				minsize = 4,
 				maxsize = 8,
-				texture = "draconis_fire_particle.png^[colorize:#AA00FF:200",
+				texture = "draconis_fire_particle.png^[colorize:#386dff:200",
 				glow = 14,
 			})
 			-- Ground shockwave ring
@@ -1093,7 +1093,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.0,
 				minsize = 3,
 				maxsize = 5,
-				texture = "draconis_fire_particle.png^[colorize:#AA00FF:200",
+				texture = "draconis_fire_particle.png^[colorize:#386dff:200",
 				glow = 10,
 			})
 		end
@@ -1409,7 +1409,7 @@ minetest.register_entity("boss:companion_dragon", {
 		makes_footstep_sound = false,
 		static_save   = false,
 		nametag       = "Caeltaroch",
-		nametag_color = "#FF8800",
+		nametag_color = "#1869db",
 		glow          = 10,
 		backface_culling = false,
 	},
@@ -1451,7 +1451,7 @@ minetest.register_entity("boss:companion_dragon", {
 				minacc = vector.new(0, -1, 0),  maxacc = vector.new(0, 0, 0),
 				minexptime = 0.4, maxexptime = 1.0,
 				minsize = 3, maxsize = 6,
-				texture = "draconis_fire_particle.png^[colorize:#FF6600:160",
+				texture = "draconis_fire_particle.png^[colorize:#b8ffed:160",
 				glow = 8,
 			})
 			self.object:remove()
@@ -1471,7 +1471,7 @@ minetest.register_entity("boss:companion_dragon", {
 				minacc = vector.new(0, 0.3, 0), maxacc = vector.new(0, 0.8, 0),
 				minexptime = 0.5, maxexptime = 1.0,
 				minsize = 1.5, maxsize = 3,
-				texture = "draconis_fire_particle.png^[colorize:#FF6600:150",
+				texture = "draconis_fire_particle.png^[colorize:#b8ffed:150",
 				glow = 10,
 			})
 		end
@@ -1623,7 +1623,7 @@ minetest.register_globalstep(function(dtime)
 		if wielded == "registered:sword_dragonpower" then
 			-- Spawn if not yet present (or the old one disappeared)
 			if (not dragon or not dragon:get_pos())
-					and not (_victory_dragon_obj and _victory_dragon_obj:get_pos()) then
+					and not (boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos()) then
 				local ppos = player:get_pos()
 				local spawn_pos = vector.add(ppos, vector.new(2, 1, 0))
 				local obj = minetest.add_entity(spawn_pos, "boss:companion_dragon")
@@ -1640,7 +1640,7 @@ minetest.register_globalstep(function(dtime)
 						minacc = vector.new(0, -2, 0), maxacc = vector.new(0, 0, 0),
 						minexptime = 0.3, maxexptime = 0.8,
 						minsize = 2, maxsize = 5,
-						texture = "draconis_fire_particle.png^[colorize:#FF6600:180",
+						texture = "draconis_fire_particle.png^[colorize:#b8ffed:180",
 						glow = 12,
 					})
 					minetest.sound_play("dragon_roar1",
@@ -1924,6 +1924,67 @@ minetest.register_entity("boss:victory_dragon", {
 			return
 		end
 
+		-- ── RETURN_FLIGHT: carry offender back to arena 1 ────────────
+		if self._phase == "return_flight" then
+			local dest = (map and map.SPAWN_POS) or vector.new(42, 4, 31)
+			local dir  = vector.direction(pos, dest)
+			local hdist = vector.distance(
+				vector.new(pos.x, 0, pos.z),
+				vector.new(dest.x, 0, dest.z)
+			)
+
+			-- Smooth yaw
+			local target_yaw = minetest.dir_to_yaw(dir)
+			local cur_yaw    = self.object:get_yaw() or 0
+			local dyaw = target_yaw - cur_yaw
+			while dyaw >  math.pi do dyaw = dyaw - 2 * math.pi end
+			while dyaw < -math.pi do dyaw = dyaw + 2 * math.pi end
+			self.object:set_yaw(cur_yaw + dyaw * math.min(dtime * 3, 1))
+
+			if hdist < 8 then
+				-- Drop the player at Arena 1 spawn and vanish
+				if self.rider then
+					local carried = self.rider
+					victory_detach(self, carried)
+					carried:set_pos(vector.new(dest.x, dest.y + 1, dest.z))
+				end
+				minetest.sound_play("dragon_roar1",
+					{pos = pos, gain = 1.0, max_hear_distance = 40})
+				for _, p in ipairs(minetest.get_connected_players()) do
+					minetest.chat_send_player(p:get_player_name(),
+						"[Teinetarnagh] Vaarwel.")
+				end
+				boss._victory_dragon_obj = nil
+				self.object:remove()
+				return
+			end
+
+			-- Fly toward arena 1, cruise high
+			local cruise_y = self._flight_height or (pos.y + 20)
+			local target_y = (pos.y < cruise_y - 1) and cruise_y or (dest.y + 20)
+			local vel_y = (target_y - pos.y) * 0.15 * 12
+			self.object:set_velocity(vector.new(dir.x * 14, vel_y, dir.z * 14))
+			set_anim("fly", {x = 401, y = 439}, 35)
+
+			-- Gold aura
+			self._aura_timer = (self._aura_timer or 0) - dtime
+			if self._aura_timer <= 0 then
+				self._aura_timer = 0.2
+				minetest.add_particlespawner({
+					amount = 6, time = 0.2,
+					minpos = vector.add(pos, vector.new(-0.5, 0.5, -0.5)),
+					maxpos = vector.add(pos, vector.new(0.5, 2.0, 0.5)),
+					minvel = vector.new(-1, -1, -1), maxvel = vector.new(1, 0, 1),
+					minacc = vector.new(0, -1, 0),   maxacc = vector.new(0, 0, 0),
+					minexptime = 0.3, maxexptime = 0.7,
+					minsize = 2, maxsize = 5,
+					texture = "draconis_fire_particle.png^[colorize:#FFD700:200",
+					glow = 12,
+				})
+			end
+			return
+		end
+
 		-- All phases below require rider
 		local rider = self.rider
 		if not rider or not rider:get_pos() then
@@ -2034,8 +2095,8 @@ minetest.register_entity("boss:victory_dragon", {
 
 	on_deactivate = function(self)
 		-- Clear singleton so a new dragon can be spawned later
-		if _victory_dragon_obj == self.object then
-			_victory_dragon_obj = nil
+		if boss._victory_dragon_obj == self.object then
+			boss._victory_dragon_obj = nil
 		end
 		-- Detach any rider
 		if self.rider then
@@ -2063,9 +2124,26 @@ minetest.register_on_leaveplayer(function(player)
 		victory_riders[pname] = nil
 	end
 end)
+-- Grab a player, fly them back to arena 1, then vanish.
+-- Called from registered/init.lua when the schedule computer is edited.
+function boss.return_player(player)
+	if not boss._victory_dragon_obj then return end
+	local vobj = boss._victory_dragon_obj
+	if not vobj:get_pos() then return end
+	local ent = vobj:get_luaentity()
+	if not ent then return end
+	-- Detach any existing rider first
+	if ent.rider and ent.rider ~= player then
+		victory_detach(ent, ent.rider)
+	end
+	victory_attach(vobj, player)
+	ent.rider = player
+	ent._phase = "return_flight"
+	ent._flight_height = vobj:get_pos().y + 20
+end
+
 function boss.spawn_victory_dragon(near_pos)
-	-- Only one Teinetarnagh at a time
-	if _victory_dragon_obj and _victory_dragon_obj:get_pos() then
+	if boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos() then
 		return
 	end
 
@@ -2073,13 +2151,13 @@ function boss.spawn_victory_dragon(near_pos)
 
 	minetest.after(2.5, function()
 		-- Double-check: still no Dragon?
-		if _victory_dragon_obj and _victory_dragon_obj:get_pos() then return end
+		if boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos() then return end
 
 		-- Dramatic entry: spawn 20 blocks above the given position
 		local spawn_pos = vector.add(center, vector.new(0, 20, 0))
 		local obj = minetest.add_entity(spawn_pos, "boss:victory_dragon")
 		if not obj then return end
-		_victory_dragon_obj = obj
+		boss._victory_dragon_obj = obj
 
 		-- Entity handles its own descent via intro phase
 

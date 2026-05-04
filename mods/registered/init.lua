@@ -76,18 +76,181 @@ minetest.register_node("registered:wood", {
 	sounds = sound_wood(),
 })
 
--- Computer (decorative block)
+-- ── Schedule Computer ──────────────────────────────────────────────────────
+-- Right-click opens the school timetable editor.
+-- Changes break times (when student waves spawn) and subject assignments.
+
+local function schedule_formspec()
+	local S    = enemy and enemy.SUBJECTS or
+		{"Frans","Latijn","Engels","Aardrijkskunde","Natuurkunde",
+		 "Wiskunde","Tekenen","Muziek","Nederlands","Biologie"}
+	local sched = (enemy and enemy.schedule) or
+		{"Wiskunde","Nederlands","Engels","Aardrijkskunde","Latijn","Frans","Muziek"}
+	local bt   = (enemy and enemy.break_times) or
+		{{h=10,m=10,lesson=nil},{h=12,m=10,lesson=nil},{h=14,m=15,lesson=nil}}
+
+	local subj_str = table.concat(S, ",")
+
+	local function subj_idx(name)
+		for i, s in ipairs(S) do if s == name then return i end end
+		return 1
+	end
+
+	-- Dropdown options for break slots: "Pauze" first, then all subjects
+	local break_options = "Pauze," .. subj_str
+
+	-- Index of a break slot choice (1 = Pauze, 2+ = subject index+1)
+	local function break_choice_idx(bdata)
+		if not bdata.lesson then return 1 end
+		for i, s in ipairs(S) do
+			if s == bdata.lesson then return i + 1 end
+		end
+		return 1
+	end
+
+	-- Generate one period row: time label + subject dropdown
+	local function period_row(n, label, y)
+		return string.format(
+			"label[0.4,%.2f;%s]"..
+			"dropdown[3.2,%.2f;6.0,0.6;subj%d;%s;%d]",
+			y, label, y - 0.1, n, subj_str, subj_idx(sched[n] or S[1])
+		)
+	end
+
+	-- Generate one break row: coloured bar + lesson/pauze dropdown + time fields
+	local function break_row(bn, label, y)
+		return string.format(
+			"box[0.2,%.2f;11.6,0.62;#3d1010]"..
+			"label[0.4,%.2f;⚡ %s]"..
+			"dropdown[3.2,%.2f;3.5,0.6;brtype%d;%s;%d]"..
+			"label[6.8,%.2f;om:]"..
+			"field[7.5,%.2f;1.3,0.55;br%dh;;%02d]"..
+			"label[8.85,%.2f;:]"..
+			"field[9.05,%.2f;1.3,0.55;br%dm;;%02d]",
+			y,
+			y + 0.12, label,
+			y - 0.1, bn, break_options, break_choice_idx(bt[bn]),
+			y + 0.12,
+			y + 0.02, bn, bt[bn].h,
+			y + 0.12,
+			y + 0.02, bn, bt[bn].m
+		)
+	end
+
+	return
+		"formspec_version[4]"..
+		"size[12,10.8]"..
+		"no_prepend[]"..
+		"bgcolor[#111122;true;#0d0d1f]"..
+		-- Title bar
+		"box[0.2,0.2;11.6,0.55;#1a2a5a]"..
+		"label[0.4,0.38;⚙  Schoolrooster — Barlaeus klassen]"..
+		-- Column headers
+		"label[0.4,1.1;Uur]"..
+		"label[3.2,1.1;Vak]"..
+		-- Periods 1-2, Pauze 1, Periods 3-4, Pauze 2, Periods 5-6, Pauze 3, Period 7
+		period_row(1, "08:00 – 09:00", 1.65)..
+		period_row(2, "09:00 – 10:00", 2.45)..
+		break_row(1, "Pauze 1  (Golf 1)", 3.15)..
+		period_row(3, "10:10 – 11:10", 3.95)..
+		period_row(4, "11:10 – 12:10", 4.75)..
+		break_row(2, "Pauze 2  (Golf 2)", 5.45)..
+		period_row(5, "12:10 – 13:10", 6.25)..
+		period_row(6, "13:10 – 14:10", 7.05)..
+		break_row(3, "Pauze 3  (Golf 3)", 7.75)..
+		period_row(7, "14:15 – 15:00", 8.55)..
+		-- Save
+		"button_exit[4.0,9.5;4.0,0.7;save;💾 Opslaan]"
+end
+
 minetest.register_node("registered:cobble", {
-	description = "Computer",
+	description = "Computer (Schoolrooster)",
 	tiles = {
-		"default_steel_block.png",            -- top / bottom
-		"default_steel_block.png",            -- sides
-		"default_steel_block.png^[colorize:#222222:160",  -- front face (screen)
+		"default_steel_block.png",
+		"default_steel_block.png",
+		"default_steel_block.png^[colorize:#222222:160",
 	},
 	paramtype2 = "facedir",
 	groups = {cracky = 2, oddly_breakable_by_hand = 1},
 	sounds = sound_stone(),
+	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
+		if not clicker:is_player() then return end
+		minetest.show_formspec(clicker:get_player_name(),
+			"schedule_computer", schedule_formspec())
+	end,
 })
+
+minetest.register_on_player_receive_fields(function(player, formname, fields)
+	if formname ~= "schedule_computer" then return end
+	if not fields.save then return end
+	if not (enemy and enemy.break_times and enemy.schedule) then return end
+
+	local S = enemy.SUBJECTS
+
+	-- Update subject schedule
+	for i = 1, 7 do
+		local v = fields["subj" .. i]
+		if v and v ~= "" then enemy.schedule[i] = v end
+	end
+
+	-- Update break times + lesson choice
+	local function parse_int(s, default)
+		local n = tonumber(s)
+		return (n and math.floor(n)) or default
+	end
+	for bn = 1, 3 do
+		local bh = parse_int(fields["br" .. bn .. "h"], enemy.break_times[bn].h)
+		local bm = parse_int(fields["br" .. bn .. "m"], enemy.break_times[bn].m)
+		bh = math.max(0, math.min(23, bh))
+		bm = math.max(0, math.min(59, bm))
+		-- brtype: "Pauze" = real break, anything else = lesson (no wave)
+		local chosen = fields["brtype" .. bn]
+		local lesson_val = nil
+		if chosen and chosen ~= "Pauze" and chosen ~= "" then
+			lesson_val = chosen
+		end
+		enemy.break_times[bn] = {h = bh, m = bm, lesson = lesson_val}
+	end
+
+	-- Allow new break times to fire even if the minute already passed
+	if enemy.refresh_schedule then enemy.refresh_schedule() end
+
+	-- ── Teinetarnagh reaction ──────────────────────────────────────────────
+	-- If the victory Dragon is alive, he grabs the player, flies them back
+	-- to arena 1, resets the schedule, then disappears.
+	if boss and boss._victory_dragon_obj then
+		local vobj = boss._victory_dragon_obj
+		if vobj:get_pos() then
+			-- Reset schedule to defaults first
+			for i = 1, 7 do
+				enemy.schedule[i] = enemy.DEFAULT_SCHEDULE[i]
+			end
+			for bn = 1, 3 do
+				local d = enemy.DEFAULT_BREAK_TIMES[bn]
+				enemy.break_times[bn] = {h = d.h, m = d.m, lesson = nil}
+			end
+			if enemy.refresh_schedule then enemy.refresh_schedule() end
+
+			-- Broadcast warning
+			minetest.chat_send_all(
+				"[Teinetarnagh] Wat denk jij dat je doet? " ..
+				"Dit rooster staat al eeuwen vast. Ik breng je terug.")
+
+			-- Carry the player back to arena 1
+			boss.return_player(player)
+			return
+		end
+	end
+
+	local pname = player:get_player_name()
+	minetest.chat_send_player(pname,
+		"[Rooster] Wijzigingen opgeslagen. "..
+		"Pauzes: "..
+		string.format("%02d:%02d", enemy.break_times[1].h, enemy.break_times[1].m).." / "..
+		string.format("%02d:%02d", enemy.break_times[2].h, enemy.break_times[2].m).." / "..
+		string.format("%02d:%02d", enemy.break_times[3].h, enemy.break_times[3].m)
+	)
+end)
 
 -- Aliases so the .mts schematic (which uses default: names) resolves correctly
 minetest.register_alias("default:stone",       "registered:stone")
@@ -95,6 +258,7 @@ minetest.register_alias("default:diamondblock","registered:diamondblock")
 minetest.register_alias("default:glass",       "registered:glass")
 minetest.register_alias("default:meselamp",    "registered:meselamp")
 minetest.register_alias("default:wood",        "registered:wood")
+minetest.register_alias("default:cobble",      "registered:cobble")
 
 -- Swords
 

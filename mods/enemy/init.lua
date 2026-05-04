@@ -104,11 +104,40 @@ enemy.alive_students = {}     -- objectrefs of living students
 enemy.boss_alive = nil        -- objectref of living boss
 enemy.wave_triggered = {}     -- track which break times have already triggered
 
--- Break times (hour, minute)
-local BREAK_TIMES = {
-	{h = 10, m = 10},
-	{h = 12, m = 10},
-	{h = 14, m = 15},
+-- Subjects available in the schedule
+enemy.SUBJECTS = {
+	"Frans", "Latijn", "Engels", "Aardrijkskunde",
+	"Natuurkunde", "Wiskunde", "Tekenen", "Muziek",
+	"Nederlands", "Biologie",
+}
+
+-- Break times (hour, minute) — can be changed via the schedule computer
+-- .lesson = nil  → real break (wave spawns); .lesson = "Subject" → lesson (no wave)
+enemy.break_times = {
+	{h = 10, m = 10, lesson = nil},
+	{h = 12, m = 10, lesson = nil},
+	{h = 14, m = 15, lesson = nil},
+}
+
+-- 7-period daily schedule (subject name per period)
+enemy.schedule = {
+	"Wiskunde", "Nederlands",          -- periods 1-2 (before pauze 1)
+	"Engels",   "Aardrijkskunde",       -- periods 3-4 (before pauze 2)
+	"Latijn",   "Frans",               -- periods 5-6 (before pauze 3)
+	"Muziek",                           -- period  7   (after  pauze 3)
+}
+
+-- Defaults (used by Teinetarnagh to reset on unauthorised edits)
+enemy.DEFAULT_SCHEDULE = {
+	"Wiskunde", "Nederlands",
+	"Engels",   "Aardrijkskunde",
+	"Latijn",   "Frans",
+	"Muziek",
+}
+enemy.DEFAULT_BREAK_TIMES = {
+	{h = 10, m = 10, lesson = nil},
+	{h = 12, m = 10, lesson = nil},
+	{h = 14, m = 15, lesson = nil},
 }
 
 -- Student spawn area (stairs)
@@ -454,6 +483,11 @@ minetest.register_chatcommand("restart", {
 -- Time-based wave spawning
 local last_check_time = ""
 
+-- Call this after editing enemy.break_times so new times can fire
+function enemy.refresh_schedule()
+	last_check_time = ""
+end
+
 minetest.register_globalstep(function(dtime)
 	if enemy.wave_active then return end
 	if enemy.current_level >= 7 then return end
@@ -467,8 +501,10 @@ minetest.register_globalstep(function(dtime)
 	last_check_time = time_key
 
 	-- Check if it's a break time
-	for _, bt in ipairs(BREAK_TIMES) do
+	for _, bt in ipairs(enemy.break_times) do
 		if h == bt.h and m == bt.m then
+			-- If this break slot has a lesson, no wave spawns
+			if bt.lesson then return end
 			-- Check if this specific break has already triggered
 			local wave_key = enemy.current_level + 1 .. "_" .. time_key
 			if not enemy.wave_triggered[wave_key] then
