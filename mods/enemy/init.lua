@@ -400,16 +400,52 @@ function enemy.reset_all()
 	game_time.reset()
 end
 
--- Player death: restart from the beginning
+-- Player death
+-- Multiplayer: individual respawn, game continues (the arena fight goes on).
+-- Solo: full reset from the beginning (original behaviour).
 minetest.register_on_dieplayer(function(player)
-	enemy.reset_all()
+	local dying_name = player:get_player_name()
+	local total_players = #minetest.get_connected_players()
 
-	local meta = player:get_meta()
-	meta:set_int("coins", 20)
+	if total_players > 1 then
+		-- Multiplayer: penalise only the dead player, others continue
+		local meta = player:get_meta()
+		meta:set_int("coins", 20)
 
-	minetest.chat_send_player(player:get_player_name(),
-		"*** Je bent gesneuveld! Alles begint opnieuw... ***")
+		minetest.chat_send_player(dying_name,
+			"*** Je bent gevallen! Je herleeft bij het startpunt... ***")
+		for _, p in ipairs(minetest.get_connected_players()) do
+			if p:get_player_name() ~= dying_name then
+				minetest.chat_send_player(p:get_player_name(),
+					"*** " .. dying_name .. " is gevallen! Verdedig de arena! ***")
+			end
+		end
+	else
+		-- Solo: full reset from the beginning
+		enemy.reset_all()
+
+		local meta = player:get_meta()
+		meta:set_int("coins", 20)
+
+		minetest.chat_send_player(dying_name,
+			"*** Je bent gesneuveld! Alles begint opnieuw... ***")
+	end
 end)
+
+-- /restart  — host command to manually reset the game in multiplayer
+minetest.register_chatcommand("restart", {
+	description = "Herstart het spel (reset golven en tijd) — alleen voor admins",
+	privs = {server = true},
+	func = function(name)
+		enemy.reset_all()
+		for _, p in ipairs(minetest.get_connected_players()) do
+			local meta = p:get_meta()
+			meta:set_int("coins", 20)
+		end
+		minetest.chat_send_all("*** Het spel is herstart door " .. name .. "! ***")
+		return true, "Spel herstart."
+	end,
+})
 
 -- Time-based wave spawning
 local last_check_time = ""

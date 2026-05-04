@@ -74,7 +74,7 @@ minetest.register_tool("registered:sword_wood", {
 	tool_capabilities = {
 		full_punch_interval = 1.0,
 		max_drop_level = 0,
-		damage_groups = {fleshy = 2},
+		damage_groups = {fleshy = 3},
 	},
 })
 
@@ -84,7 +84,7 @@ minetest.register_tool("registered:sword_steel", {
 	tool_capabilities = {
 		full_punch_interval = 0.8,
 		max_drop_level = 1,
-		damage_groups = {fleshy = 130},
+		damage_groups = {fleshy = 5},
 	},
 })
 
@@ -154,12 +154,12 @@ minetest.register_tool("registered:sword_ancient", {
 })
 
 minetest.register_tool("registered:sword_dragonpower", {
-	description = "Zwaard van Drakenkracht",
+	description = "Strijdbijl van Drakenkracht",
 	inventory_image = "registered_sword_dragonpower.png",
 	tool_capabilities = {
 		full_punch_interval = 0.4,
 		max_drop_level = 3,
-		damage_groups = {fleshy = 60},
+		damage_groups = {fleshy = 190},
 	},
 })
 

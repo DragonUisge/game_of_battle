@@ -40,6 +40,16 @@ minetest.register_on_newplayer(function(player)
 	meta:set_int("coins", 20)
 end)
 
+-- Teleport ALL players (new and returning) to the arena on join
+minetest.register_on_joinplayer(function(player)
+	minetest.after(0.5, function()
+		local p = minetest.get_player_by_name(player:get_player_name())
+		if p then
+			p:set_pos(SPAWN_POS)
+		end
+	end)
+end)
+
 minetest.register_on_respawnplayer(function(player)
 	player:set_pos(SPAWN_POS)
 	return true
