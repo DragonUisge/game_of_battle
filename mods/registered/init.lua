@@ -229,10 +229,11 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				local d = enemy.DEFAULT_BREAK_TIMES[bn]
 				enemy.break_times[bn] = {h = d.h, m = d.m, lesson = nil}
 			end
-			if enemy.refresh_schedule then enemy.refresh_schedule() end
+			-- Do NOT call refresh_schedule() here — resetting last_check_time
+			-- would immediately re-trigger a break and restart the BGM.
 
 			-- Broadcast warning
-			minetest.chat_send_all(
+			minetest.chat_send_player(player:get_player_name(),
 				"[Teinetarnagh] Wat denk jij dat je doet? " ..
 				"Dit rooster staat al eeuwen vast. Ik breng je terug.")
 

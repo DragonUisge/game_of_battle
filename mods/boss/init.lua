@@ -161,7 +161,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 		maxexptime = 0.7,
 		minsize = 2,
 		maxsize = 4,
-		texture = "draconis_fire_particle.png^[colorize:#386dff:200",
+		texture = "aura_particle.png^[colorize:#386dff:200",
 		glow = 12,
 	})
 
@@ -185,7 +185,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 			maxexptime = 1.0,
 			minsize = 3,
 			maxsize = 6,
-			texture = "draconis_fire_particle.png^[colorize:#1a3888:200",
+			texture = "aura_particle.png^[colorize:#1a3888:200",
 			glow = 10,
 		})
 	end
@@ -219,7 +219,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 				maxexptime = 0.3,
 				minsize = 2,
 				maxsize = 4,
-				texture = "draconis_fire_particle.png^[colorize:#CC88FF:120",
+				texture = "aura_particle.png^[colorize:#CC88FF:120",
 				glow = 14,
 			})
 		end
@@ -420,7 +420,7 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 				maxexptime = 0.75,
 				minsize = 2.5,
 				maxsize = 5,
-				texture = "draconis_fire_particle.png^[colorize:#3b1200:210",
+				texture = "aura_particle.png^[colorize:#3b1200:210",
 				glow = 0,
 			})
 		end
@@ -490,7 +490,7 @@ local function raisin_explode(pos, owner)
 		maxexptime = 0.45,
 		minsize = 2,
 		maxsize = 5,
-		texture = "draconis_fire_particle.png^[colorize:#111111:220",
+		texture = "aura_particle.png^[colorize:#111111:220",
 		glow = 2,
 	})
 	minetest.sound_play("default_explode", {pos = pos, gain = 0.5, max_hear_distance = 20})
@@ -501,12 +501,12 @@ minetest.register_entity("boss:raisin", {
 		visual = "cube",
 		visual_size = {x = 0.15, y = 0.15, z = 0.15},
 		textures = {
-			"draconis_fire_particle.png^[colorize:#111111:255",
-			"draconis_fire_particle.png^[colorize:#111111:255",
-			"draconis_fire_particle.png^[colorize:#111111:255",
-			"draconis_fire_particle.png^[colorize:#111111:255",
-			"draconis_fire_particle.png^[colorize:#111111:255",
-			"draconis_fire_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
+			"aura_particle.png^[colorize:#111111:255",
 		},
 		physical = true,
 		collide_with_objects = false,
@@ -768,7 +768,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 				minacc = vector.new(0, -2, 0), maxacc = vector.new(0, 0, 0),
 				minexptime = 0.2, maxexptime = 0.6,
 				minsize = 2, maxsize = 4,
-				texture = "draconis_fire_particle.png^[colorize:#FFAACC:200",
+				texture = "aura_particle.png^[colorize:#FFAACC:200",
 				glow = 8,
 			})
 			minetest.sound_play("default_place_node_hard",
@@ -1076,7 +1076,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.5,
 				minsize = 4,
 				maxsize = 8,
-				texture = "draconis_fire_particle.png^[colorize:#386dff:200",
+				texture = "aura_particle.png^[colorize:#386dff:200",
 				glow = 14,
 			})
 			-- Ground shockwave ring
@@ -1093,7 +1093,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.0,
 				minsize = 3,
 				maxsize = 5,
-				texture = "draconis_fire_particle.png^[colorize:#386dff:200",
+				texture = "aura_particle.png^[colorize:#386dff:200",
 				glow = 10,
 			})
 		end
@@ -1202,7 +1202,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.2,
 				minsize = 2,
 				maxsize = 4,
-				texture = "draconis_fire_particle.png^[colorize:#6600AA:180",
+				texture = "aura_particle.png^[colorize:#6600AA:180",
 				glow = 8,
 			})
 		end
@@ -1226,7 +1226,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.8,
 				minsize = 3,
 				maxsize = 6,
-				texture = "draconis_fire_particle.png^[colorize:#1a0033:200",
+				texture = "aura_particle.png^[colorize:#1a0033:200",
 				glow = 2,
 			})
 		end
@@ -1301,7 +1301,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 1.0,
 				minsize = 4,
 				maxsize = 9,
-				texture = "draconis_fire_particle.png^[colorize:#FF4400:80",
+				texture = "aura_particle.png^[colorize:#FF4400:80",
 				glow = 12,
 			})
 			-- Ground scorch (fire on impact area)
@@ -1451,7 +1451,7 @@ minetest.register_entity("boss:companion_dragon", {
 				minacc = vector.new(0, -1, 0),  maxacc = vector.new(0, 0, 0),
 				minexptime = 0.4, maxexptime = 1.0,
 				minsize = 3, maxsize = 6,
-				texture = "draconis_fire_particle.png^[colorize:#b8ffed:160",
+				texture = "aura_particle.png^[colorize:#b8ffed:160",
 				glow = 8,
 			})
 			self.object:remove()
@@ -1471,7 +1471,7 @@ minetest.register_entity("boss:companion_dragon", {
 				minacc = vector.new(0, 0.3, 0), maxacc = vector.new(0, 0.8, 0),
 				minexptime = 0.5, maxexptime = 1.0,
 				minsize = 1.5, maxsize = 3,
-				texture = "draconis_fire_particle.png^[colorize:#b8ffed:150",
+				texture = "aura_particle.png^[colorize:#b8ffed:150",
 				glow = 10,
 			})
 		end
@@ -1640,7 +1640,7 @@ minetest.register_globalstep(function(dtime)
 						minacc = vector.new(0, -2, 0), maxacc = vector.new(0, 0, 0),
 						minexptime = 0.3, maxexptime = 0.8,
 						minsize = 2, maxsize = 5,
-						texture = "draconis_fire_particle.png^[colorize:#b8ffed:180",
+						texture = "aura_particle.png^[colorize:#b8ffed:180",
 						glow = 12,
 					})
 					minetest.sound_play("dragon_roar1",
@@ -1926,7 +1926,7 @@ minetest.register_entity("boss:victory_dragon", {
 
 		-- ── RETURN_FLIGHT: carry offender back to arena 1 ────────────
 		if self._phase == "return_flight" then
-			local dest = (map and map.SPAWN_POS) or vector.new(42, 4, 31)
+			local dest = vector.new(0, 3, 0)
 			local dir  = vector.direction(pos, dest)
 			local hdist = vector.distance(
 				vector.new(pos.x, 0, pos.z),
@@ -1948,13 +1948,10 @@ minetest.register_entity("boss:victory_dragon", {
 					victory_detach(self, carried)
 					carried:set_pos(vector.new(dest.x, dest.y + 1, dest.z))
 				end
-				minetest.sound_play("dragon_roar1",
-					{pos = pos, gain = 1.0, max_hear_distance = 40})
-				for _, p in ipairs(minetest.get_connected_players()) do
-					minetest.chat_send_player(p:get_player_name(),
-						"[Teinetarnagh] Vaarwel.")
-				end
-				boss._victory_dragon_obj = nil
+                                -- Kill any stale BGM that leaked through after wave completion
+                                if enemy and enemy.stop_bgm and not enemy.wave_active then
+                                        enemy.stop_bgm()
+                                end
 				self.object:remove()
 				return
 			end
@@ -1978,7 +1975,7 @@ minetest.register_entity("boss:victory_dragon", {
 					minacc = vector.new(0, -1, 0),   maxacc = vector.new(0, 0, 0),
 					minexptime = 0.3, maxexptime = 0.7,
 					minsize = 2, maxsize = 5,
-					texture = "draconis_fire_particle.png^[colorize:#FFD700:200",
+					texture = "aura_particle.png^[colorize:#FFD700:200",
 					glow = 12,
 				})
 			end
@@ -2044,7 +2041,7 @@ minetest.register_entity("boss:victory_dragon", {
 					minacc = vector.new(0, -0.5, 0),  maxacc = vector.new(0, 0, 0),
 					minexptime = 0.3, maxexptime = 0.8,
 					minsize = 2, maxsize = 4,
-					texture = "draconis_fire_particle.png^[colorize:#FFD700:160",
+					texture = "aura_particle.png^[colorize:#FFD700:160",
 					glow = 8,
 				})
 			end

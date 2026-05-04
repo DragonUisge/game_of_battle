@@ -11,10 +11,27 @@ enemy = {}
 -- ============================================================
 
 local bgm = {
-	handle = nil,       -- current minetest.sound_play handle
-	active = false,     -- flag checked by minetest.after callbacks
+	handles  = {},      -- [pname] = sound handle (per player)
+	active   = false,   -- flag checked by minetest.after callbacks
 	sequence = {},      -- upcoming tracks to play
+	current  = nil,     -- name of track currently playing
 }
+
+-- Arena 2 bounding box (ORIGIN2 = -330,177,-440; size 51×9×62)
+local ARENA2_MIN = vector.new(-330, 177, -440)
+local ARENA2_MAX = vector.new(-279, 186, -378)
+
+-- Returns true if this player should be isolated from arena-1 BGM/announcements.
+-- Conditions: player is in Arena 2, OR attached to an entity (riding Teinetarnagh).
+local function is_exempt(player)
+	if player:get_attach() then return true end
+	local pos = player:get_pos()
+	if not pos then return false end
+	return pos.x >= ARENA2_MIN.x and pos.x <= ARENA2_MAX.x
+	   and pos.y >= ARENA2_MIN.y and pos.y <= ARENA2_MAX.y
+	   and pos.z >= ARENA2_MIN.z and pos.z <= ARENA2_MAX.z
+end
+enemy.is_exempt = is_exempt
 
 -- Track durations in seconds (measured via ffprobe)
 local TRACK_DURATIONS = {
@@ -39,15 +56,24 @@ local function shuffle(t)
 	end
 end
 
--- Play a single track (stereo, no position = global to all players)
+-- Play a single track per-player (skips players in arena 2 or riding dragon)
 local function play_track(name)
 	if not bgm.active then return 0 end
 
-	if bgm.handle then
-		minetest.sound_stop(bgm.handle)
+	-- Stop all existing handles
+	for pname, h in pairs(bgm.handles) do
+		if h then minetest.sound_stop(h) end
 	end
+	bgm.handles = {}
+	bgm.current = name
 
-	bgm.handle = minetest.sound_play(name, {gain = 0.8})
+	-- Play for each non-exempt player
+	for _, player in ipairs(minetest.get_connected_players()) do
+		local pname = player:get_player_name()
+		if not is_exempt(player) then
+			bgm.handles[pname] = minetest.sound_play(name, {to_player = pname, gain = 0.8})
+		end
+	end
 	return TRACK_DURATIONS[name] or 30.0
 end
 
@@ -87,13 +113,14 @@ function enemy.start_bgm()
 	end)
 end
 
--- Stop BGM immediately
+-- Stop BGM immediately (for all players)
 function enemy.stop_bgm()
 	bgm.active = false
-	if bgm.handle then
-		minetest.sound_stop(bgm.handle)
-		bgm.handle = nil
+	bgm.current = nil
+	for pname, h in pairs(bgm.handles) do
+		if h then minetest.sound_stop(h) end
 	end
+	bgm.handles = {}
 	bgm.sequence = {}
 end
 
@@ -344,16 +371,18 @@ function enemy.spawn_wave(level)
 		boss.set_level(boss_obj, level)
 	end
 
-	-- Announce wave
+	-- Announce wave (skip players in arena 2 or riding dragon)
 	local msg = "=== Golf " .. level .. " begint! ==="
 	if level == 7 then
 		msg = "=== LAATSTE GOLF! Margriet verschijnt! ==="
 	end
 	for _, player in ipairs(minetest.get_connected_players()) do
-		minetest.chat_send_player(player:get_player_name(), msg)
+		if not is_exempt(player) then
+			minetest.chat_send_player(player:get_player_name(), msg)
+		end
 	end
 
-	-- Start battle music
+	-- Start battle music (only reaches non-exempt players via play_track)
 	enemy.start_bgm()
 end
 
@@ -379,21 +408,25 @@ function enemy.check_wave_clear()
 
 		local level = enemy.current_level
 
-		-- Reward coins
+		-- Reward coins (all players), announce only to non-exempt
 		local reward = 10 + level * 2
 		for _, player in ipairs(minetest.get_connected_players()) do
 			local meta = player:get_meta()
 			local coins = meta:get_int("coins") + reward
 			meta:set_int("coins", coins)
-			minetest.chat_send_player(player:get_player_name(),
-				"Golf " .. level .. " verslagen! +" .. reward .. " munten (totaal: " .. coins .. ")")
+			if not is_exempt(player) then
+				minetest.chat_send_player(player:get_player_name(),
+					"Golf " .. level .. " verslagen! +" .. reward .. " munten (totaal: " .. coins .. ")")
+			end
 		end
 
 		if level >= 7 then
 			-- Game won!
 			for _, player in ipairs(minetest.get_connected_players()) do
-				minetest.chat_send_player(player:get_player_name(),
-					"*** GEFELICITEERD! Je hebt alle golven verslagen! ***")
+				if not is_exempt(player) then
+					minetest.chat_send_player(player:get_player_name(),
+						"*** GEFELICITEERD! Je hebt alle golven verslagen! ***")
+				end
 			end
 			-- Spawn the victory dragon
 			if boss and boss.spawn_victory_dragon then
@@ -512,6 +545,33 @@ minetest.register_globalstep(function(dtime)
 				enemy.spawn_wave(enemy.current_level + 1)
 			end
 			return
+		end
+	end
+end)
+
+-- BGM per-player sync: mute when player enters arena 2 or mounts dragon,
+-- resume when they leave. Checked every second.
+local bgm_sync_timer = 0
+minetest.register_globalstep(function(dtime)
+	bgm_sync_timer = bgm_sync_timer + dtime
+	if bgm_sync_timer < 1.0 then return end
+	bgm_sync_timer = 0
+
+	if not bgm.active or not bgm.current then return end
+
+	for _, player in ipairs(minetest.get_connected_players()) do
+		local pname = player:get_player_name()
+		local exempt = is_exempt(player)
+		local has_handle = bgm.handles[pname] ~= nil
+
+		if exempt and has_handle then
+			-- Entered arena 2 or mounted dragon: mute this player
+			minetest.sound_stop(bgm.handles[pname])
+			bgm.handles[pname] = nil
+		elseif not exempt and not has_handle then
+			-- Left arena 2 or dismounted: resume BGM for this player
+			bgm.handles[pname] = minetest.sound_play(bgm.current,
+				{to_player = pname, gain = 0.8})
 		end
 	end
 end)
