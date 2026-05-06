@@ -59,12 +59,12 @@ local CLASSROOM_DEFS = {
 		texture = "npc_teacher_huiskamp.png",
 		pos     = vector.new(-320, 179, -387),
 		lines   = {
-			"De dt-regel: werkwoord na 'jij' of 'je' krijgt geen -t als het onderwerp erna staat. 'Jij werkt' — maar 'werk jij?'",
-			"Een zin heeft altijd een onderwerp en een persoonsvorm. Vind eerst de persoonsvorm, dan het onderwerp.",
-			"Lidwoorden: 'de' voor mannelijke en vrouwelijke woorden, 'het' voor onzijdige. Er is geen vaste regel — leer ze uit het hoofd.",
-			"Actief: 'De kat vangt de muis.' Passief: 'De muis wordt gevangen door de kat.' Let op het verschil.",
-			"Woordvolgorde: in een bijzin staat de persoonsvorm achteraan. 'Ik weet dat hij morgen komt.'",
-			"Een metafoor vergelijkt zonder 'zoals' of 'als'. 'Het leven is een rivier' — dat is een metafoor.",
+			"De congruentieregel: een bijvoeglijk naamwoord krijgt een -e tenzij het een onzijdig woord is zonder lidwoord. 'Een groot huis', maar 'het grote huis'.",
+			"Trappen van vergelijking: stellende trap, vergrotende trap op -er, overtreffende trap op -st. Uitzondering: 'veel → meer → meest', 'goed → beter → best'.",
+			"Naamvallen zijn in het Nederlands vrijwel verdwenen, maar de genitief overleeft in vaste uitdrukkingen: 'des konings wil', 'iets van waarde'. Archaïsch, maar je herkent het in literatuur.",
+			"Het verschil tussen 'die' en 'dat' hangt af van het lidwoord. 'De man die...', 'het kind dat...'. Bij meervoud altijd 'die', ongeacht het geslacht.",
+			"Partikel of prefix? 'Opbellen' is scheidbaar: 'Ik bel hem op.' Maar 'ondervinden' is onscheidbaar: 'Ik ondervind problemen.' Controleer altijd de woordenboeknotatie.",
+			"Stijlmiddelen: anafoor is herhaling aan het begin van zinnen voor nadruk — zie De Génestet. Chiasme keert de volgorde om: 'Leer niet voor de leraar, maar voor jezelf.' Herken ze in teksten.",
 		},
 	},
 	-- ── RECHTER KANT (x=-289) ─────────────────────────────────────────────
