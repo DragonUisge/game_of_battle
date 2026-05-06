@@ -325,6 +325,104 @@ local function bram_drumstick_step(self, dtime, pos, nearest, nearest_dist)
 end
 
 -- ============================================================
+-- ============================================================
+-- Choco splash helper (used by Julian's choco_drop entity)
+-- ============================================================
+local function choco_splash(pos)
+	minetest.add_particlespawner({
+		amount = 20,
+		time = 0.3,
+		minpos = vector.add(pos, vector.new(-0.2, 0, -0.2)),
+		maxpos = vector.add(pos, vector.new( 0.2, 0.1,  0.2)),
+		minvel = vector.new(-3, 1, -3),
+		maxvel = vector.new( 3, 4,  3),
+		minacc = vector.new(0, -10, 0),
+		maxacc = vector.new(0, -10, 0),
+		minexptime = 0.25,
+		maxexptime = 0.6,
+		minsize = 1.5,
+		maxsize = 3,
+		texture = "wool_brown.png",
+	})
+	minetest.sound_play("default_water_footstep", {pos = pos, gain = 0.6, max_hear_distance = 14})
+end
+
+-- ============================================================
+-- Julian (level 4) — hot chocolate shoulder pour attack
+-- "normal" : walks toward player, melee attacks
+-- "pour"   : stops, pours hot chocolate from right shoulder
+-- ============================================================
+local function julian_step(self, dtime, pos, nearest, nearest_dist)
+	local ppos = nearest:get_pos()
+	local dir = vector.direction(pos, ppos)
+	self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+	self._julian_timer = self._julian_timer - dtime
+
+	if self._julian_pour then
+		-- Stand still and pour
+		self.object:set_velocity(vector.new(0, -9.81, 0))
+		self.object:set_animation({x = 189, y = 198}, 20, 0, true)
+
+		-- Spawn choco drops from right shoulder every 0.18 s
+		self._julian_drop_cd = self._julian_drop_cd - dtime
+		if self._julian_drop_cd <= 0 then
+			self._julian_drop_cd = 0.18
+			local right = vector.new(-dir.z, 0, dir.x)
+			local shoulder = vector.new(
+				pos.x + right.x * 0.45,
+				pos.y + 1.55,
+				pos.z + right.z * 0.45
+			)
+			local drop = minetest.add_entity(shoulder, "boss:choco_drop")
+			if drop then
+				drop:set_velocity(vector.new(
+					dir.x * 1.5 + (math.random() - 0.5) * 1.2,
+					0.5,
+					dir.z * 1.5 + (math.random() - 0.5) * 1.2
+				))
+			end
+		end
+
+		-- End pour after 2.5 s
+		if self._julian_timer <= 0 then
+			self._julian_pour = false
+			self._julian_timer = 5.0 + math.random() * 3.0
+		end
+		return
+	end
+
+	-- Normal: walk toward player
+	local speed = 1.8
+	self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+	self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+
+	-- Melee
+	self._attack_cooldown = self._attack_cooldown - dtime
+	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+		if nearest:is_player() then
+			nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+		else
+			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+		end
+		self._attack_cooldown = 1.5
+		self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+		minetest.after(0.5, function()
+			if self.object and self.object:get_pos() then
+				self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+			end
+		end)
+	end
+
+	-- Trigger pour
+	if self._julian_timer <= 0 then
+		self._julian_pour = true
+		self._julian_timer = 2.5
+		self._julian_drop_cd = 0
+	end
+end
+
+-- ============================================================
 -- Generic boss on_step (non-Hugo, non-Bram levels)
 -- ============================================================
 local function generic_on_step(self, dtime, pos, nearest, nearest_dist)
@@ -423,6 +521,19 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 				texture = "aura_particle.png^[colorize:#3b1200:210",
 				glow = 0,
 			})
+			-- Spawn a physical choco drop every 5th tick (~0.35 s)
+			self._julian_drop_counter = (self._julian_drop_counter or 0) + 1
+			if self._julian_drop_counter >= 5 then
+				self._julian_drop_counter = 0
+				local drop = minetest.add_entity(shoulder_pos, "boss:choco_drop")
+				if drop then
+					drop:set_velocity(vector.new(
+						dir.x * 4 + (math.random() - 0.5) * 1.5,
+						0.3 + math.random() * 0.6,
+						dir.z * 4 + (math.random() - 0.5) * 1.5
+					))
+				end
+			end
 		end
 
 		-- Damage players in forward splash cone every 0.45 s
@@ -495,6 +606,84 @@ local function raisin_explode(pos, owner)
 	})
 	minetest.sound_play("default_explode", {pos = pos, gain = 0.5, max_hear_distance = 20})
 end
+
+minetest.register_entity("boss:choco_drop", {
+	initial_properties = {
+		visual = "sprite",
+		visual_size = {x = 0.3, y = 0.3},
+		textures = {"aura_particle.png^[colorize:#3b1200:255"},
+		physical = true,
+		collide_with_objects = false,
+		collisionbox = {-0.1, -0.1, -0.1, 0.1, 0.1, 0.1},
+		static_save = false,
+		pointable = false,
+	},
+
+	_lifetime = 0,
+	_splashed = false,
+	_prev_vy = 0,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime)
+		if self._splashed then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		self._lifetime = self._lifetime + dtime
+		if self._lifetime > 5 then
+			self._splashed = true
+			self.object:remove()
+			return
+		end
+
+		local vel = self.object:get_velocity()
+
+		-- Hit player directly
+		if self._lifetime > 0.1 then
+			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 0.3)) do
+				if obj:is_player() then
+					obj:set_hp(math.max(0, obj:get_hp() - 2), {type = "punch"})
+					minetest.add_particlespawner({
+						amount = 10, time = 0.2,
+						minpos = vector.add(pos, vector.new(-0.15, 0, -0.15)),
+						maxpos = vector.add(pos, vector.new( 0.15, 0.1,  0.15)),
+						minvel = vector.new(-2, 0.5, -2), maxvel = vector.new(2, 2, 2),
+						minacc = vector.new(0, -9, 0),    maxacc = vector.new(0, -9, 0),
+						minexptime = 0.2, maxexptime = 0.5,
+						minsize = 1, maxsize = 2.5,
+						texture = "aura_particle.png^[colorize:#3b1200:210",
+					})
+					self._splashed = true
+					self.object:remove()
+					return
+				end
+			end
+		end
+
+		-- Detect ground landing: was falling, now stopped in Y
+		if self._lifetime > 0.2 and self._prev_vy < -1.5 and math.abs(vel.y) < 0.8 then
+			minetest.add_particlespawner({
+				amount = 16, time = 0.25,
+				minpos = vector.add(pos, vector.new(-0.2, 0, -0.2)),
+				maxpos = vector.add(pos, vector.new( 0.2, 0.05,  0.2)),
+				minvel = vector.new(-3, 0.5, -3), maxvel = vector.new(3, 2.5, 3),
+				minacc = vector.new(0, -9, 0),    maxacc = vector.new(0, -9, 0),
+				minexptime = 0.2, maxexptime = 0.55,
+				minsize = 1.5, maxsize = 3.5,
+				texture = "aura_particle.png^[colorize:#3b1200:210",
+			})
+			minetest.sound_play("default_water_footstep", {pos = pos, gain = 0.5, max_hear_distance = 12})
+			self._splashed = true
+			self.object:remove()
+			return
+		end
+
+		self._prev_vy = vel.y
+	end,
+})
 
 minetest.register_entity("boss:raisin", {
 	initial_properties = {
@@ -867,6 +1056,7 @@ minetest.register_entity("boss:teacher", {
 	_julian_phase = "normal",
 	_julian_timer = 8.0,
 	_julian_pour_tick = 0,
+	_julian_drop_counter = 0,
 
 	-- Rosanne-specific state
 	_rosanne_phase   = "normal",
@@ -1880,7 +2070,7 @@ minetest.register_entity("boss:victory_dragon", {
 				for _, p in ipairs(minetest.get_connected_players()) do
 					minetest.chat_send_player(p:get_player_name(), "[Teinetarnagh] " .. line)
 				end
-				minetest.sound_play("dragon_roar3",
+				minetest.sound_play("dragon_roar2",
 					{pos = pos, gain = 1.2, max_hear_distance = 60})
 
 				-- Descend to just above ground (~3 nodes)
