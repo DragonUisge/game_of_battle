@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memento Mori | Dragons</title>
+  <meta name="description" content="The three Dragons of Memento Mori — Kearach, Caeltaroch, and Teinetarnagh. Lore, stats, and technical reference.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dragon-card {
+      padding: 36px;
+      border-radius: 28px;
+      border: 1px solid rgba(126, 191, 255, 0.18);
+      background: rgba(5, 18, 38, 0.58);
+      margin-bottom: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .dragon-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0.06;
+      pointer-events: none;
+    }
+
+    /* Per-Dragon accent colours */
+    .dragon-kearach { border-color: rgba(56, 109, 255, 0.35); }
+    .dragon-kearach::before { background: radial-gradient(circle at 80% 20%, #386dff, transparent 55%); opacity: 0.12; }
+    .dragon-kearach .dragon-name { color: #008cff; }
+
+    .dragon-caeltaroch { border-color: rgba(24, 105, 219, 0.35); }
+    .dragon-caeltaroch::before { background: radial-gradient(circle at 80% 20%, #1869db, transparent 55%); opacity: 0.12; }
+    .dragon-caeltaroch .dragon-name { color: #4db3ff; }
+
+    .dragon-teinetarnagh { border-color: rgba(255, 215, 0, 0.28); background: rgba(14, 8, 2, 0.72); }
+    .dragon-teinetarnagh::before { background: radial-gradient(circle at 80% 20%, #ffd700, transparent 55%); opacity: 0.09; }
+    .dragon-teinetarnagh .dragon-name { color: #FFD700; }
+
+    .dragon-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .dragon-name {
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1;
+      margin: 0 0 6px;
+    }
+
+    .dragon-role {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+
+    .dragon-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .dragon-tag {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      border: 1px solid currentColor;
+    }
+
+    .tag-blue   { color: #5599ff; border-color: rgba(85, 153, 255, 0.4); background: rgba(85, 153, 255, 0.07); }
+    .tag-slate  { color: #88aacc; border-color: rgba(136, 170, 204, 0.35); background: rgba(136, 170, 204, 0.07); }
+    .tag-gold   { color: #ffd700; border-color: rgba(255, 215, 0, 0.35); background: rgba(255, 215, 0, 0.06); }
+    .tag-orange { color: #008cff; border-color: rgba(0, 140, 255, 0.35); background: rgba(0, 140, 255, 0.07); }
+    .tag-muted  { color: var(--muted); border-color: rgba(126, 191, 255, 0.22); background: rgba(126, 191, 255, 0.05); }
+
+    .dragon-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 4px;
+    }
+
+    .dragon-block {
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: rgba(4, 12, 28, 0.52);
+      border: 1px solid rgba(126, 191, 255, 0.1);
+    }
+
+    .dragon-block h4 {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .dragon-block p,
+    .dragon-block li {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.9rem;
+      line-height: 1.65;
+    }
+
+    .dragon-block ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .dragon-block ul li + li {
+      margin-top: 8px;
+    }
+
+    .phase-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .phase-pill {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-family: "Consolas", "Fira Code", monospace;
+      background: rgba(77, 179, 255, 0.09);
+      border: 1px solid rgba(77, 179, 255, 0.22);
+      color: var(--accent-strong);
+    }
+
+    .color-swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .swatch-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .swatch-label {
+      font-family: "Consolas", "Fira Code", monospace;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .dragon-quote {
+      margin: 22px 0 0;
+      padding: 18px 22px;
+      border-left: 3px solid #FFD700;
+      background: rgba(255, 215, 0, 0.04);
+      border-radius: 0 14px 14px 0;
+    }
+
+    .dragon-quote p {
+      margin: 0;
+      font-style: italic;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .dragon-quote cite {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-style: normal;
+    }
+
+    .dragon-grid {
+      display: grid;
+      gap: 24px;
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .compare-table th {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(126, 191, 255, 0.2);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+
+    .compare-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(126, 191, 255, 0.08);
+      vertical-align: top;
+    }
+
+    .compare-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .compare-table tr:hover td {
+      background: rgba(77, 179, 255, 0.04);
+    }
+
+    .compare-table td:first-child {
+      font-weight: 700;
+    }
+
+    @media (max-width: 760px) {
+      .dragon-body {
+        grid-template-columns: 1fr;
+      }
+      .dragon-header {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="dragon-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <div class="page-shell">
+      <a class="brand" href="index.html" aria-label="Memento Mori home page">
+        <div>
+          <img class="brand-mark" src="assets/image15.png" alt="logo">
+        </div>
+        <div class="brand-copy">
+          <strong>Memento Mori</strong>
+          <span>GitHub Pages site</span>
+        </div>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="updates.html">Updates</a>
+        <a href="install-guide.html">Install Guide</a>
+        <a href="mods.html">Mod Docs</a>
+        <a class="active" href="dragons.html">Dragons</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-shell">
+
+      <section class="hero">
+        <div class="eyebrow">Lore &amp; Technical Reference</div>
+        <h1>The Dragons.</h1>
+        <p>
+          Three Dragons appear in Memento Mori. Each has a name, a role, and a distinct behaviour system.
+          They share the same model (<code>draconis_fire_dragon.b3d</code>) but differ in texture, size, AI phase logic, and purpose.
+          This page documents all three.
+        </p>
+      </section>
+
+      <!-- Quick comparison -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Overview</div>
+            <h2>All three Dragons at a glance</h2>
+          </div>
+          <p>Sorted by appearance order in-game.</p>
+        </div>
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Entity ID</th>
+              <th>Texture</th>
+              <th>Role</th>
+              <th>Nametag colour</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="color:#008cff">Kearach</td>
+              <td><code>boss:summoned_dragon</code></td>
+              <td><code>blue_dragon.png</code></td>
+              <td>Hugo's summoned combat Dragon — kills Hugo when it dies</td>
+              <td><code style="color:#008cff">#008cff</code></td>
+            </tr>
+            <tr>
+              <td style="color:#4db3ff">Caeltaroch</td>
+              <td><code>boss:companion_dragon</code></td>
+              <td><code>slate_dragon.png</code></td>
+              <td>Companion Dragon — follows and fights alongside its owner</td>
+              <td><code style="color:#1869db">#1869db</code></td>
+            </tr>
+            <tr>
+              <td style="color:#FFD700">Teinetarnagh</td>
+              <td><code>boss:victory_dragon</code></td>
+              <td><code>black_dragon.png</code></td>
+              <td>Victory Dragon — spawns after all 7 waves, carries rider to Arena 2</td>
+              <td><code style="color:#FFD700">#FFD700</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Dragon cards -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Dragon Profiles</div>
+            <h2>Full documentation</h2>
+          </div>
+          <p>Behaviour, stats, visual effects, and sound references for each Dragon.</p>
+        </div>
+
+        <div class="dragon-grid">
+
+          <!-- SKARATHOS -->
+          <div class="dragon-card dragon-kearach">
+            <div class="dragon-header">
+              <div>
+                <h2 class="dragon-name">Kearach</h2>
+                <p class="dragon-role">Hugo's summoned Dragon &mdash; Level 2 encounter</p>
+              </div>
+              <div class="dragon-tags">
+                <span class="dragon-tag tag-blue">Blue Dragon</span>
+                <span class="dragon-tag tag-orange">Combat</span>
+                <span class="dragon-tag tag-muted">boss:summoned_dragon</span>
+              </div>
+            </div>
+
+            <div class="dragon-body">
+              <div class="dragon-block">
+                <h4>Stats</h4>
+                <ul>
+                  <li><strong>HP:</strong> 100</li>
+                  <li><strong>Damage:</strong> 5 per hit</li>
+                  <li><strong>Visual size:</strong> 6 × 6 × 6</li>
+                  <li><strong>Collisionbox:</strong> &minus;0.5 to 0.5 horizontal, 0 to 2.5 vertical</li>
+                  <li><strong>Physical:</strong> yes (gravity applies)</li>
+                  <li><strong>Glow:</strong> 8</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Summoning conditions</h4>
+                <ul>
+                  <li>Hugo reaches <strong>25% HP</strong> and is not already in summon or linked phase</li>
+                  <li>No Victory Dragon currently active (<code>boss._victory_dragon_obj</code> must be nil)</li>
+                  <li>3-second channeling phase before the Dragon appears</li>
+                  <li>Hugo becomes <strong>invulnerable</strong> (linked phase) while Kearach lives</li>
+                  <li>When Kearach dies, Hugo dies immediately too</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Spawn visual effects</h4>
+                <ul>
+                  <li>Vertical dark energy column: 80 particles, 2 s, rising velocity</li>
+                  <li>Ground shockwave ring: 40 particles, 0.5 s</li>
+                  <li>Aura particle colour: <span class="color-swatch"><span class="swatch-dot" style="background:#386dff"></span><span class="swatch-label">#386dff</span></span></li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Ongoing smoke trail</h4>
+                <ul>
+                  <li>Emitted every 0.15 s from behind the Dragon</li>
+                  <li>Particle colour: <span class="color-swatch"><span class="swatch-dot" style="background:#6600AA"></span><span class="swatch-label">#6600AA:180</span></span></li>
+                  <li>Secondary: <span class="color-swatch"><span class="swatch-dot" style="background:#1a0033"></span><span class="swatch-label">#1a0033:200</span></span></li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Sounds</h4>
+                <ul>
+                  <li><code>dragon_roar1</code> / <code>dragon_roar2</code> — on hit (40% chance)</li>
+                  <li><code>dragon_roar2</code> — on death (gain 7.0)</li>
+                  <li><code>draconis_fire_breath.ogg</code> — fire breath attack</li>
+                  <li><code>enemy_boss_dragoncall_cry1/2</code> — Hugo's cry when triggering the dash phase</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Drop</h4>
+                <ul>
+                  <li><code>registered:sword_fire</code> — fire sword drops on death</li>
+                  <li><strong>Note:</strong> the fire sword is a blacklisted weapon — it cannot be used in boss fights</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="dragon-block" style="margin-top:14px;">
+              <h4>Nametag note</h4>
+              <p>
+                The Dragon spawns with the initial nametag <strong style="color:#008cff">Kearach</strong>.
+                The nametag changes to <strong style="color:#008cff">Kearach</strong> the first time the Dragon is damaged.
+                Both names refer to the same entity.
+              </p>
+            </div>
+          </div>
+
+          <!-- CAELTAROCH -->
+          <div class="dragon-card dragon-caeltaroch">
+            <div class="dragon-header">
+              <div>
+                <h2 class="dragon-name">Caeltaroch</h2>
+                <p class="dragon-role">Companion Dragon &mdash; follows and protects its owner</p>
+              </div>
+              <div class="dragon-tags">
+                <span class="dragon-tag tag-slate">Slate Dragon</span>
+                <span class="dragon-tag tag-muted">Companion</span>
+                <span class="dragon-tag tag-muted">boss:companion_dragon</span>
+              </div>
+            </div>
+
+            <div class="dragon-body">
+              <div class="dragon-block">
+                <h4>Properties</h4>
+                <ul>
+                  <li><strong>Texture:</strong> <code>slate_dragon.png</code> + <code>slate_eyes.png</code></li>
+                  <li><strong>Visual size:</strong> 6 × 6 × 6</li>
+                  <li><strong>Physical:</strong> no (manual velocity)</li>
+                  <li><strong>Glow:</strong> 10</li>
+                  <li><strong>Nametag:</strong> <span style="color:#1869db">Caeltaroch</span> (<code>#1869db</code>)</li>
+                  <li><strong>static_save:</strong> false</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Behaviour</h4>
+                <ul>
+                  <li>Follows a designated <em>owner</em> (player name string stored in <code>_owner</code>)</li>
+                  <li>Attacks enemies near the owner; has its own attack cooldown and roar timer</li>
+                  <li>Tracks animation state in <code>_current_anim</code> to avoid restarting mid-play</li>
+                  <li>Roar timer initialises at 5 s</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- TEINETARNAGH -->
+          <div class="dragon-card dragon-teinetarnagh">
+            <div class="dragon-header">
+              <div>
+                <h2 class="dragon-name">Teinetarnagh</h2>
+                <p class="dragon-role">The Victory Dragon &mdash; spawns after all 7 waves are beaten</p>
+              </div>
+              <div class="dragon-tags">
+                <span class="dragon-tag tag-gold">Black Dragon</span>
+                <span class="dragon-tag tag-gold">Victory</span>
+                <span class="dragon-tag tag-muted">boss:victory_dragon</span>
+              </div>
+            </div>
+
+            <div class="dragon-body">
+              <div class="dragon-block">
+                <h4>Properties</h4>
+                <ul>
+                  <li><strong>Texture:</strong> <code>black_dragon.png</code> + <code>draconis_baked_in_shading.png</code></li>
+                  <li><strong>Visual size:</strong> 8 × 8 × 8 (larger than other Dragons)</li>
+                  <li><strong>Physical:</strong> no (manual velocity, no gravity)</li>
+                  <li><strong>Collisionbox:</strong> &minus;0.8 to 0.8 horizontal, 0 to 3.0 vertical</li>
+                  <li><strong>Glow:</strong> 8</li>
+                  <li><strong>Nametag:</strong> <span style="color:#FFD700">Teinetarnagh</span> (<code>#FFD700</code>)</li>
+                  <li><strong>Armour:</strong> immortal (cannot be damaged)</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Phase state machine</h4>
+                <div class="phase-list">
+                  <span class="phase-pill">intro</span>
+                  <span class="phase-pill">waiting</span>
+                  <span class="phase-pill">takeoff</span>
+                  <span class="phase-pill">flying</span>
+                  <span class="phase-pill">landing</span>
+                  <span class="phase-pill">landed</span>
+                </div>
+                <p style="margin-top:12px;color:var(--muted);font-size:0.87rem;">
+                  Starts in <code>intro</code> (2.5 s), transitions to <code>waiting</code>.
+                  Right-click to mount → moves to <code>flying</code>, climbs 22 nodes above current position,
+                  then descends to Arena 2 entry point and transitions to <code>landing</code> → <code>landed</code>.
+                </p>
+              </div>
+              <div class="dragon-block">
+                <h4>Mounting</h4>
+                <ul>
+                  <li>Right-click in <code>waiting</code> or <code>landed</code> phase to mount</li>
+                  <li>Right-click again to dismount; also auto-dismounts on arrival</li>
+                  <li>Player model is hidden while riding (collisionbox zeroed, visual_size zeroed)</li>
+                  <li>Camera locked to Dragon at eye offset Y+920, Z&minus;2240 (scale 8 formula)</li>
+                  <li>Only one rider at a time: <em>"Teinetarnagh heeft al een ruiter."</em></li>
+                  <li>Cannot mount during flight to Arena 2: <em>"Teinetarnagh is nog niet klaar om te rijden."</em></li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Destination</h4>
+                <ul>
+                  <li><strong>ARENA2_ENTRY:</strong> <code>x=&minus;303, y=179, z=&minus;439</code></li>
+                  <li>Dragon carries rider autonomously — no manual controls</li>
+                  <li>Arrival announced in chat as <code>[Teinetarnagh]</code> message</li>
+                  <li>On departure: <em>"De strijd is gestreden. Beklim mijn rug."</em> etc. (4 random lines)</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>Sounds</h4>
+                <ul>
+                  <li><code>dragon_roar1</code> — on spawn</li>
+                  <li><code>dragon_roar2</code> — on player mount</li>
+                  <li><code>dragon_roar3</code> — on landing / arrival</li>
+                </ul>
+              </div>
+              <div class="dragon-block">
+                <h4>API</h4>
+                <ul>
+                  <li><code>boss._victory_dragon_obj</code> — singleton objectref, nil when not active. Hugo's summon checks this before spawning Kearach.</li>
+                  <li><code>boss.spawn_victory_dragon(pos)</code> — spawns Teinetarnagh near <em>pos</em>, no-op if already active.</li>
+                  <li><code>/spawn_victory_dragon</code> — chat command (server priv), spawns at caller's position.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="dragon-quote">
+              <p>"De strijd is gestreden. Beklim mijn rug."</p>
+              <cite>&mdash; Teinetarnagh, on victory</cite>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- 3D model viewer -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Texture Preview</div>
+            <h2>Dragon skins</h2>
+          </div>
+          <p>UV skin textures for <code>draconis_fire_dragon.b3d</code> — one per dragon variant.</p>
+        </div>
+        <div class="tex-gallery">
+          <div class="tex-card">
+            <img src="assets/blue_dragon.png" alt="Skarathos blue skin texture">
+            <div class="tex-card-label"><div class="tex-card-name">Kearach</div>blue</div>
+          </div>
+          <div class="tex-card">
+            <img src="assets/slate_dragon.png" alt="Caeltaroch slate skin texture">
+            <div class="tex-card-label"><div class="tex-card-name">Caeltaroch</div>slate</div>
+          </div>
+          <div class="tex-card">
+            <img src="assets/black_dragon.png" alt="Teinetarnagh black skin texture">
+            <div class="tex-card-label"><div class="tex-card-name">Teinetarnagh</div>black</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Shared model reference -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Shared Assets</div>
+            <h2>Model &amp; animation reference</h2>
+          </div>
+          <p>All three Dragons use the same skeleton and animation frame ranges.</p>
+        </div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Model</h3>
+            <ul class="list-clean">
+              <li><strong>File:</strong> <code>mods/boss/models/draconis_fire_dragon.b3d</code></li>
+              <li><strong>Bone used for rider attach:</strong> <code>Torso.2</code></li>
+              <li><strong>backface_culling:</strong> disabled on combat Dragons</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Animation frames</h3>
+            <ul class="list-clean">
+              <li><strong>Walk:</strong> frames 211–249 @ 30 fps</li>
+              <li><strong>Hover:</strong> frames 321–359 @ 30 fps</li>
+              <li>Other ranges tracked per entity in <code>_current_anim</code> to prevent mid-play restarts</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Sound files</h3>
+            <ul class="list-clean">
+              <li><code>dragon_roar1.ogg</code></li>
+              <li><code>dragon_roar2.ogg</code></li>
+              <li><code>dragon_roar3.ogg</code></li>
+              <li><code>draconis_fire_breath.ogg</code></li>
+              <p style="margin-top:8px;font-size:0.82rem;">All located in <code>mods/boss/sounds/</code></code>.</p>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Textures</h3>
+            <ul class="list-clean">
+              <li><code>blue_dragon.png</code> — Kearach</li>
+              <li><code>slate_dragon.png</code> + <code>slate_eyes.png</code> — Caeltaroch</li>
+              <li><code>black_dragon.png</code> — Teinetarnagh</li>
+              <li><code>draconis_baked_in_shading.png</code> — shared shading overlay on Teinetarnagh and Kearach</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell">
+      <p>Memento Mori &mdash; Dragon reference. Three Dragons, one model, very different purposes.</p>
+    </div>
+  </footer>
+
+  <script src="dragon-bg.js"></script>
+  <script>
+    (function () {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    })();
+  </script>
+</body>
+</html>

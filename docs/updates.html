@@ -25,6 +25,8 @@
         <a href="index.html">Home</a>
         <a class="active" href="updates.html">Updates</a>
         <a href="install-guide.html">Install Guide</a>
+        <a href="mods.html">Mod Docs</a>
+        <a href="dragons.html">Dragons</a>
       </nav>
     </div>
   </header>
@@ -33,22 +35,20 @@
     <div class="page-shell">
       <section class="hero">
         <div class="eyebrow">Release Notes</div>
-        <h1>Recent work on gameplay and presentation.</h1>
+        <h1>What changed and when.</h1>
         <p>
-          Use this page for visible changes that players will notice first: boss flow, trailer polish, camera tuning,
-          collision fixes, soundtrack swaps, and content drops.
+          Live commit feed from the <strong>scathach</strong> branch plus a hand-written log of major feature work.
+          Use the download links to grab any specific version as a zip.
         </p>
       </section>
 
       <section class="section">
         <div class="section-head">
           <div>
-            <div class="eyebrow">Latest</div>
+            <div class="eyebrow">Git History</div>
             <h2>Commits from GitHub</h2>
           </div>
-          <p>
-            Pulled live from the <strong>scathach</strong> branch. Each entry links directly to that version of the project.
-          </p>
+          <p>Pulled live from the <strong>scathach</strong> branch. Each entry links directly to that commit.</p>
         </div>
         <div class="timeline" id="commit-timeline">
           <p id="commit-loading" style="opacity:.6;">Loading commits…</p>
@@ -58,34 +58,78 @@
       <section class="section">
         <div class="section-head">
           <div>
-            <div class="eyebrow">Roadmap</div>
-            <h2>Good next entries for this page</h2>
+            <div class="eyebrow">Changelog</div>
+            <h2>Recent feature work</h2>
           </div>
-          <p>
-            Keep updates concise. Focus on behavior changes, visible content additions, and anything players should test after pulling a new version.
-          </p>
+          <p>Hand-written log of larger changes that span multiple commits.</p>
         </div>
-        <div class="grid grid-3">
-          <article class="card">
-            <h3>Content Drops</h3>
-            <p>New bosses, maps, enemy types, weapon sets, or showcase sequences.</p>
+        <div class="timeline">
+
+          <article>
+            <time>May 2025</time>
+            <h3>Arena 2 — classroom NPC system</h3>
+            <p>
+              Six teacher NPCs added to the Arena 2 classroom building: Frans (Mevr. Schaapherder),
+              Wiskunde (Dr. Grin), Nederlands (Mevr. Huiskamp), Natuurkunde (Dr. Aalberts),
+              Biologie (Mevr. Klever), and Engels (Mr. Daniel).
+              Each teacher has a unique texture generated from the base character skin,
+              a fixed classroom position derived from the schematic, and six lines of subject-specific educational dialogue.
+              Teachers despawn during active waves and respawn with a live-check loop every 3 seconds.
+            </p>
           </article>
-          <article class="card">
-            <h3>Technical Fixes</h3>
-            <p>AI movement, collision handling, rendering cleanups, or audio behavior changes.</p>
+
+          <article>
+            <time>May 2025</time>
+            <h3>Boss — Julian AI rewrite (phase state machine)</h3>
+            <p>
+              Julian's hot chocolate attack was rewritten from a simple boolean flag
+              (<code>_julian_pour</code>) to a proper phase state machine (<code>_julian_phase = "normal" / "pour"</code>).
+              The new version adds a particle shower cone and correctly resets between pours.
+              The old dead-code path was removed from <code>boss/init.lua</code>.
+            </p>
           </article>
-          <article class="card">
-            <h3>Player Guidance</h3>
-            <p>Patch notes that explain whether old saves still work and what settings players may need to update.</p>
+
+          <article>
+            <time>May 2025</time>
+            <h3>BGM — dynamic loop system for wave music</h3>
+            <p>
+              Wave music now plays through a structured sequence: <em>intro</em> (20 s) → <em>begin2</em> (30 s) →
+              a shuffled loop of seven middle/bridge tracks. Per-player handles mean each connected player
+              gets their own volume control. Players inside Arena 2 or riding Teinetarnagh are exempted
+              from Arena 1 audio entirely.
+            </p>
           </article>
+
+          <article>
+            <time>April 2025</time>
+            <h3>Trailer mode — camera wall avoidance</h3>
+            <p>
+              The cinematic camera now probes for solid nodes ahead and to the sides using multi-distance ray checks.
+              Velocity is adjusted in real time to avoid clipping into arena walls during recording.
+              The <code>/trailer wave N</code> command was added to start any specific wave without waiting for the time trigger.
+            </p>
+          </article>
+
+          <article>
+            <time>April 2025</time>
+            <h3>Arena 2 schematic — room position correction</h3>
+            <p>
+              Room positions were corrected by parsing the <code>barlaeus_arena.mts</code> schematic directly
+              (MTS v4 format, zlib-compressed node data). Left rooms at world x = −320,
+              right rooms at world x = −289. Three z-depths: −418, −400, −387.
+            </p>
+          </article>
+
         </div>
       </section>
+
+      <section class="section">
     </div>
   </main>
 
   <footer class="site-footer">
     <div class="page-shell">
-      <p>Updates page for Memento Mori. Replace the sample notes with release-specific entries as development continues.</p>
+      <p>Updates — Memento Mori. Commit feed from the scathach branch plus hand-written feature notes.</p>
     </div>
   </footer>
 

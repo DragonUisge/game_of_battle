@@ -327,6 +327,10 @@ kbd {
   z-index: 0;
   pointer-events: none;
   mix-blend-mode: screen;
+  /* Force own GPU layer — prevents white-dot artefacts during fast scroll */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .site-header { z-index: 20; }
@@ -510,4 +514,101 @@ main, .site-footer { position: relative; z-index: 1; }
   .button-secondary {
     width: 100%;
   }
+}
+
+/* ====================================================
+   3-D model viewer
+   ==================================================== */
+.viewer-wrap {
+  border-radius: 24px;
+  border: 1px solid rgba(56, 109, 255, 0.2);
+  background: rgba(3, 8, 20, 0.7);
+  overflow: hidden;
+  padding-bottom: 16px;
+}
+
+.viewer-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 24px 24px 0 0;
+}
+
+.viewer-tex-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding: 14px 16px 4px;
+}
+
+.viewer-tex-btn {
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 109, 255, 0.4);
+  background: rgba(56, 109, 255, 0.08);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.viewer-tex-btn.active,
+.viewer-tex-btn:hover {
+  background: rgba(56, 109, 255, 0.2);
+  color: var(--accent-strong);
+  border-color: rgba(56, 109, 255, 0.6);
+}
+
+.viewer-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+  padding: 6px 0 4px;
+  user-select: none;
+}
+
+.viewer-compact .viewer-canvas {
+  border-radius: 18px 18px 0 0;
+}
+}
+
+/* Dragon texture gallery */
+.tex-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 540px) {
+  .tex-gallery { grid-template-columns: 1fr; }
+}
+
+.tex-card {
+  border-radius: 16px;
+  border: 1px solid rgba(56, 109, 255, 0.2);
+  background: rgba(3, 8, 20, 0.7);
+  overflow: hidden;
+  text-align: center;
+}
+.tex-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.tex-card-label {
+  padding: 10px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tex-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+  margin-bottom: 2px;
 }

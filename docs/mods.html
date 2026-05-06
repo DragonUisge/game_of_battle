@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memento Mori | Mod Docs</title>
+  <meta name="description" content="Technical documentation for all mods in Memento Mori — boss fights, enemies, NPCs, map, player, trailer mode, and more.">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .mod-grid {
+      display: grid;
+      gap: 20px;
+    }
+    .mod-block {
+      padding: 28px;
+      border-radius: 24px;
+      border: 1px solid rgba(126, 191, 255, 0.18);
+      background: rgba(5, 18, 38, 0.52);
+    }
+    .mod-block h3 {
+      margin: 0 0 4px;
+      font-size: 1.18rem;
+      color: var(--accent-strong);
+    }
+    .mod-desc {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 0.97rem;
+      line-height: 1.65;
+    }
+    .mod-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .mod-tag {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      background: rgba(77, 179, 255, 0.1);
+      border: 1px solid rgba(77, 179, 255, 0.25);
+      color: var(--accent-strong);
+    }
+    .mod-tag.dep {
+      background: rgba(77, 179, 255, 0.06);
+      border-color: rgba(126, 191, 255, 0.18);
+      color: var(--muted);
+    }
+    .mod-section-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .cmd-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .cmd-list li {
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(4, 12, 28, 0.6);
+      border: 1px solid rgba(126, 191, 255, 0.12);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .cmd-list code {
+      display: block;
+      color: var(--accent-strong);
+      font-family: "Consolas", "Fira Code", monospace;
+      margin-bottom: 2px;
+    }
+    .cmd-list span {
+      color: var(--muted);
+      font-size: 0.87rem;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .detail-card {
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: rgba(4, 12, 28, 0.5);
+      border: 1px solid rgba(126, 191, 255, 0.12);
+    }
+    .detail-card h4 {
+      margin: 0 0 8px;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .detail-card p, .detail-card li {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+    .detail-card ul {
+      padding-left: 16px;
+      margin: 0;
+    }
+    .dep-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 14px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: rgba(4, 12, 28, 0.5);
+      border: 1px solid rgba(126, 191, 255, 0.1);
+      font-size: 0.88rem;
+    }
+    .dep-chain .arrow {
+      color: var(--muted);
+      opacity: 0.5;
+    }
+    .dep-chain .node {
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(77, 179, 255, 0.25);
+      color: var(--accent-strong);
+    }
+    .dep-chain .node.root {
+      background: rgba(77, 179, 255, 0.14);
+      font-weight: 700;
+    }
+    table.boss-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    table.boss-table th {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(126, 191, 255, 0.2);
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+    }
+    table.boss-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(126, 191, 255, 0.08);
+      color: var(--text);
+      vertical-align: top;
+    }
+    table.boss-table tr:last-child td {
+      border-bottom: none;
+    }
+    table.boss-table tr:hover td {
+      background: rgba(77, 179, 255, 0.04);
+    }
+    table.boss-table td:first-child {
+      font-weight: 700;
+      color: var(--accent-strong);
+      white-space: nowrap;
+    }
+    .teacher-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .teacher-card {
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(126, 191, 255, 0.14);
+      background: rgba(4, 12, 28, 0.5);
+      font-size: 0.88rem;
+    }
+    .teacher-card .subj {
+      font-weight: 700;
+      color: var(--accent-strong);
+      margin-bottom: 2px;
+    }
+    .teacher-card .name {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .teacher-card .side {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      background: rgba(77, 179, 255, 0.1);
+      border: 1px solid rgba(77, 179, 255, 0.2);
+      color: var(--muted);
+    }
+    @media (max-width: 720px) {
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="dragon-canvas" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <div class="page-shell">
+      <a class="brand" href="index.html" aria-label="Memento Mori home page">
+        <div>
+          <img class="brand-mark" src="assets/image15.png" alt="logo">
+        </div>
+        <div class="brand-copy">
+          <strong>Memento Mori</strong>
+          <span>GitHub Pages site</span>
+        </div>
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="updates.html">Updates</a>
+        <a href="install-guide.html">Install Guide</a>
+        <a class="active" href="mods.html">Mod Docs</a>
+        <a href="dragons.html">Dragons</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-shell">
+
+      <section class="hero">
+        <div class="eyebrow">Technical Reference</div>
+        <h1>Mod documentation.</h1>
+        <p>
+          Memento Mori is built as a Luanti game with eight standalone mods.
+          Each mod owns a specific domain — bosses, enemies, NPCs, maps, player logic, items, time, and cinematic trailer mode.
+          This page covers how they work and how they fit together.
+        </p>
+      </section>
+
+      <!-- Dependency graph -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Architecture</div>
+            <h2>Load order &amp; dependencies</h2>
+          </div>
+          <p>Mods are loaded bottom-up. <code>registered</code> has no dependencies and loads first.</p>
+        </div>
+        <div class="dep-chain">
+          <span class="node">registered</span>
+          <span class="arrow">→</span>
+          <span class="node">time</span>
+          <span class="arrow">→</span>
+          <span class="node">npc</span>
+          <span class="arrow">→</span>
+          <span class="node">enemy</span>
+          <span class="arrow">→</span>
+          <span class="node">boss</span>
+          <span class="arrow">→</span>
+          <span class="node">player</span>
+          <span class="arrow">→</span>
+          <span class="node">trailer</span>
+        </div>
+        <div class="dep-chain" style="margin-top:10px;">
+          <span class="node">map</span>
+          <span class="arrow"> — standalone, no external deps</span>
+        </div>
+      </section>
+
+      <!-- Mod blocks -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Mods</div>
+            <h2>All eight mods</h2>
+          </div>
+          <p>Click a tag to filter. Each entry lists what the mod exposes and any chat commands it registers.</p>
+        </div>
+
+        <div class="mod-grid">
+
+          <!-- registered -->
+          <div class="mod-block">
+            <h3>registered</h3>
+            <p class="mod-desc">
+              The foundation mod. Registers all custom nodes and items used by other mods — arena blocks, decorative pieces,
+              weapons, and collectibles. No other mods depend on it loading before.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">No deps</span>
+              <span class="mod-tag">Nodes</span>
+              <span class="mod-tag">Items</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <h4>What it registers</h4>
+                <ul>
+                  <li>Arena wall, floor, and ceiling nodes</li>
+                  <li>Decorative arena props</li>
+                  <li>Weapon items (swords, shields)</li>
+                  <li>Collectible drop items</li>
+                </ul>
+              </div>
+              <div class="detail-card">
+                <h4>Used by</h4>
+                <ul>
+                  <li><code>npc</code> — NPC textures reference registered nodes</li>
+                  <li><code>enemy</code> — drop loot from registered items</li>
+                  <li><code>boss</code> — boss loot and arena effects</li>
+                  <li><code>trailer</code> — props referenced in scene setup</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- time -->
+          <div class="mod-block">
+            <h3>time</h3>
+            <p class="mod-desc">
+              Controls the 24-hour day cycle and exposes a HUD clock for all players.
+              Wave spawning in the <code>enemy</code> mod reads the in-game time to decide when to start a wave.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: registered</span>
+              <span class="mod-tag">HUD</span>
+              <span class="mod-tag">Day cycle</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <h4>Break times (wave trigger)</h4>
+                <ul>
+                  <li><strong>10:10</strong> — morning break → wave 1–3</li>
+                  <li><strong>12:10</strong> — lunch break → wave 4–6</li>
+                  <li><strong>14:15</strong> — afternoon break → wave 7</li>
+                </ul>
+              </div>
+              <div class="detail-card">
+                <h4>API</h4>
+                <p><code>time.get_hour()</code> — returns current in-game hour (0–23).</p>
+                <p style="margin-top:6px;"><code>time.get_minute()</code> — returns current in-game minute (0–59).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- npc -->
+          <div class="mod-block">
+            <h3>npc</h3>
+            <p class="mod-desc">
+              Manages non-combat NPCs in Arena 2: the six classroom teachers. Each teacher occupies a fixed room,
+              displays subject-specific dialogue when approached, and despawns when a wave is active.
+              Includes per-entity live-check spawn logic that retries every 3 seconds if a mapblock is not yet loaded.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: registered</span>
+              <span class="mod-tag">NPC entities</span>
+              <span class="mod-tag">Dialogue</span>
+              <span class="mod-tag">Arena 2</span>
+            </div>
+
+            <div class="mod-section-label" style="margin-top:18px;">Classroom Teachers — Arena 2</div>
+            <div class="teacher-grid">
+              <div class="teacher-card">
+                <div class="subj">Frans</div>
+                <div class="name">Mevr. Schaapherder</div>
+                <span class="side">Left — Room 1</span>
+              </div>
+              <div class="teacher-card">
+                <div class="subj">Wiskunde</div>
+                <div class="name">Dr. Grin</div>
+                <span class="side">Left — Room 2</span>
+              </div>
+              <div class="teacher-card">
+                <div class="subj">Nederlands</div>
+                <div class="name">Mevr. Huiskamp</div>
+                <span class="side">Left — Room 3</span>
+              </div>
+              <div class="teacher-card">
+                <div class="subj">Natuurkunde</div>
+                <div class="name">Dr. Aalberts</div>
+                <span class="side">Right — Room 4</span>
+              </div>
+              <div class="teacher-card">
+                <div class="subj">Biologie</div>
+                <div class="name">Mevr. Klever</div>
+                <span class="side">Right — Room 5</span>
+              </div>
+              <div class="teacher-card">
+                <div class="subj">Engels</div>
+                <div class="name">Mr. Daniel</div>
+                <span class="side">Right — Room 6</span>
+              </div>
+            </div>
+
+            <div class="mod-section-label" style="margin-top:18px;">Chat Commands</div>
+            <ul class="cmd-list">
+              <li>
+                <code>/set_teacher_pos &lt;subject&gt;</code>
+                <span>Teleports the named teacher to your current position. Requires <strong>server</strong> privilege. Useful for correcting spawn offsets after schematic changes.</span>
+              </li>
+            </ul>
+
+            <div class="detail-grid" style="margin-top:14px;">
+              <div class="detail-card">
+                <h4>Spawn logic</h4>
+                <p>Every 3 seconds <code>update_classroom_teachers()</code> checks each teacher's objectref. If the ref is nil or the entity no longer has a position, it respawns. Teachers are removed when <code>enemy.wave_active == true</code>.</p>
+              </div>
+              <div class="detail-card">
+                <h4>API</h4>
+                <p><code>npc._teacher_refs[subject]</code> — objectref for a specific teacher, or nil if not spawned.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- enemy -->
+          <div class="mod-block">
+            <h3>enemy</h3>
+            <p class="mod-desc">
+              Handles student enemy entities and the wave spawning system. Seven waves correspond to the seven boss levels.
+              Each wave spawns 10 student enemies plus one boss. Level 7 skips students and spawns the final boss directly.
+              Includes the dynamic BGM loop system: intro → begin2 → shuffled middle/bridge tracks.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: registered, time, npc</span>
+              <span class="mod-tag">Wave system</span>
+              <span class="mod-tag">BGM</span>
+              <span class="mod-tag">Student AI</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <h4>Wave flow</h4>
+                <ul>
+                  <li>Time trigger → <code>enemy.wave_active = true</code></li>
+                  <li>10 students spawn at random arena positions</li>
+                  <li>Students eliminated → boss spawns</li>
+                  <li>Boss defeated → <code>enemy.wave_active = false</code></li>
+                  <li>Victory sequence plays, next wave unlocks</li>
+                </ul>
+              </div>
+              <div class="detail-card">
+                <h4>Student stats (scale by level)</h4>
+                <ul>
+                  <li><strong>HP:</strong> 1</li>
+                  <li><strong>Damage:</strong> 1</li>
+                  <li><strong>Size:</strong> 60% at level 1 → 100% at level 6</li>
+                  <li><strong>Arena 2 isolation:</strong> players inside Arena 2 or riding Teinetarnagh are exempt from Arena 1 BGM and announcements</li>
+                </ul>
+              </div>
+            </div>
+            <div class="mod-section-label" style="margin-top:18px;">BGM Tracks</div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <h4>Sequence</h4>
+                <ul>
+                  <li><strong>intro</strong> (20 s) → <strong>begin2</strong> (30 s) → shuffled loop</li>
+                  <li>Loop pool: middle1/2/3 (30 s each), bridge1/2 (16 s), bridge3/4 (30 s)</li>
+                </ul>
+              </div>
+              <div class="detail-card">
+                <h4>API</h4>
+                <p><code>enemy.wave_active</code> — boolean, true while a wave is running.</p>
+                <p style="margin-top:6px;"><code>enemy.is_exempt(player)</code> — returns true if player should skip Arena 1 audio.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- boss -->
+          <div class="mod-block">
+            <h3>boss</h3>
+            <p class="mod-desc">
+              Defines all seven boss entities with unique AI patterns, attack moves, and defeat sequences.
+              Each boss has a custom <code>on_step</code> behaviour. Higher levels introduce ranged attacks, area damage, and particle effects.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: npc, enemy, time</span>
+              <span class="mod-tag">Boss AI</span>
+              <span class="mod-tag">Victory sequence</span>
+            </div>
+
+            <div class="mod-section-label" style="margin-top:18px;">Boss Roster</div>
+            <table class="boss-table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Name</th>
+                  <th>HP</th>
+                  <th>Signature attack</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Bram</td><td>100</td><td>Melee rush</td></tr>
+                <tr><td>2</td><td>Hugo</td><td>150</td><td>Spinning melee + knockback</td></tr>
+                <tr><td>3</td><td>Joachim</td><td>200</td><td>Charge + stomp</td></tr>
+                <tr><td>4</td><td>Julian</td><td>250</td><td>Hot chocolate cone attack + particle shower</td></tr>
+                <tr><td>5</td><td>Rosanne</td><td>300</td><td>Ranged projectile burst</td></tr>
+                <tr><td>6</td><td>Jan Willem</td><td>350</td><td>Shield bash + area slam</td></tr>
+                <tr><td>7</td><td>Margriet</td><td>450</td><td>Final boss</td></tr>
+              </tbody>
+            </table>
+
+            <div class="detail-grid" style="margin-top:14px;">
+              <div class="detail-card">
+                <h4>Victory sequence</h4>
+                <p><code>boss.return_player(player)</code> — restores player state after the fight.<br><code>boss.spawn_victory_dragon(pos)</code> — spawns the Victory Dragon. See the <a href="dragons.html" style="color:var(--accent-strong)">Dragons</a> page for full details.</p>
+              </div>
+              <div class="detail-card">
+                <h4>API</h4>
+                <p><code>boss._victory_dragon_obj</code> — singleton objectref to the Victory Dragon, nil when not active.</p>
+              </div>
+            </div>
+
+            <!-- Dragon texture gallery -->
+            <div style="margin-top:20px;">
+              <div class="mod-section-label" style="margin-bottom:10px;">Dragon skin textures</div>
+              <div class="tex-gallery">
+                <div class="tex-card">
+                  <img src="assets/blue_dragon.png" alt="Skarathos blue skin texture">
+                  <div class="tex-card-label"><div class="tex-card-name">Skarathos</div>blue</div>
+                </div>
+                <div class="tex-card">
+                  <img src="assets/slate_dragon.png" alt="Caeltaroch slate skin texture">
+                  <div class="tex-card-label"><div class="tex-card-name">Caeltaroch</div>slate</div>
+                </div>
+                <div class="tex-card">
+                  <img src="assets/black_dragon.png" alt="Teinetarnagh black skin texture">
+                  <div class="tex-card-label"><div class="tex-card-name">Teinetarnagh</div>black</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- player -->
+          <div class="mod-block">
+            <h3>player</h3>
+            <p class="mod-desc">
+              Handles player initialisation, HUD elements, and combat stats. Sets starting inventory,
+              registers player join/leave hooks, and controls respawn behaviour during active waves.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: registered</span>
+              <span class="mod-tag">Player HUD</span>
+              <span class="mod-tag">Inventory</span>
+              <span class="mod-tag">Respawn</span>
+            </div>
+            <div class="detail-card" style="margin-top:4px;">
+              <h4>Model</h4>
+              <p>Uses the standard <code>character.b3d</code> model (64×32 skin). Custom texture files per player skin are placed in <code>mods/player/textures/</code>.</p>
+            </div>
+          </div>
+
+          <!-- map -->
+          <div class="mod-block">
+            <h3>map</h3>
+            <p class="mod-desc">
+              Loads arena schematics on world creation. Currently manages two arenas:
+              Arena 1 (the primary combat arena) and Arena 2 (the classroom building, origin <code>−330, 177, −440</code>, 51×9×62 blocks).
+              Schematics are stored as <code>.mts</code> files in <code>mods/map/schems/</code>.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">No deps</span>
+              <span class="mod-tag">Schematics</span>
+              <span class="mod-tag">Arena layout</span>
+            </div>
+            <div class="detail-grid">
+              <div class="detail-card">
+                <h4>Arena 2 — classroom layout</h4>
+                <ul>
+                  <li>Size: 51 × 9 × 62 nodes</li>
+                  <li>Corridor: x = 20–32 (world x ≈ −310 to −298)</li>
+                  <li>Left rooms: world x = −320, z = −418 / −400 / −387</li>
+                  <li>Right rooms: world x = −289, z = −418 / −400 / −387</li>
+                </ul>
+              </div>
+              <div class="detail-card">
+                <h4>Schematic files</h4>
+                <ul>
+                  <li><code>fietsarena.mts</code> — Arena 1 (main combat arena)</li>
+                  <li><code>barlaeus_arena.mts</code> — Arena 2 (classroom building)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- trailer -->
+          <div class="mod-block">
+            <h3>trailer</h3>
+            <p class="mod-desc">
+              Cinematic trailer mode. Hides the real player, spawns an invisible camera entity and a visible stunt double,
+              then starts a wave. The camera follows the stunt double with close framing and wall-collision avoidance.
+              Useful for recording footage without HUD clutter or player shadows.
+            </p>
+            <div class="mod-meta">
+              <span class="mod-tag">Dep: enemy, boss, registered, player</span>
+              <span class="mod-tag">Cinematic</span>
+              <span class="mod-tag">Camera AI</span>
+              <span class="mod-tag">Stunt double</span>
+            </div>
+            <div class="mod-section-label" style="margin-top:18px;">Chat Commands</div>
+            <ul class="cmd-list">
+              <li>
+                <code>/trailer start</code>
+                <span>Hides player, spawns camera + stunt double, starts next wave. Requires <strong>trailer</strong> or <strong>server</strong> privilege.</span>
+              </li>
+              <li>
+                <code>/trailer stop</code>
+                <span>Restores player, removes camera and stunt double, ends trailer mode.</span>
+              </li>
+              <li>
+                <code>/trailer wave &lt;N&gt;</code>
+                <span>Starts a specific wave (1–7) in trailer mode, overriding the normal time trigger.</span>
+              </li>
+            </ul>
+            <div class="detail-grid" style="margin-top:14px;">
+              <div class="detail-card">
+                <h4>Camera behaviour</h4>
+                <p>Follows stunt double at close range. Probes for walls ahead and to the sides, adjusting velocity to avoid clipping. Clamped to arena bounds.</p>
+              </div>
+              <div class="detail-card">
+                <h4>State</h4>
+                <p><code>trailer.active</code> — boolean.<br><code>trailer.camera</code> — camera objectref.<br><code>trailer.stunt</code> — stunt double objectref.<br><code>trailer.player_pos</code> — saved position for restoration.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- File layout -->
+      <section class="section reveal">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">File Layout</div>
+            <h2>Repository structure</h2>
+          </div>
+          <p>A flat mods directory — each mod is a self-contained folder with <code>init.lua</code> and <code>mod.conf</code>.</p>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-card">
+            <h4>Game root</h4>
+            <ul>
+              <li><code>game.conf</code> — game name and engine settings</li>
+              <li><code>mods/</code> — all eight mod folders</li>
+              <li><code>menu/</code> — main menu background</li>
+              <li><code>docs/</code> — this GitHub Pages site</li>
+            </ul>
+          </div>
+          <div class="detail-card">
+            <h4>Per-mod layout</h4>
+            <ul>
+              <li><code>mod.conf</code> — name, description, depends</li>
+              <li><code>init.lua</code> — main logic (entry point)</li>
+              <li><code>textures/</code> — PNG textures for entities and nodes</li>
+              <li><code>sounds/</code> — OGG audio files</li>
+              <li><code>models/</code> — B3D 3D models (boss, player)</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="page-shell">
+      <p>Memento Mori — mod reference. Built with Lua for Luanti (Minetest 5.7+).</p>
+    </div>
+  </footer>
+
+  <script src="dragon-bg.js"></script>
+  <script>
+    (function () {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    })();
+  </script>
+</body>
+</html>

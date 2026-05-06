@@ -6,6 +6,98 @@
   <title>Memento Mori | Install Guide</title>
   <meta name="description" content="Step-by-step installation guide for Memento Mori — Minetest / Luanti game.">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .latest-build {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 32px;
+      align-items: start;
+      padding: 32px 36px;
+      border-radius: 24px;
+      border: 1px solid rgba(56, 109, 255, 0.25);
+      background: rgba(5, 14, 36, 0.65);
+      margin-top: -12px;
+    }
+
+    .lb-img {
+      width: 100%;
+      border-radius: 16px;
+      display: block;
+      mix-blend-mode: lighten;
+    }
+
+    .lb-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(56, 109, 255, 0.12);
+      border: 1px solid rgba(56, 109, 255, 0.35);
+      color: #5599ff;
+      margin-bottom: 14px;
+    }
+
+    .lb-badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #5599ff;
+      box-shadow: 0 0 6px #5599ff;
+      animation: lb-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes lb-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .lb-sha {
+      display: inline-block;
+      font-family: "Consolas", "Fira Code", monospace;
+      font-size: 0.82rem;
+      padding: 2px 9px;
+      border-radius: 6px;
+      background: rgba(77, 179, 255, 0.1);
+      border: 1px solid rgba(77, 179, 255, 0.2);
+      color: var(--accent-strong);
+      margin-bottom: 8px;
+    }
+
+    .lb-msg {
+      display: block;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .lb-meta {
+      display: block;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .lb-note {
+      margin: 10px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 680px) {
+      .latest-build {
+        grid-template-columns: 1fr;
+      }
+      .lb-img { max-width: 160px; }
+    }
+  </style>
 </head>
 <body>
   <canvas id="dragon-canvas" aria-hidden="true"></canvas>
@@ -25,6 +117,8 @@
         <a href="index.html">Home</a>
         <a href="updates.html">Updates</a>
         <a class="active" href="install-guide.html">Install Guide</a>
+        <a href="mods.html">Mod Docs</a>
+        <a href="dragons.html">Dragons</a>
       </nav>
     </div>
   </header>
@@ -40,8 +134,25 @@
           No build tools, no dependencies — just copy and play.
         </p>
         <div class="hero-actions">
-          <a class="button" href="game_of_battle.zip" download>Download game_of_battle.zip</a>
+          <a class="button" id="hero-dl" href="https://github.com/DragonUisge/game_of_battle/archive/refs/heads/scathach.zip">Download game_of_battle.zip</a>
           <a class="button-secondary" href="https://luanti.org/" target="_blank" rel="noopener">Get Luanti (luanti.org)</a>
+        </div>
+      </section>
+
+      <!-- Latest build preview -->
+      <section class="section" style="padding-top:0;">
+        <div class="latest-build">
+          <img class="lb-img" id="lb-cover" src="assets/dragon_hero.png" alt="Game cover art">
+          <div>
+            <div class="lb-badge">Latest build — scathach</div>
+            <span class="lb-sha" id="lb-sha">···</span>
+            <span class="lb-msg" id="lb-msg">Fetching latest commit&hellip;</span>
+            <span class="lb-meta" id="lb-meta"></span>
+            <a class="button" id="lb-dl" href="https://github.com/DragonUisge/game_of_battle/archive/refs/heads/scathach.zip">
+              &#8659;&nbsp;Download game_of_battle.zip
+            </a>
+            <p class="lb-note">Always the current tip of the scathach branch. No account needed.</p>
+          </div>
         </div>
       </section>
 
@@ -77,7 +188,7 @@
               <code>game_of_battle</code>. Keep it intact — do not rename it.
             </p>
             <div class="hero-actions" style="margin-top:1rem;">
-              <a class="button" href="game_of_battle.zip" download>Download game_of_battle.zip</a>
+              <a class="button" href="https://github.com/DragonUisge/game_of_battle/archive/refs/heads/scathach.zip">Download game_of_battle.zip</a>
             </div>
           </article>
 
@@ -94,7 +205,7 @@
               <div class="card">
                 <h4>Linux</h4>
                 <code>~/.minetest/games</code>
-                <p style="margin-top:.5rem;font-size:.82rem;">Or <code>~/.var/app/net.minetest.Minetest/data/minetest/games</code> for the Flatpak.</p>
+                <p style="margin-top:.5rem;font-size:.82rem;">Or <code style="word-break:break-all;">~/.var/app/net.minetest.Minetest/data/minetest/games</code> for the Flatpak.</p>
               </div>
               <div class="card">
                 <h4>macOS</h4>
@@ -109,12 +220,8 @@
             <h3>Start Luanti and select the game</h3>
             <p>
               Open Luanti. On the main screen, click <strong>Start Game</strong>, then pick
-              <em>Memento Mori / game_of_battle</em> from the game list.
+              <em>the sword icon</em> from the game list.
               Create a new world (any map generator works) and hit <strong>Play</strong>.
-            </p>
-            <p>
-              The first wave starts immediately. Boss fights begin at the end of each wave.
-              Good luck.
             </p>
           </article>
 
@@ -166,105 +273,73 @@
   </footer>
 
   <script src="dragon-bg.js"></script>
-</body>
-</html>
-  <header class="site-header">
-    <div class="page-shell">
-      <a class="brand" href="index.html" aria-label="Memento Mori home page">
-        <div>
-          <img class="brand-mark" src="assets/image15.png" alt="logo">
-        </div>
-        <div class="brand-copy">
-          <strong>Memento Mori</strong>
-          <span>GitHub Pages site</span>
-        </div>
-      </a>
-      <nav class="site-nav" aria-label="Primary">
-        <a href="index.html">Home</a>
-        <a href="updates.html">Updates</a>
-        <a class="active" href="install-guide.html">Install Guide</a>
-      </nav>
-    </div>
-  </header>
+  <script>
+    (function () {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
+          }
+        });
+      }, { threshold: 0.08 });
+      document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+    })();
 
-  <main>
-    <div class="page-shell">
-      <section class="hero">
-        <div class="eyebrow">Setup</div>
-        <h1>Install the game without digging through the repository.</h1>
-        <p>
-          This page gives a clear sequence you can keep current as the project evolves. The steps below are written to be easy to replace with the repository's exact commands later.
-        </p>
-      </section>
+    // Cover randomiser
+    (function () {
+      const COVERS = [
+        "assets/image.png","assets/image5.png","assets/image6.png",
+        "assets/image8.png","assets/image10.png","assets/image11.png",
+        "assets/image12.png","assets/image13.png","assets/image15.png",
+        "assets/image16.png","assets/image18.png","assets/image19.png",
+        "assets/image20.png","assets/image21.png","assets/image22.png",
+        "assets/image24.png","assets/image25.png","assets/image26.png",
+        "assets/image27.png","assets/image28.png"
+      ];
+      const img = document.getElementById("lb-cover");
+      if (img) img.src = COVERS[Math.floor(Math.random() * COVERS.length)];
+    })();
 
-      <section class="section">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow">Steps</div>
-            <h2>Recommended installation flow</h2>
-          </div>
-          <p>
-            GitHub Pages is static, so keep the guide practical: where to clone, where to copy the game folder, and how to launch it from Minetest.
-              
-          <article class="step">
-            <div class="step-number">Step 1</div>
-            <h3>Get everything</h3>
-            <p>Download Minetest:</p>
-            <a class="button-secondary" href="https://luanti.org/" target="_blank" rel="noopener">luanti.org</a>
-            <a class="button" href="game_of_battle.zip" download>Download the latest game archive</a>
-          </article>
-          <article class="step">
-            <div class="step-number">Step 2</div>
-            <h3>Unpack the archive and place it into your Minetest games directory.</h3>
-            <h4><strong>Windows:</strong> <code>%APPDATA%\minetest\games</code></h4>
-            <h4><strong>Linux:</strong> <code>~/.minetest/games</code></h4>
-            <h4><strong>MacOS:</strong> <code>~/Library/Application Support/minetest/games</code></h4>
-            <p>Copy the repository into the Minetest games folder on your system, then verify that the project root contains the expected game configuration files.</p>
-          </article>
-          <article class="step">
-            <div class="step-number">Step 3</div>
-            <h3>Launch and test</h3>
-            <p>Start Minetest, select the game, create or open a world, and confirm that the core content loads correctly before testing trailer mode or boss encounters.</p>
-          </article>
-        </div>
-      </section>
+    // Latest commit preview
+    (function () {
+      const REPO   = "DragonUisge/game_of_battle";
+      const BRANCH = "scathach";
+      const ZIP    = `https://github.com/${REPO}/archive/refs/heads/${BRANCH}.zip`;
 
-      <section class="section">
-        <div class="section-head">
-          <div>
-            <div class="eyebrow">Checklist</div>
-            <h2>What to include later</h2>
-          </div>
-          <p>
-            This section is useful for exact compatibility notes once you want to publish the page for other players.
-          </p>
-        </div>
-        <div class="grid grid-2">
-          <article class="card">
-            <h3>Requirements</h3>
-            <ul class="list-clean">
-              <li>Target Minetest or Luanti version.</li>
-              <li>Any external assets or optional dependencies.</li>
-              <li>Supported operating systems.</li>
-            </ul>
-          </article>
-          <article class="card">
-            <h3>Troubleshooting</h3>
-            <ul class="list-clean">
-              <li>What to do if the game does not appear in the menu.</li>
-              <li>How to update an existing local copy safely.</li>
-              <li>Where to report bugs or missing assets.</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-    </div>
-  </main>
+      function timeAgo(dateStr) {
+        const diff = (Date.now() - new Date(dateStr)) / 1000;
+        if (diff < 60)   return `${Math.floor(diff)}s ago`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return `${Math.floor(diff / 86400)}d ago`;
+      }
 
-  <footer class="site-footer">
-    <div class="page-shell">
-      <p>Install guide for Memento Mori. Replace the placeholder wording with the exact repository and Minetest steps you want public players to follow.</p>
-    </div>
-  </footer>
+      fetch(`https://api.github.com/repos/${REPO}/commits?sha=${BRANCH}&per_page=1`, {
+        headers: { Accept: "application/vnd.github+json" }
+      })
+        .then(r => r.json())
+        .then(([c]) => {
+          if (!c) return;
+          const sha  = c.sha.slice(0, 7);
+          const msg  = c.commit.message.split("\n")[0];
+          const meta = `${c.commit.author.name} &middot; ${timeAgo(c.commit.author.date)}`;
+          const zip  = `https://github.com/${REPO}/archive/${c.sha}.zip`;
+
+          document.getElementById("lb-sha").textContent = sha;
+          document.getElementById("lb-msg").textContent = msg;
+          document.getElementById("lb-meta").innerHTML  = meta;
+
+          // Point download links to the pinned commit zip
+          ["lb-dl", "hero-dl"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.href = zip;
+          });
+        })
+        .catch(() => {
+          document.getElementById("lb-msg").textContent = "(could not fetch — GitHub API rate limit)";
+        });
+    })();
+  </script>
 </body>
 </html>

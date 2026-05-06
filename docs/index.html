@@ -25,6 +25,8 @@
         <a class="active" href="index.html">Home</a>
         <a href="updates.html">Updates</a>
         <a href="install-guide.html">Install Guide</a>
+        <a href="mods.html">Mod Docs</a>
+        <a href="dragons.html">Dragons</a>
       </nav>
     </div>
   </header>
@@ -32,15 +34,15 @@
   <main>
     <div class="page-shell">
       <section class="hero">
-        <div class="eyebrow">Blue Archive</div>
-        <h1>Action, bosses, and a sharp trailer mode.</h1>
+        <div class="eyebrow">Luanti Game</div>
+        <h1>Seven bosses. One arena. Graduate or die.</h1>
         <p>
-          This site is the public front for Memento Mori on GitHub Pages. It gives a clean starting point for new players,
-          shows what changed recently, and keeps installation steps close at hand.
+          Memento Mori is a wave-based combat game for Luanti (Minetest 5.7+). Fight through seven waves of student enemies,
+          each ending in a boss encounter. Survive all seven and trigger the final victory cinematic.
         </p>
         <div class="hero-actions">
-          <a class="button" href="install-guide.html">Start Installation</a>
-          <a class="button-secondary" href="updates.html">Download Recent Updates</a>
+          <a class="button" href="install-guide.html">Install the Game</a>
+          <a class="button-secondary" href="mods.html">Read the Docs</a>
         </div>
       </section>
 
@@ -48,25 +50,24 @@
         <div class="section-head">
           <div>
             <div class="eyebrow">Overview</div>
-            <h2>What this project highlights</h2>
+            <h2>How the game works</h2>
           </div>
           <p>
-            The layout is built to work well on GitHub Pages: static files only, quick to load, and easy to extend with screenshots,
-            patch notes, or download links later.
+            Eight mods, one arena building, seven boss fights. Each system is independent and documented separately.
           </p>
         </div>
         <div class="grid grid-3">
           <article class="card">
-            <h3>Cinematic Boss Fights</h3>
-            <p>Trailer mode focuses on close framing, smoother camera movement, and staged encounters that feel more deliberate on screen.</p>
+            <h3>Wave System</h3>
+            <p>Waves trigger at school break times — 10:10, 12:10, 14:15. Each wave spawns 10 student enemies. Clear them all and the boss appears.</p>
           </article>
           <article class="card">
-            <h3>Fast Project Access</h3>
-            <p>The navigation keeps the three main entry points visible at all times: home, updates, and the install guide.</p>
+            <h3>Boss Encounters</h3>
+            <p>Seven unique bosses with escalating HP and distinct attack patterns. The final boss, Margriet, rides a dragon named Teinetarnagh.</p>
           </article>
           <article class="card">
-            <h3>Ready for Expansion</h3>
-            <p>Add screenshots, changelogs, and platform notes without reworking the structure. The site already has reusable sections and cards.</p>
+            <h3>Trailer Mode</h3>
+            <p>Built-in cinematic mode hides the player, spawns a camera entity with wall avoidance, and records clean footage without HUD clutter.</p>
           </article>
         </div>
       </section>
@@ -75,22 +76,25 @@
         <div class="section-head">
           <div>
             <div class="eyebrow">Quick Access</div>
-            <h2>Three pages, one clear path</h2>
+            <h2>Where to go next</h2>
           </div>
-          <p>
-            Keep the homepage short, use updates for release notes, and reserve the install guide for the exact steps needed to launch the game.
-          </p>
+          <p>Three pages cover everything a new player or contributor needs.</p>
         </div>
-        <div class="grid grid-2">
+        <div class="grid grid-3">
           <article class="card">
             <h3>Updates</h3>
-            <p>Track visible changes, polish work, and feature milestones. Good place for trailer improvements and gameplay tweaks.</p>
+            <p>Live commit feed from the <strong>scathach</strong> branch. Download any specific version as a zip directly from this page.</p>
             <a class="button-secondary" href="updates.html">Open Updates</a>
           </article>
           <article class="card">
             <h3>Install Guide</h3>
-            <p>Show the exact repository setup, Minetest game directory placement, and launch instructions in one place.</p>
+            <p>Four steps: get Luanti, download the archive, place the folder in <code>games/</code>, and launch. Works on Windows, Linux, and macOS.</p>
             <a class="button-secondary" href="install-guide.html">Open Guide</a>
+          </article>
+          <article class="card">
+            <h3>Mod Docs</h3>
+            <p>Technical reference for all eight mods — API, commands, boss stats, teacher roster, dependency graph, and file layout.</p>
+            <a class="button-secondary" href="mods.html">Open Docs</a>
           </article>
         </div>
       </section>
@@ -155,7 +159,7 @@
             <div class="eyebrow">Project Stats</div>
             <h2>By the numbers</h2>
           </div>
-          <p>Live data pulled from the GitHub repository.</p>
+          <p>Live commit count pulled from GitHub. Boss and NPC counts are fixed.</p>
         </div>
         <div class="stat-strip">
           <div class="stat-tile">
@@ -164,11 +168,11 @@
           </div>
           <div class="stat-tile">
             <span class="stat-number">7</span>
-            <span class="stat-label">Bosses</span>
+            <span class="stat-label">Boss fights</span>
           </div>
           <div class="stat-tile">
-            <span class="stat-number">450</span>
-            <span class="stat-label">Max boss HP</span>
+            <span class="stat-number">6</span>
+            <span class="stat-label">Classroom NPCs</span>
           </div>
         </div>
       </section>

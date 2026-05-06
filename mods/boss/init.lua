@@ -1152,7 +1152,7 @@ minetest.register_entity("boss:summoned_dragon", {
 		makes_footstep_sound = false,
 		static_save = false,
 		nametag = "Kearach",
-		nametag_color = "#ff7700",
+		nametag_color = "#1869db",
 		glow = 8,
 		backface_culling = false,
 	},
@@ -1244,7 +1244,7 @@ minetest.register_entity("boss:summoned_dragon", {
 					maxexptime = 0.9,
 					minsize = 3,
 					maxsize = 6,
-					texture = "draconis_fire_particle.png",
+					texture = "aura_particle.png^[colorize:#1869db:200",
 					glow = 14,
 				})
 			end
@@ -1254,7 +1254,7 @@ minetest.register_entity("boss:summoned_dragon", {
 		self._hp = self._hp - dmg
 
 		self.object:set_properties({
-			nametag = "Skarathos",
+			nametag = "Kearach",
 		})
 
 		-- Roar when hit
