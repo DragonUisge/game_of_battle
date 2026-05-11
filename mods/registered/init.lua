@@ -534,6 +534,231 @@ minetest.register_entity("registered:appelflap_boomerang_ent", {
 	end,
 })
 
+-- ══════════════════════════════════════════════════════════════
+-- Fanta Bazooka — schiet Fanta-blikjes die exploderen bij impact
+-- Toegevoegd door Ege
+-- ══════════════════════════════════════════════════════════════
+
+-- Fanta explosie: oranje splash met schade in een gebied
+local function fanta_explode(pos, owner)
+	-- Schade aan vijanden in de buurt (straal van 2 blokken)
+	for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 2.0)) do
+		if obj:is_player() then
+			-- Geen schade aan de schutter zelf
+			if not owner or obj:get_player_name() ~= owner then
+				obj:set_hp(math.max(0, obj:get_hp() - 6), {type = "punch"})
+			end
+		else
+			local ent = obj:get_luaentity()
+			-- Schade aan vijanden (studenten en bosses)
+			if ent and ent._hp then
+				ent._hp = ent._hp - 12
+				if ent._hp <= 0 then
+					-- Student verslagen
+					if ent.name == "enemy:student" then
+						for i, ref in ipairs(enemy.alive_students) do
+							if ref == obj then
+								table.remove(enemy.alive_students, i)
+								break
+							end
+						end
+						obj:remove()
+						enemy.check_wave_clear()
+					-- Boss verslagen
+					elseif ent._level then
+						local bpos = obj:get_pos()
+						local BOSSES = {
+							[1] = {drop = "registered:sword_bronze"},
+							[3] = {drop = "registered:sword_diamond"},
+							[4] = {drop = "registered:sword_ancient"},
+							[6] = {drop = "registered:sword_dragonpower"},
+							[7] = {drop = "registered:sword_elements"},
+						}
+						local bdata = BOSSES[ent._level]
+						if bpos and bdata and bdata.drop then
+							minetest.add_item(bpos, bdata.drop)
+						end
+						if ent._drumstick_entity and ent._drumstick_entity:get_pos() then
+							ent._drumstick_entity:remove()
+						end
+						enemy.boss_alive = nil
+						obj:remove()
+						enemy.check_wave_clear()
+					end
+				end
+			end
+		end
+	end
+
+	-- Oranje splash-deeltjes (het Fanta-effect!)
+	minetest.add_particlespawner({
+		amount = 40,
+		time = 0.5,
+		minpos = vector.add(pos, vector.new(-0.5, -0.3, -0.5)),
+		maxpos = vector.add(pos, vector.new(0.5, 0.5, 0.5)),
+		minvel = vector.new(-5, 1, -5),
+		maxvel = vector.new(5, 6, 5),
+		minacc = vector.new(0, -9, 0),
+		maxacc = vector.new(0, -6, 0),
+		minexptime = 0.3,
+		maxexptime = 0.8,
+		minsize = 2,
+		maxsize = 5,
+		texture = "aura_particle.png^[colorize:#FF8C00:230",
+		glow = 10,
+	})
+
+	-- Tweede laag: witte bubbels (koolzuur!)
+	minetest.add_particlespawner({
+		amount = 15,
+		time = 0.3,
+		minpos = vector.add(pos, vector.new(-0.3, 0, -0.3)),
+		maxpos = vector.add(pos, vector.new(0.3, 0.3, 0.3)),
+		minvel = vector.new(-2, 2, -2),
+		maxvel = vector.new(2, 5, 2),
+		minacc = vector.new(0, -3, 0),
+		maxacc = vector.new(0, -1, 0),
+		minexptime = 0.2,
+		maxexptime = 0.5,
+		minsize = 1,
+		maxsize = 2,
+		texture = "aura_particle.png^[colorize:#FFFFFF:200",
+		glow = 14,
+	})
+
+	-- Explosie geluid
+	minetest.sound_play("default_water_footstep",
+		{pos = pos, gain = 0.8, max_hear_distance = 20})
+end
+
+-- Fanta-blik projectiel entity
+minetest.register_entity("registered:fanta_can", {
+	initial_properties = {
+		visual = "cube",
+		visual_size = {x = 0.3, y = 0.4, z = 0.3},
+		textures = {
+			-- alle 6 zijden van de kubus (boven, onder, rechts, links, voor, achter)
+			"registered_fanta_can.png",
+			"registered_fanta_can.png",
+			"registered_fanta_can.png",
+			"registered_fanta_can.png",
+			"registered_fanta_can.png",
+			"registered_fanta_can.png",
+		},
+		physical = true,
+		collide_with_objects = false,
+		collisionbox = {-0.1, -0.1, -0.1, 0.1, 0.1, 0.1},
+		static_save = false,
+	},
+
+	_owner = nil,
+	_lifetime = 0,
+	_exploded = false,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime)
+		if self._exploded then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		-- Na 6 seconden automatisch verwijderen
+		self._lifetime = self._lifetime + dtime
+		if self._lifetime > 6 then
+			self._exploded = true
+			self.object:remove()
+			return
+		end
+
+		-- Draai het blikje terwijl het vliegt (cool effect)
+		local vel = self.object:get_velocity()
+		local yaw = self.object:get_yaw() or 0
+		self.object:set_yaw(yaw + dtime * 8)
+
+		-- Check of we iets raken (vijanden)
+		if self._lifetime > 0.15 then
+			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 0.6)) do
+				if obj ~= self.object then
+					if obj:is_player() then
+						if not self._owner or obj:get_player_name() ~= self._owner then
+							fanta_explode(pos, self._owner)
+							self._exploded = true
+							self.object:remove()
+							return
+						end
+					else
+						local ent = obj:get_luaentity()
+						if ent and ent._hp then
+							fanta_explode(pos, self._owner)
+							self._exploded = true
+							self.object:remove()
+							return
+						end
+					end
+				end
+			end
+		end
+
+		-- Check of we een muur raken (snelheid stopt plotseling)
+		if self._lifetime > 0.2 then
+			if math.abs(vel.x) < 0.5 and math.abs(vel.z) < 0.5 and self._lifetime > 0.3 then
+				fanta_explode(pos, self._owner)
+				self._exploded = true
+				self.object:remove()
+				return
+			end
+		end
+	end,
+})
+
+-- Het wapen zelf: de Fanta Bazooka
+minetest.register_tool("registered:fanta_bazooka", {
+	description = "Fanta Bazooka",
+	inventory_image = "registered_fanta_bazooka.png",
+	-- Grotere weergave als je het vasthoudt
+	wield_scale = {x = 2.0, y = 2.0, z = 2.0},
+	tool_capabilities = {
+		full_punch_interval = 1.5,
+		max_drop_level = 2,
+		-- Directe klap doet weinig schade (het gaat om de Fanta!)
+		damage_groups = {fleshy = 3},
+	},
+	-- Rechter-muisknop = schiet een Fanta-blik
+	on_secondary_use = function(itemstack, user, pointed_thing)
+		if not user:is_player() then return end
+		local pos = user:get_pos()
+		pos.y = pos.y + 1.4  -- ooghoogte
+
+		-- Richting waar de speler kijkt
+		local yaw = user:get_look_horizontal()
+		local pitch = user:get_look_vertical()
+		local dir = vector.new(
+			-math.sin(yaw) * math.cos(pitch),
+			-math.sin(pitch),
+			-math.cos(yaw) * math.cos(pitch)
+		)
+
+		-- Maak het Fanta-blik aan en schiet het weg
+		local speed = 25
+		local can = minetest.add_entity(pos, "registered:fanta_can")
+		if can then
+			can:set_velocity(vector.multiply(dir, speed))
+			local ent = can:get_luaentity()
+			if ent then
+				ent._owner = user:get_player_name()
+			end
+		end
+
+		-- Schiet-geluid
+		minetest.sound_play("default_place_node_hard",
+			{pos = pos, gain = 0.6, max_hear_distance = 15})
+
+		return itemstack
+	end,
+})
+
 -- Food items
 
 minetest.register_craftitem("registered:meat", {
