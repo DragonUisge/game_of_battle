@@ -369,8 +369,169 @@ minetest.register_tool("registered:sword_elements", {
 })
 
 minetest.register_craftitem("registered:drumstick", {
-	description = "Trommelstok",
-	inventory_image = "registered_sword_bronze.png^[colorize:#4A2000:200",
+	description = "Drumstok",
+	inventory_image = "registered_drumstick.png",
+})
+
+
+-- ============================================================
+-- Appelflap Boomerang entity (registered:appelflap_boomerang)
+-- Phase 1 (0–1.5 s): flies forward in a straight line.
+-- Phase 2 (1.5 s+): homes back toward the owner.
+-- Deals 10 damage on hit (boss or player enemy). Vanishes when
+-- caught by owner or after 6 s.
+-- ============================================================
+
+-- Appelflap Boomerang — thrown weapon; right-click to throw.
+-- Buy from the weaponsmith for 25 coins. Damage: 10.
+minetest.register_tool("registered:appelflap_boomerang", {
+	description = "Appelflap Boomerang",
+	inventory_image = "registered_appelflap_boomerang.png",
+	tool_capabilities = {
+		full_punch_interval = 0.8,
+		damage_groups = {fleshy = 10},
+	},
+	on_use = function(itemstack, user, pointed_thing)
+		if not user:is_player() then return end
+		local pos = user:get_pos()
+		pos.y = pos.y + 1.4
+		local dir = user:get_look_dir()
+		local boomobj = minetest.add_entity(pos, "registered:appelflap_boomerang_ent")
+		if boomobj then
+			boomobj:set_velocity(vector.multiply(dir, 18))
+			local ent = boomobj:get_luaentity()
+			if ent then ent._owner = user:get_player_name() end
+		end
+		itemstack:take_item(1)
+		return itemstack
+	end,
+})
+
+local function boomerang_damage_boss(boomerang_obj, target_obj, pos)
+	local bpos = boomerang_obj:get_pos() or pos
+	local tpos = target_obj:get_pos() or pos
+	local dir = vector.direction(bpos, tpos)
+	target_obj:punch(boomerang_obj, 1.0,
+		{full_punch_interval = 1.0, damage_groups = {fleshy = 10}}, dir)
+end
+
+minetest.register_entity("registered:appelflap_boomerang_ent", {
+	initial_properties = {
+		visual          = "cube",
+		visual_size     = {x = 0.65, y = 0.07, z = 0.65},
+		textures        = {
+			"registered_appelflap_boomerang.png",
+			"registered_appelflap_boomerang.png",
+			"registered_appelflap_boomerang.png",
+			"registered_appelflap_boomerang.png",
+			"registered_appelflap_boomerang.png",
+			"registered_appelflap_boomerang.png",
+		},
+		physical        = true,
+		collide_with_objects = false,
+		collisionbox    = {-0.3, -0.07, -0.3, 0.3, 0.07, 0.3},
+		static_save     = false,
+		pointable       = false,
+		glow            = 4,
+	},
+
+	_owner      = nil,
+	_returning  = false,
+	_lifetime   = 0,
+	_done       = false,
+	_hit_cd     = 0,
+	_spin       = 0,
+	_prev_speed = 18,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime)
+		if self._done then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		self._lifetime = self._lifetime + dtime
+		self._hit_cd   = math.max(0, self._hit_cd - dtime)
+
+		-- Auto-remove after 6 s
+		if self._lifetime > 6 then
+			self._done = true
+			self.object:remove()
+			return
+		end
+
+		-- Spin like a frisbee (rotate around Y axis)
+		self._spin = self._spin + dtime * 14
+		self.object:set_rotation(vector.new(0, self._spin, 0))
+
+		-- Detect wall hit: velocity drops sharply while still going forward
+		if not self._returning then
+			local vel = self.object:get_velocity()
+			local speed = vector.length(vel)
+			if self._lifetime > 0.1 and speed < self._prev_speed * 0.3 then
+				-- Hit a wall — start returning immediately
+				self._returning = true
+			end
+			self._prev_speed = speed
+		end
+
+		-- Switch to return phase after 1.5 s (normal arc)
+		if not self._returning and self._lifetime > 1.5 then
+			self._returning = true
+		end
+
+		-- Return phase: steer toward owner each step
+		if self._returning and self._owner then
+			local owner_obj = minetest.get_player_by_name(self._owner)
+			if owner_obj then
+				local opos = owner_obj:get_pos()
+				opos.y = opos.y + 1.2
+				local dist = vector.distance(pos, opos)
+				if dist < 1.0 then
+					-- Caught — return to inventory
+					local inv = owner_obj:get_inventory()
+					if inv:room_for_item("main", "registered:appelflap_boomerang") then
+						inv:add_item("main", "registered:appelflap_boomerang")
+					else
+						-- Inventory full — drop at player feet
+						minetest.add_item(opos, "registered:appelflap_boomerang")
+					end
+					self._done = true
+					self.object:remove()
+					return
+				end
+				self.object:set_velocity(vector.multiply(
+					vector.direction(pos, opos), 18))
+			end
+		end
+
+		-- Hit detection
+		if self._hit_cd > 0 then return end
+		for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.2)) do
+			if obj == self.object then
+				-- skip self
+			elseif obj:is_player() then
+				local pname = obj:get_player_name()
+				if not self._owner or pname ~= self._owner then
+					obj:set_hp(math.max(0, obj:get_hp() - 10), {type = "punch"})
+					minetest.sound_play("appelflap_hit", {pos = pos, gain = 1.0, max_hear_distance = 20})
+					self._hit_cd    = 0.8
+					self._returning = true
+				end
+			else
+				local ent = obj:get_luaentity()
+				if ent and ent._hp and ent._level then
+					minetest.sound_play("appelflap_hit", {pos = pos, gain = 1.0, max_hear_distance = 20})
+					boomerang_damage_boss(self.object, obj, pos)
+					self._hit_cd    = 0.8
+					self._returning = true
+					return
+				end
+			end
+		end
+	end,
 })
 
 -- Food items

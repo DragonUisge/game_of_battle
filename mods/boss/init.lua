@@ -15,8 +15,8 @@ local BOSSES = {
 	[3] = {name = "Joachim",     hp = 200, dmg = 4,  tex = "boss_joachim.png",    drop = "registered:sword_diamond"},
 	[4] = {name = "Julian",      hp = 250, dmg = 5,  tex = "boss_julian.png",     drop = "registered:sword_ancient"},
 	[5] = {name = "Rosanne",     hp = 300, dmg = 6,  tex = "boss_rosanne.png"},
-	[6] = {name = "Jan Willem",  hp = 350, dmg = 7,  tex = "boss_janwillem.png",  drop = "registered:sword_dragonpower"},
-	[7] = {name = "Margriet",    hp = 450, dmg = 8,  tex = "boss_margriet.png",   drop = "registered:sword_elements"},
+	[6] = {name = "Jan Willem",  hp = 350, dmg = 7,  tex = "boss_janwillem.png",  drop = "registered:sword_elements"},
+	[7] = {name = "Margriet",    hp = 450, dmg = 8,  tex = "boss_margriet.png",   drop = "registered:sword_dragonpower"},
 }
 
 -- ============================================================
@@ -714,8 +714,7 @@ minetest.register_entity("boss:raisin", {
 	end,
 })
 
--- ============================================================
--- Rosanne (level 5): artist boss — draws weapons from thin air
+
 -- Phases: "normal" → "drawing" → "armed" → (redraw after timer)
 -- Allowed weapons (blacklist: diamond, ancient, dragonpower, elements)
 -- ============================================================
@@ -920,6 +919,136 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 end
 
 -- ============================================================
+-- Margriet (level 7): summons Joachim, Rosanne or Jan Willem
+-- ============================================================
+local function margriet_step(self, dtime, pos, nearest, nearest_dist)
+	local ppos = nearest:get_pos()
+	local dir  = vector.direction(pos, ppos)
+
+	if self._margriet_phase == "normal" then
+		-- Standard walk + melee
+		self.object:set_yaw(minetest.dir_to_yaw(dir))
+		self.object:set_velocity(vector.new(dir.x * 2.2, -9.81, dir.z * 2.2))
+		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+
+		self._attack_cooldown = self._attack_cooldown - dtime
+		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+			if nearest:is_player() then
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+			else
+				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+			end
+			self._attack_cooldown = 1.5
+			self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+		end
+
+		-- Periodic summon every 20 seconds
+		self._margriet_timer = self._margriet_timer - dtime
+		if self._margriet_timer <= 0 then
+			self._margriet_phase = "summon"
+			self._margriet_timer = 3.0  -- channeling duration
+		end
+
+	elseif self._margriet_phase == "summon" then
+		-- Stand still, channel for 3 seconds, then spawn a helper boss
+		self._margriet_timer = self._margriet_timer - dtime
+		self.object:set_velocity(vector.new(0, -9.81, 0))
+		self.object:set_yaw(minetest.dir_to_yaw(dir))
+		self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+
+		-- Swirling orange/red channeling particles
+		minetest.add_particlespawner({
+			amount  = 10,
+			time    = 0.2,
+			minpos  = vector.add(pos, vector.new(-1.8, 0, -1.8)),
+			maxpos  = vector.add(pos, vector.new(1.8, 3.0, 1.8)),
+			minvel  = vector.new(-2, 1, -2),
+			maxvel  = vector.new(2, 3, 2),
+			minacc  = vector.new(0, 0.5, 0),
+			maxacc  = vector.new(0, 1.5, 0),
+			minexptime = 0.3,
+			maxexptime = 0.7,
+			minsize = 2,
+			maxsize = 5,
+			texture = "aura_particle.png^[colorize:#FF5500:180",
+			glow    = 10,
+		})
+
+		if self._margriet_timer <= 0 then
+			-- Summon one random boss from: Joachim(3), Rosanne(5), Jan Willem(6)
+			local pool = {3, 5, 6}
+			local pick = pool[math.random(#pool)]
+			local offset = vector.new(math.random(-3, 3), 0, math.random(-3, 3))
+			local spawn_pos = vector.add(pos, offset)
+			local new_obj = minetest.add_entity(spawn_pos, "boss:teacher")
+			if new_obj then
+				boss.set_level(new_obj, pick)
+				self._margriet_summon_ref = new_obj
+				local bname = BOSSES[pick] and BOSSES[pick].name or "?"
+				minetest.chat_send_all("Margriet roept " .. bname .. " op!")
+				minetest.sound_play("dragon_roar1", {
+					pos = spawn_pos, gain = 1.0, max_hear_distance = 40})
+				-- Summon flash
+				minetest.add_particlespawner({
+					amount  = 30,
+					time    = 0.3,
+					minpos  = vector.add(spawn_pos, vector.new(-0.5, 0.5, -0.5)),
+					maxpos  = vector.add(spawn_pos, vector.new(0.5, 2.0, 0.5)),
+					minvel  = vector.new(-4, 0, -4),
+					maxvel  = vector.new(4, 4, 4),
+					minacc  = vector.new(0, -2, 0),
+					maxacc  = vector.new(0, 0, 0),
+					minexptime = 0.5,
+					maxexptime = 1.0,
+					minsize = 3,
+					maxsize = 6,
+					texture = "aura_particle.png^[colorize:#FF8800:200",
+					glow    = 12,
+				})
+			end
+			self._margriet_phase = "linked"
+			self.object:set_properties({
+				nametag = "Margriet [beschermd door haar helper]",
+				nametag_color = "#FF8800",
+			})
+		end
+
+	elseif self._margriet_phase == "linked" then
+		-- Invulnerable while summoned boss lives; still walks and attacks
+		if not self._margriet_summon_ref or not self._margriet_summon_ref:get_pos() then
+			-- Helper died — Margriet returns to normal; next summon in 15 s
+			self._margriet_phase      = "normal"
+			self._margriet_timer      = 15.0
+			self._margriet_summon_ref = nil
+			local data = BOSSES[7]
+			self.object:set_properties({
+				nametag       = (data and data.name or "Margriet") ..
+				                " [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] WOEDEND",
+				nametag_color = "#FF0000",
+			})
+			minetest.chat_send_all("Margriet is woedend!")
+		else
+			-- Continue attacking while protected
+			self.object:set_yaw(minetest.dir_to_yaw(dir))
+			self.object:set_velocity(vector.new(dir.x * 1.8, -9.81, dir.z * 1.8))
+			self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+
+			self._attack_cooldown = self._attack_cooldown - dtime
+			if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+				if nearest:is_player() then
+					nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				else
+					nearest:punch(self.object, 1.0,
+						{damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				end
+				self._attack_cooldown = 1.5
+				self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+			end
+		end
+	end
+end
+
+-- ============================================================
 -- Drumstick visual (attached to Bram during rage phase)
 -- ============================================================
 minetest.register_entity("boss:drumstick_visual", {
@@ -991,6 +1120,11 @@ minetest.register_entity("boss:teacher", {
 	_drawing_spawned = false,
 	_weapon_entity   = nil,
 
+	-- Margriet-specific state
+	_margriet_phase      = "normal",
+	_margriet_timer      = 20.0,  -- first summon after 20 s
+	_margriet_summon_ref = nil,
+
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
 		self.object:set_armor_groups({fleshy = 100})
@@ -998,14 +1132,26 @@ minetest.register_entity("boss:teacher", {
 
 	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		if not puncher then return end
-		-- Accept hits from players or stunt double
+		-- Accept hits from players, stunt double, or boomerang
 		local is_stunt = puncher:get_luaentity() and puncher:get_luaentity().name == "trailer:stunt_double"
-		if not puncher:is_player() and not is_stunt then return end
+		local is_boomerang = puncher:get_luaentity() and puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
+		if not puncher:is_player() and not is_stunt and not is_boomerang then return end
 
 		-- Hugo linked phase: invulnerable while Dragon lives
 		if self._level == 2 and self._enemy_boss_dragoncall_phase == "linked" then
-			minetest.chat_send_player(puncher:get_player_name(),
-				"Hugo is beschermd! Versla eerst de Draak!")
+			if puncher:is_player() then
+				minetest.chat_send_player(puncher:get_player_name(),
+					"Hugo is beschermd! Versla eerst de Draak!")
+			end
+			return true
+		end
+
+		-- Margriet linked phase: invulnerable while summoned boss lives
+		if self._level == 7 and self._margriet_phase == "linked" then
+			if puncher:is_player() then
+				minetest.chat_send_player(puncher:get_player_name(),
+					"Margriet is beschermd! Versla eerst haar helper!")
+			end
 			return true
 		end
 
@@ -1129,6 +1275,12 @@ minetest.register_entity("boss:teacher", {
 		-- Rosanne (level 5): drawing ability
 		if self._level == 5 then
 			rosanne_step(self, dtime, pos, nearest, nearest_dist)
+			return
+		end
+
+		-- Margriet (level 7): summon ability
+		if self._level == 7 then
+			margriet_step(self, dtime, pos, nearest, nearest_dist)
 			return
 		end
 
@@ -1798,8 +1950,8 @@ local SPAWN_BY_NAME = {
 }
 
 minetest.register_chatcommand("spawn", {
-	params      = "<boss_name>",
-	description = "Spawn a boss at your position (server only). Names: " ..
+	params      = "<boss_name> [count]",
+	description = "Spawn one or more bosses at your position (server only). Names: " ..
 		table.concat((function()
 			local t = {}
 			for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
@@ -1808,7 +1960,11 @@ minetest.register_chatcommand("spawn", {
 		end)(), ", "),
 	privs = {server = true},
 	func = function(name, param)
-		local pname = param:match("^%s*(.-)%s*$")  -- trim whitespace
+		-- Parse: <boss_name> [count]
+		local pname, count_str = param:match("^%s*(%S+)%s*(%d*)%s*$")
+		if not pname then pname = param:match("^%s*(.-)%s*$") end
+		local count = math.min(math.max(tonumber(count_str) or 1, 1), 5)
+
 		local level = SPAWN_BY_NAME[pname]
 		if not level then
 			return false, "Onbekende baas. Gebruik: " ..
@@ -1824,22 +1980,32 @@ minetest.register_chatcommand("spawn", {
 		if not player then return false, "Speler niet gevonden." end
 
 		local pos = player:get_pos()
-		-- Spawn 3 blocks in front of the player
 		local yaw = player:get_look_horizontal()
-		local spawn_pos = vector.add(pos, vector.new(
-			-math.sin(yaw) * 3,
-			0,
-			 math.cos(yaw) * 3
-		))
 
-		local obj = minetest.add_entity(spawn_pos, "boss:teacher")
-		if not obj then return false, "Kon de baas niet spawnen." end
-
-		boss.set_level(obj, level)
-		enemy.boss_alive = obj
+		-- Spread bosses in a horizontal line in front of the player.
+		-- count=1 → directly 3 blocks ahead; count>1 → evenly spaced 2 blocks apart.
+		local spawned = 0
+		for i = 1, count do
+			local offset_x = (i - (count + 1) / 2) * 2.0
+			local spawn_pos = vector.add(pos, vector.new(
+				-math.sin(yaw) * 3 + math.cos(yaw) * offset_x,
+				0,
+				 math.cos(yaw) * 3 + math.sin(yaw) * offset_x
+			))
+			local obj = minetest.add_entity(spawn_pos, "boss:teacher")
+			if obj then
+				boss.set_level(obj, level)
+				enemy.boss_alive = obj
+				spawned = spawned + 1
+			end
+		end
 
 		local data = BOSSES[level]
-		return true, "Baas gespawnd: " .. data.name .. " (level " .. level .. ")"
+		if spawned == 1 then
+			return true, "Baas gespawnd: " .. data.name .. " (level " .. level .. ")"
+		else
+			return true, spawned .. "× " .. data.name .. " gespawnd (level " .. level .. ")"
+		end
 	end,
 })
 
