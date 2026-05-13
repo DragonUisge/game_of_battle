@@ -2472,3 +2472,54 @@ minetest.register_chatcommand("spawn_victory_dragon", {
 		return true, "De Draak is onderweg..."
 	end,
 })
+
+minetest.register_chatcommand("floor", {
+	privs  = {server = true},
+	params = "[<spelernaam>]",
+	description = "Teleporteer speler 2 blokken omlaag en bouw een stenen kooi. Zonder naam: jijzelf zakt door de vloer.",
+	func = function(caller, param)
+		local target_name = param ~= "" and param or nil
+
+		if not target_name then
+			target_name = caller
+		end
+
+		local target = minetest.get_player_by_name(target_name)
+		if not target then return false, "Speler '" .. target_name .. "' niet gevonden." end
+
+		local pos = target:get_pos()
+		-- Floor position: 2 blocks below player feet
+		local fx = math.floor(pos.x + 0.5)
+		local fy = math.floor(pos.y) - 2
+		local fz = math.floor(pos.z + 0.5)
+
+		-- Place floor block
+		minetest.set_node({x = fx, y = fy,     z = fz}, {name = "default:stone"})
+
+		-- Place walls (3-block-high ring around 3×3 area, leaving only inside open)
+		local stone = {name = "default:stone"}
+		for dx = -1, 1 do
+			for dz = -1, 1 do
+				if dx == -1 or dx == 1 or dz == -1 or dz == 1 then
+					for dy = 1, 3 do
+						minetest.set_node({x = fx + dx, y = fy + dy, z = fz + dz}, stone)
+					end
+				end
+			end
+		end
+
+		-- Roof
+		for dx = -1, 1 do
+			for dz = -1, 1 do
+				minetest.set_node({x = fx + dx, y = fy + 4, z = fz + dz}, stone)
+			end
+		end
+
+		-- Teleport player onto the floor block
+		target:set_pos(vector.new(fx, fy + 1, fz))
+
+		minetest.chat_send_player(target_name,
+			"Je zit gevangen in de vloer!")
+		return true, target_name .. " is opgesloten."
+	end,
+})
