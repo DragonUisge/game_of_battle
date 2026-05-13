@@ -572,7 +572,6 @@ main, .site-footer { position: relative; z-index: 1; }
 .viewer-compact .viewer-canvas {
   border-radius: 18px 18px 0 0;
 }
-}
 
 /* Dragon texture gallery */
 .tex-gallery {

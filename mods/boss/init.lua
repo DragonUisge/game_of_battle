@@ -804,6 +804,12 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 				self._weapon_entity:remove()
 				self._weapon_entity = nil
 			end
+			-- Start drawing sound (looped, stopped when drawing ends)
+			if self._draw_sound then
+				minetest.sound_stop(self._draw_sound)
+			end
+			self._draw_sound = minetest.sound_play("rosanne_draw",
+				{pos = pos, gain = 1.0, max_hear_distance = 20, loop = true})
 			-- Jump/float up
 			self.object:set_velocity(vector.new(0, 5, 0))
 			for _, p in ipairs(minetest.get_connected_players()) do
@@ -847,6 +853,11 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 
 		-- Drawing done — pick weapon and enter armed phase
 		if self._rosanne_timer <= 0 then
+			-- Stop drawing sound
+			if self._draw_sound then
+				minetest.sound_stop(self._draw_sound)
+				self._draw_sound = nil
+			end
 			if self._drawing_entity and self._drawing_entity:get_pos() then
 				self._drawing_entity:remove()
 				self._drawing_entity = nil
@@ -1119,6 +1130,7 @@ minetest.register_entity("boss:teacher", {
 	_drawing_entity  = nil,
 	_drawing_spawned = false,
 	_weapon_entity   = nil,
+	_draw_sound      = nil,
 
 	-- Margriet-specific state
 	_margriet_phase      = "normal",
