@@ -37,7 +37,7 @@ end
 local function build_shop_formspec(npc_name, coins)
 	return
 		"formspec_version[4]" ..
-		"size[13,8]" ..
+		"size[13,10]" ..
 		"label[0.5,0.5;" .. minetest.formspec_escape(npc_name) .. "]" ..
 		"label[0.5,1.0;Je hebt " .. coins .. " munten.]" ..
 
@@ -56,12 +56,17 @@ local function build_shop_formspec(npc_name, coins)
 		"label[5.5,4.0;Bronzen Zwaard]" ..
 		"label[5.5,4.5;25 munten]" ..
 
-		-- Fanta Bazooka (30 coins)
+		-- Fanta Bazooka (10 coins)
 		"image_button[8.0,1.8;2,2;registered_fanta_bazooka.png;buy_fanta_bazooka;]" ..
 		"label[8.0,4.0;Fanta Bazooka]" ..
 		"label[8.0,4.5;10 munten]" ..
 
-		"button_exit[5.0,6.5;3,0.8;close;Sluiten]"
+		-- Appelflap Boomerang (25 coins) — second row
+		"image_button[0.5,5.2;2,2;registered_bread.png^[colorize:#B87333:80;buy_appelflap_boomerang;]" ..
+		"label[0.5,7.4;Appelflap Boomerang]" ..
+		"label[0.5,7.9;25 munten]" ..
+
+		"button_exit[5.0,9.0;3,0.8;close;Sluiten]"
 end
 
 -- Build food shop formspec
@@ -227,10 +232,11 @@ end)
 
 -- Shop formspec handler
 local SHOP_ITEMS = {
-	buy_sword_wood    = {item = "registered:sword_wood",    price = 5,  name = "Houten Zwaard"},
-	buy_sword_steel   = {item = "registered:sword_steel",   price = 15, name = "Stalen Zwaard"},
-	buy_sword_bronze  = {item = "registered:sword_bronze",  price = 25, name = "Bronzen Zwaard"},
-	buy_fanta_bazooka = {item = "registered:fanta_bazooka", price = 10, name = "Fanta Bazooka"},
+	buy_sword_wood          = {item = "registered:sword_wood",          price = 5,  name = "Houten Zwaard"},
+	buy_sword_steel         = {item = "registered:sword_steel",         price = 15, name = "Stalen Zwaard"},
+	buy_sword_bronze        = {item = "registered:sword_bronze",        price = 25, name = "Bronzen Zwaard"},
+	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 10, name = "Fanta Bazooka"},
+	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 25, name = "Appelflap Boomerang"},
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
