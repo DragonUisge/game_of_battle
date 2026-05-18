@@ -56,15 +56,15 @@ local function build_shop_formspec(npc_name, coins)
 		"label[5.5,4.0;Bronzen Zwaard]" ..
 		"label[5.5,4.5;25 munten]" ..
 
-		-- Fanta Bazooka (10 coins)
+		-- Fanta Bazooka (5 munten) — goedkoop, maar je hebt munitie nodig!
 		"image_button[8.0,1.8;2,2;registered_fanta_bazooka.png;buy_fanta_bazooka;]" ..
 		"label[8.0,4.0;Fanta Bazooka]" ..
-		"label[8.0,4.5;10 munten]" ..
+		"label[8.0,4.5;5 munten]" ..
 
-		-- Appelflap Boomerang (25 coins) — second row
-		"image_button[0.5,5.2;2,2;registered_bread.png^[colorize:#B87333:80;buy_appelflap_boomerang;]" ..
+		-- Appelflap Boomerang (10 munten) — tweede rij
+		"image_button[0.5,5.2;2,2;registered_appelflap_boomerang.png;buy_appelflap_boomerang;]" ..
 		"label[0.5,7.4;Appelflap Boomerang]" ..
-		"label[0.5,7.9;25 munten]" ..
+		"label[0.5,7.9;10 munten]" ..
 
 		"button_exit[5.0,9.0;3,0.8;close;Sluiten]"
 end
@@ -73,31 +73,36 @@ end
 local function build_food_formspec(npc_name, coins)
 	return
 		"formspec_version[4]" ..
-		"size[12,8]" ..
+		"size[13,8]" ..
 		"label[0.5,0.5;" .. minetest.formspec_escape(npc_name) .. "]" ..
 		"label[0.5,1.0;Je hebt " .. coins .. " munten.]" ..
 
-		-- Appel (2 coins)
+		-- Appel (2 munten)
 		"image_button[0.5,1.8;2,2;registered_apple.png;buy_apple;]" ..
 		"label[0.5,4.0;Appel]" ..
 		"label[0.5,4.5;2 munten]" ..
 
-		-- Brood (4 coins)
+		-- Brood (4 munten)
 		"image_button[3.0,1.8;2,2;registered_bread.png;buy_bread;]" ..
 		"label[3.0,4.0;Brood]" ..
 		"label[3.0,4.5;4 munten]" ..
 
-		-- Vis (6 coins)
+		-- Vis (6 munten)
 		"image_button[5.5,1.8;2,2;registered_fish.png;buy_fish;]" ..
 		"label[5.5,4.0;Vis]" ..
 		"label[5.5,4.5;6 munten]" ..
 
-		-- Vlees (8 coins)
+		-- Vlees (8 munten)
 		"image_button[8.0,1.8;2,2;registered_meat.png;buy_meat;]" ..
 		"label[8.0,4.0;Vlees]" ..
 		"label[8.0,4.5;8 munten]" ..
 
-		"button_exit[4.5,6.5;3,0.8;close;Sluiten]"
+		-- Fanta 6-Pack (5 munten) — munitie voor de Fanta Bazooka!
+		"image_button[10.5,1.8;2,2;registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
+		"label[10.5,4.0;Fanta 6-Pack]" ..
+		"label[10.5,4.5;5 munten]" ..
+
+		"button_exit[5.0,6.5;3,0.8;close;Sluiten]"
 end
 
 -- NPC entity definition
@@ -235,8 +240,8 @@ local SHOP_ITEMS = {
 	buy_sword_wood          = {item = "registered:sword_wood",          price = 5,  name = "Houten Zwaard"},
 	buy_sword_steel         = {item = "registered:sword_steel",         price = 15, name = "Stalen Zwaard"},
 	buy_sword_bronze        = {item = "registered:sword_bronze",        price = 25, name = "Bronzen Zwaard"},
-	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 10, name = "Fanta Bazooka"},
-	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 25, name = "Appelflap Boomerang"},
+	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 5,  name = "Fanta Bazooka"},
+	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 10, name = "Appelflap Boomerang"},
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -276,6 +281,8 @@ local FOOD_ITEMS = {
 	buy_bread = {item = "registered:bread",  price = 4, name = "Brood"},
 	buy_fish  = {item = "registered:fish",   price = 6, name = "Vis"},
 	buy_meat  = {item = "registered:meat",   price = 8, name = "Vlees"},
+	-- Fanta 6-Pack: geeft 6x fanta_ammo (munitie voor de Fanta Bazooka)
+	buy_fanta_sixpack = {item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6},
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -289,8 +296,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields[field] then
 			if coins >= info.price then
 				local inv = player:get_inventory()
-				if inv:room_for_item("main", info.item) then
-					inv:add_item("main", info.item)
+				-- Fanta 6-pack geeft meerdere items (6 blikjes)
+				local buy_item = info.item .. " " .. (info.amount or 1)
+				if inv:room_for_item("main", buy_item) then
+					inv:add_item("main", buy_item)
 					coins = coins - info.price
 					meta:set_int("coins", coins)
 					minetest.chat_send_player(pname,
