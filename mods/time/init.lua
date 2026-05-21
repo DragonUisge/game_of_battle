@@ -122,3 +122,31 @@ minetest.after(0, function()
 	minetest.settings:set("time_speed", 0)
 	sync_engine_time()
 end)
+
+-- /timestamp <HH:MM>  — set game clock and engine time-of-day
+minetest.register_chatcommand("timestamp", {
+	params      = "<HH:MM>",
+	description = "Set the game clock (e.g. /timestamp 14:30)",
+	privs       = {server = true},
+	func = function(name, param)
+		local h, m = param:match("^(%d+):(%d+)$")
+		if not h then
+			-- accept bare hour ("9" → 09:00)
+			h = param:match("^(%d+)$")
+			m = "0"
+		end
+		if not h then
+			return false, "Usage: /timestamp <HH:MM>"
+		end
+		h = tonumber(h)
+		m = tonumber(m)
+		if h > 23 or m > 59 then
+			return false, "Invalid time. Hours 0-23, minutes 0-59."
+		end
+		game_hour   = h
+		game_minute = m
+		sync_engine_time()
+		update_all_huds()
+		return true, "Time set to " .. format_time()
+	end,
+})

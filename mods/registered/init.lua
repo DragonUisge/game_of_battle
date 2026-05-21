@@ -452,6 +452,7 @@ minetest.register_entity("registered:freeze_ent", {
 	_target   = nil,
 	_timer    = 0,
 	_duration = 3.5,
+	_y_off    = 0.7,   -- vertical center offset (set by registered_apply_freeze)
 
 	on_activate = function(self)
 		self.object:set_armor_groups({immortal = 1})
@@ -463,9 +464,9 @@ minetest.register_entity("registered:freeze_ent", {
 			self.object:remove()
 			return
 		end
-		-- Track target position
+		-- Track target position (offset Y so cube is centered on the entity body)
 		local tpos = self._target:get_pos()
-		self.object:set_pos(tpos)
+		self.object:set_pos(vector.new(tpos.x, tpos.y + self._y_off, tpos.z))
 		-- Override velocity to zero every frame
 		self._target:set_velocity(vector.new(0, 0, 0))
 		-- Ice sparkles
@@ -501,12 +502,24 @@ function registered_apply_freeze(target_obj)
 	local tpos = target_obj:get_pos()
 	if not tpos then return end
 	local props = target_obj:get_properties()
-	local vs    = (props and props.visual_size) or {x = 1.2, y = 1.2}
+	-- Use collisionbox for accurate physical size (visual_size is a mesh scale multiplier)
+	local cb    = props and props.collisionbox
+	local sx, sy, y_off
+	if cb and #cb >= 6 then
+		sx    = (cb[4] - cb[1]) + 0.2   -- X width + padding
+		sy    = (cb[5] - cb[2]) + 0.2   -- Y height + padding
+		y_off = cb[2] + (cb[5] - cb[2]) / 2  -- center of box in Y
+	else
+		sx, sy, y_off = 1.2, 1.4, 0.7
+	end
 	local fent  = minetest.add_entity(tpos, "registered:freeze_ent")
 	if fent then
-		fent:set_properties({visual_size = {x = vs.x, y = vs.y, z = vs.x}})
+		fent:set_properties({visual_size = {x = sx, y = sy, z = sx}})
 		local fe = fent:get_luaentity()
-		if fe then fe._target = target_obj end
+		if fe then
+			fe._target = target_obj
+			fe._y_off  = y_off
+		end
 	end
 end
 
