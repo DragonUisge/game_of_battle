@@ -1782,7 +1782,7 @@ minetest.register_entity("boss:gladiator", {
 
 	-- Nominativus jump
 	_jump_timer        = 0,
-	_on_ground         = true,
+	_air_time          = 100.0, -- large = on ground (y_vel clamped to -9.81)
 
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
@@ -1891,10 +1891,7 @@ minetest.register_entity("boss:gladiator", {
 			self._jump_timer = self._jump_timer - dtime
 			if self._jump_timer <= 0 then
 				self._jump_timer = 3.0 + math.random() * 2.0
-				-- Give an upward impulse equivalent to ~2-block jump
-				-- v² = 2gh → v = sqrt(2 * 9.81 * 2) ≈ 6.26
-				local vel = self.object:get_velocity()
-				self.object:set_velocity(vector.new(vel.x, 6.3, vel.z))
+				self._air_time = 0  -- begin jump arc
 				minetest.add_particlespawner({
 					amount = 10, time = 0.3,
 					minpos = vector.add(pos, vector.new(-0.3, 0, -0.3)),
@@ -1907,10 +1904,11 @@ minetest.register_entity("boss:gladiator", {
 					glow = 8,
 				})
 			end
-			self.object:set_velocity(vector.new(
-				dir.x * spd,
-				self.object:get_velocity().y,
-				dir.z * spd))
+			-- Manual gravity arc: y = v0 - g*t (v0=6.3, g=9.81)
+			-- Matches every other boss which also sets Y manually each frame.
+			self._air_time = self._air_time + dtime
+			local y_vel = math.max(6.3 - 9.81 * self._air_time, -9.81)
+			self.object:set_velocity(vector.new(dir.x * spd, y_vel, dir.z * spd))
 		else
 			-- Standard horizontal movement with gravity
 			self.object:set_velocity(vector.new(dir.x * spd, -9.81, dir.z * spd))
