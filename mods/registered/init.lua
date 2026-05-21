@@ -261,6 +261,34 @@ minetest.register_alias("default:meselamp",    "registered:meselamp")
 minetest.register_alias("default:wood",        "registered:wood")
 minetest.register_alias("default:cobble",      "registered:cobble")
 
+-- Mapgen aliases (suppress Luanti mapgen warnings)
+minetest.register_alias("mapgen_stone", "registered:stone")
+minetest.register_node("registered:water_source", {
+	description = "Water",
+	drawtype = "liquid",
+	tiles = {"default_water.png"},
+	special_tiles = {"default_water.png"},
+	use_texture_alpha = "blend",
+	paramtype = "light",
+	walkable = false,
+	pointable = false,
+	diggable = false,
+	buildable_to = true,
+	is_ground_content = false,
+	liquidtype = "source",
+	liquid_alternative_flowing = "registered:water_source",
+	liquid_alternative_source = "registered:water_source",
+	liquid_viscosity = 1,
+	post_effect_color = {a = 103, r = 30, g = 60, b = 90},
+	groups = {water = 3, liquid = 3},
+})
+minetest.register_alias("mapgen_water_source", "registered:water_source")
+
+-- Dry grass aliases (suppress NodeResolver warnings)
+for i = 1, 5 do
+	minetest.register_alias("default:dry_grass_" .. i, "air")
+end
+
 -- Swords
 
 minetest.register_tool("registered:sword_wood", {
@@ -551,8 +579,9 @@ local function fanta_explode(pos, owner)
 		else
 			local ent = obj:get_luaentity()
 			-- Schade aan vijanden (studenten en bosses)
+			-- 50 schade per Fanta: een boss (100 HP) gaat in 2 schoten neer!
 			if ent and ent._hp then
-				ent._hp = ent._hp - 12
+				ent._hp = ent._hp - 50
 				if ent._hp <= 0 then
 					-- Student verslagen
 					if ent.name == "enemy:student" then
@@ -632,12 +661,12 @@ local function fanta_explode(pos, owner)
 end
 
 -- Fanta-blik projectiel entity
+-- Draait in de lucht, explodeert DIRECT bij botsing met muur of vijand
 minetest.register_entity("registered:fanta_can", {
 	initial_properties = {
 		visual = "cube",
 		visual_size = {x = 0.3, y = 0.4, z = 0.3},
 		textures = {
-			-- alle 6 zijden van de kubus (boven, onder, rechts, links, voor, achter)
 			"registered_fanta_can.png",
 			"registered_fanta_can.png",
 			"registered_fanta_can.png",
@@ -654,12 +683,13 @@ minetest.register_entity("registered:fanta_can", {
 	_owner = nil,
 	_lifetime = 0,
 	_exploded = false,
+	_last_pos = nil,  -- vorige positie voor muur-detectie
 
 	on_activate = function(self)
 		self.object:set_armor_groups({immortal = 1})
 	end,
 
-	on_step = function(self, dtime)
+	on_step = function(self, dtime, moveresult)
 		if self._exploded then return end
 		local pos = self.object:get_pos()
 		if not pos then return end
@@ -673,15 +703,31 @@ minetest.register_entity("registered:fanta_can", {
 		end
 
 		-- Draai het blikje terwijl het vliegt (cool effect)
-		local vel = self.object:get_velocity()
 		local yaw = self.object:get_yaw() or 0
 		self.object:set_yaw(yaw + dtime * 8)
 
-		-- Check of we iets raken (vijanden)
-		if self._lifetime > 0.15 then
-			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 0.6)) do
+		-- MUUR-BOTSING: moveresult bevat info over botsingen met nodes
+		-- Dit detecteert meteen wanneer het blikje een muur/vloer/plafond raakt
+		if moveresult and moveresult.collisions and #moveresult.collisions > 0 then
+			for _, collision in ipairs(moveresult.collisions) do
+				if collision.type == "node" then
+					fanta_explode(pos, self._owner)
+					self._exploded = true
+					self.object:remove()
+					return
+				end
+			end
+		end
+
+		-- VIJAND-BOTSING: check objecten in de buurt
+		-- Grotere straal (1.5) omdat het blikje snel vliegt en anders
+		-- door vijanden heen kan schieten tussen twee frames
+		-- Kleine vertraging (0.1s) zodat het blikje niet meteen de schutter raakt
+		if self._lifetime > 0.1 then
+			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.5)) do
 				if obj ~= self.object then
 					if obj:is_player() then
+						-- Geen schade aan de schutter zelf
 						if not self._owner or obj:get_player_name() ~= self._owner then
 							fanta_explode(pos, self._owner)
 							self._exploded = true
@@ -690,7 +736,10 @@ minetest.register_entity("registered:fanta_can", {
 						end
 					else
 						local ent = obj:get_luaentity()
-						if ent and ent._hp then
+						-- Raak alles behalve andere Fanta-blikjes en boomerangs
+						if ent and ent.name ~= "registered:fanta_can"
+						       and ent.name ~= "registered:appelflap_boomerang_ent"
+						       and ent.name ~= "boss:drumstick_visual" then
 							fanta_explode(pos, self._owner)
 							self._exploded = true
 							self.object:remove()
@@ -700,63 +749,91 @@ minetest.register_entity("registered:fanta_can", {
 				end
 			end
 		end
-
-		-- Check of we een muur raken (snelheid stopt plotseling)
-		if self._lifetime > 0.2 then
-			if math.abs(vel.x) < 0.5 and math.abs(vel.z) < 0.5 and self._lifetime > 0.3 then
-				fanta_explode(pos, self._owner)
-				self._exploded = true
-				self.object:remove()
-				return
-			end
-		end
 	end,
 })
 
--- Het wapen zelf: de Fanta Bazooka
+-- ══════════════════════════════════════════════════════════════
+-- Fanta Bazooka wapen — door Ege
+-- Schiet Fanta-blikjes met rechtermuisklik.
+-- Heeft munitie nodig: koop een Fanta 6-pack bij de Eetverkoper!
+-- Elk 6-pack geeft 6 schoten. Zonder munitie kun je niet schieten.
+-- Cooldown van 1.5 seconden zodat je niet kan spammen.
+-- on_place + on_secondary_use: werkt zowel als je op een blok
+-- richt als in de lucht (anders schiet hij altijd dezelfde kant op).
+-- ══════════════════════════════════════════════════════════════
+
+-- Fanta munitie: koop bij de Eetverkoper als 6-pack
+minetest.register_craftitem("registered:fanta_ammo", {
+	description = "Fanta Blikje (munitie)",
+	inventory_image = "registered_fanta_can.png",
+	stack_max = 99,
+})
+
+-- Cooldown per speler bijhouden (voorkomt machinegeweer-spam)
+local fanta_cooldown = {}
+
+-- Schietfunctie: wordt aangeroepen bij rechtermuisklik
+-- Checkt of de speler munitie heeft, en verbruikt 1 Fanta per schot
+local function fanta_shoot(itemstack, user, pointed_thing)
+	if not user:is_player() then return end
+	local pname = user:get_player_name()
+
+	-- Cooldown: minimaal 1.5 seconden tussen elk schot
+	local now = minetest.get_us_time() / 1000000
+	if fanta_cooldown[pname] and now - fanta_cooldown[pname] < 1.5 then
+		return itemstack  -- te snel, nog even wachten!
+	end
+
+	-- Munitie check: heb je Fanta blikjes in je inventaris?
+	local inv = user:get_inventory()
+	if not inv:contains_item("main", "registered:fanta_ammo") then
+		minetest.chat_send_player(pname,
+			"Geen Fanta munitie! Koop een 6-pack bij de Eetverkoper.")
+		return itemstack
+	end
+
+	-- Verbruik 1 Fanta blikje als munitie
+	inv:remove_item("main", "registered:fanta_ammo 1")
+	fanta_cooldown[pname] = now
+
+	-- Startpositie: ooghoogte van de speler
+	local pos = user:get_pos()
+	pos.y = pos.y + 1.4
+
+	-- Kijkrichting: schiet precies waar het kruisje (+) op het scherm is
+	local dir = user:get_look_dir()
+
+	-- Fanta-blik aanmaken en wegschieten met snelheid 25
+	local speed = 25
+	local can = minetest.add_entity(pos, "registered:fanta_can")
+	if can then
+		can:set_velocity(vector.multiply(dir, speed))
+		local ent = can:get_luaentity()
+		if ent then
+			ent._owner = pname
+		end
+	end
+
+	-- Schietgeluid afspelen
+	minetest.sound_play("default_place_node_hard",
+		{pos = pos, gain = 0.6, max_hear_distance = 15})
+
+	return itemstack
+end
+
 minetest.register_tool("registered:fanta_bazooka", {
 	description = "Fanta Bazooka",
 	inventory_image = "registered_fanta_bazooka.png",
-	-- Grotere weergave als je het vasthoudt
-	wield_scale = {x = 2.0, y = 2.0, z = 2.0},
+	wield_scale = {x = 2.0, y = 2.0, z = 2.0},  -- groter in je hand
 	tool_capabilities = {
 		full_punch_interval = 1.5,
 		max_drop_level = 2,
-		-- Directe klap doet weinig schade (het gaat om de Fanta!)
-		damage_groups = {fleshy = 3},
+		damage_groups = {fleshy = 3},  -- klap doet weinig, het gaat om de Fanta!
 	},
-	-- Rechter-muisknop = schiet een Fanta-blik
-	on_secondary_use = function(itemstack, user, pointed_thing)
-		if not user:is_player() then return end
-		local pos = user:get_pos()
-		pos.y = pos.y + 1.4  -- ooghoogte
-
-		-- Richting waar de speler kijkt
-		local yaw = user:get_look_horizontal()
-		local pitch = user:get_look_vertical()
-		local dir = vector.new(
-			-math.sin(yaw) * math.cos(pitch),
-			-math.sin(pitch),
-			-math.cos(yaw) * math.cos(pitch)
-		)
-
-		-- Maak het Fanta-blik aan en schiet het weg
-		local speed = 25
-		local can = minetest.add_entity(pos, "registered:fanta_can")
-		if can then
-			can:set_velocity(vector.multiply(dir, speed))
-			local ent = can:get_luaentity()
-			if ent then
-				ent._owner = user:get_player_name()
-			end
-		end
-
-		-- Schiet-geluid
-		minetest.sound_play("default_place_node_hard",
-			{pos = pos, gain = 0.6, max_hear_distance = 15})
-
-		return itemstack
-	end,
+	-- Beide callbacks nodig: on_place voor als je op een blok richt,
+	-- on_secondary_use voor als je in de lucht richt
+	on_secondary_use = fanta_shoot,
+	on_place = fanta_shoot,
 })
 
 -- Food items

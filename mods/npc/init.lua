@@ -56,42 +56,41 @@ local function build_shop_formspec(npc_name, coins)
 		"label[5.5,4.0;Bronzen Zwaard]" ..
 		"label[5.5,4.5;25 munten]" ..
 
-		-- Fanta Bazooka (10 coins)
+		-- Fanta Bazooka (5 munten) — goedkoop, maar je hebt munitie nodig!
 		"image_button[8.0,1.8;2,2;registered_fanta_bazooka.png;buy_fanta_bazooka;]" ..
 		"label[8.0,4.0;Fanta Bazooka]" ..
-		"label[8.0,4.5;10 munten]" ..
+		"label[8.0,4.5;5 munten]" ..
 
-		-- Appelflap Boomerang (25 coins) — second row
-		"image_button[0.5,5.2;2,2;registered_bread.png^[colorize:#B87333:80;buy_appelflap_boomerang;]" ..
+		-- Appelflap Boomerang (10 munten) — tweede rij
+		"image_button[0.5,5.2;2,2;registered_appelflap_boomerang.png;buy_appelflap_boomerang;]" ..
 		"label[0.5,7.4;Appelflap Boomerang]" ..
-		"label[0.5,7.9;25 munten]" ..
+		"label[0.5,7.9;10 munten]" ..
 
 		"button_exit[5.0,9.0;3,0.8;close;Sluiten]"
 end
 
 -- Build food shop formspec
 local function build_food_formspec(npc_name, coins)
-	-- Row layout: 4 items, each 2.3 wide, starting at x=0.4 with 0.35 gap
-	-- Item x-positions: 0.4, 3.05, 5.7, 8.35
-	local ix = {0.4, 3.05, 5.7, 8.35}
+	-- Row layout: 5 items, each 2.3 wide, starting at x=0.4 with 0.3 gap
+	local ix = {0.4, 2.9, 5.4, 7.9, 10.4}
 	local iw, ih = 2.3, 2.3
 	local btn_y   = 1.65      -- top of item buttons
 	local name_y  = btn_y + ih + 0.25   -- label: item name
 	local price_y = name_y + 0.45       -- label: price
 	local close_y = price_y + 0.65      -- close button y
 
-	local heal = {"+3 HP", "+5 HP", "+7 HP", "+10 HP"}  -- tooltips
+	local heal = {"+3 HP", "+5 HP", "+7 HP", "+10 HP", "6x munitie"}  -- tooltips
 
 	return
 		"formspec_version[4]" ..
-		"size[12,"..(close_y + 0.9).."]" ..
+		"size[13.1,"..(close_y + 0.9).."]" ..
 		"no_prepend[]" ..
 		"bgcolor[#111122;true;#0d0d1f]" ..
 		-- Header bar
-		"box[0.2,0.2;11.6,0.55;#1a2a5a]" ..
+		"box[0.2,0.2;12.7,0.55;#1a2a5a]" ..
 		"label[0.4,0.38;🍴 " .. minetest.formspec_escape(npc_name) .. " — Kantine]" ..
 		-- Coin balance
-		"box[0.2,0.9;11.6,0.45;#0d1a3a]" ..
+		"box[0.2,0.9;12.7,0.45;#0d1a3a]" ..
 		"label[0.4,1.06;💰 Saldo: " .. coins .. " munten]" ..
 		-- Items
 		"image_button["..ix[1]..","..btn_y..";"..iw..","..ih..";registered_apple.png;buy_apple;]" ..
@@ -114,7 +113,13 @@ local function build_food_formspec(npc_name, coins)
 		"label["..ix[4]..","..name_y..";Vlees]" ..
 		"label["..ix[4]..","..price_y..";8 munten]" ..
 
-		"button_exit[4.25,"..close_y..";3.5,0.7;close;✖ Sluiten]"
+		-- Fanta 6-Pack (munitie voor de Fanta Bazooka)
+		"image_button["..ix[5]..","..btn_y..";"..iw..","..ih..";registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
+		"tooltip[buy_fanta_sixpack;Fanta 6-Pack — "..heal[5].."]" ..
+		"label["..ix[5]..","..name_y..";Fanta 6-Pack]" ..
+		"label["..ix[5]..","..price_y..";5 munten]" ..
+
+		"button_exit[4.8,"..close_y..";3.5,0.7;close;✖ Sluiten]"
 end
 
 -- NPC entity definition
@@ -252,8 +257,8 @@ local SHOP_ITEMS = {
 	buy_sword_wood          = {item = "registered:sword_wood",          price = 5,  name = "Houten Zwaard"},
 	buy_sword_steel         = {item = "registered:sword_steel",         price = 15, name = "Stalen Zwaard"},
 	buy_sword_bronze        = {item = "registered:sword_bronze",        price = 25, name = "Bronzen Zwaard"},
-	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 10, name = "Fanta Bazooka"},
-	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 25, name = "Appelflap Boomerang"},
+	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 5,  name = "Fanta Bazooka"},
+	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 10, name = "Appelflap Boomerang"},
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -293,6 +298,8 @@ local FOOD_ITEMS = {
 	buy_bread = {item = "registered:bread",  price = 4, name = "Brood"},
 	buy_fish  = {item = "registered:fish",   price = 6, name = "Vis"},
 	buy_meat  = {item = "registered:meat",   price = 8, name = "Vlees"},
+	-- Fanta 6-Pack: geeft 6x fanta_ammo (munitie voor de Fanta Bazooka)
+	buy_fanta_sixpack = {item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6},
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -306,8 +313,10 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 		if fields[field] then
 			if coins >= info.price then
 				local inv = player:get_inventory()
-				if inv:room_for_item("main", info.item) then
-					inv:add_item("main", info.item)
+				-- Fanta 6-pack geeft meerdere items (6 blikjes)
+				local buy_item = info.item .. " " .. (info.amount or 1)
+				if inv:room_for_item("main", buy_item) then
+					inv:add_item("main", buy_item)
 					coins = coins - info.price
 					meta:set_int("coins", coins)
 					minetest.chat_send_player(pname,
