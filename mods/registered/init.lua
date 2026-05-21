@@ -396,6 +396,43 @@ minetest.register_tool("registered:sword_elements", {
 	},
 })
 
+minetest.register_tool("registered:pick", {
+	description = "Houweel",
+	inventory_image = "registered_pick.png",
+	tool_capabilities = {
+		full_punch_interval = 0.01,
+		max_drop_level = 3,
+		damage_groups = {fleshy = 20},
+		groupcaps = {
+			cracky              = {times = {[1]=2.0,[2]=1.0,[3]=0.5}, uses = 0, maxlevel = 3},
+			choppy              = {times = {[1]=2.0,[2]=1.0,[3]=0.5}, uses = 0, maxlevel = 3},
+			crumbly             = {times = {[1]=2.0,[2]=1.0,[3]=0.5}, uses = 0, maxlevel = 3},
+			oddly_breakable_by_hand = {times = {[1]=1.0,[2]=0.5,[3]=0.3}, uses = 0, maxlevel = 3},
+		},
+	},
+})
+
+-- Admin-only: non-server-priv players cannot dig with the pick.
+-- register_on_dignode fires after the node is removed, so we re-place it
+-- and clean up any accidentally spawned item drops.
+minetest.register_on_dignode(function(pos, oldnode, digger)
+	if not digger or not digger:is_player() then return end
+	if digger:get_wielded_item():get_name() ~= "registered:pick" then return end
+	if minetest.check_player_privs(digger, {server = true}) then return end
+
+	-- Undo: restore the node
+	minetest.set_node(pos, oldnode)
+	-- Remove any item entities that were spawned by the (unwanted) dig
+	for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.5)) do
+		local ent = obj:get_luaentity()
+		if ent and ent.name == "__builtin:item" then
+			obj:remove()
+		end
+	end
+	minetest.chat_send_player(digger:get_player_name(),
+		"Alleen Scottii mag dit gebruiken! Je actie is ongedaan gemaakt.")
+end)
+
 minetest.register_craftitem("registered:drumstick", {
 	description = "Drumstok",
 	inventory_image = "registered_drumstick.png",
