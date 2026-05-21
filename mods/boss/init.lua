@@ -1649,6 +1649,297 @@ function boss.set_level(obj, level)
 end
 
 -- ============================================================
+-- Gladiator boss (boss:gladiator)
+-- Naamgevallen state machine — 5 Latijnse naamvallen (zonder vocatief).
+-- Elke ~12 seconden een overgang; bij elke overgang klinkt een audioclip
+-- en activeer een passende buff.
+--
+--   nominativus  → springkracht: kan willekeurig 2 blokken hoog springen
+--   accusativus  → +25 % snelheid
+--   dativus      → geneest 5 % van max HP bij overgang
+--   genitivus    → +5 platte schade bovenop basis
+--   ablativus    → 10 % schadevermindering (neemt 10 % minder schade)
+-- ============================================================
+
+local GLAD_STATES   = {"nominativus", "accusativus", "dativus", "genitivus", "ablativus"}
+local GLAD_COLORS   = {
+	nominativus = "#FFD700",
+	accusativus = "#FF8800",
+	dativus     = "#44FF88",
+	genitivus   = "#FF4455",
+	ablativus   = "#5599FF",
+}
+local GLAD_LABELS   = {
+	nominativus = "NOMINATIVUS [springkracht]",
+	accusativus = "ACCUSATIVUS [snelheid +25%]",
+	dativus     = "DATIVUS [genezing +5%]",
+	genitivus   = "GENITIVUS [schade +5]",
+	ablativus   = "ABLATIVUS [weerstand +10%]",
+}
+-- Base stats
+local GLAD_BASE_HP  = 280
+local GLAD_BASE_DMG = 7
+local GLAD_BASE_SPD = 2.5
+
+-- Index helper: find state index in GLAD_STATES
+local function glad_state_index(s)
+	for i, v in ipairs(GLAD_STATES) do if v == s then return i end end
+	return 1
+end
+
+-- Apply immediate buff for the new state on entry
+local function glad_apply_state(self, state)
+	-- Reset modifiers to base first
+	self._damage       = GLAD_BASE_DMG
+	self._speed        = GLAD_BASE_SPD
+	self._dmg_resist   = 0.0
+
+	if state == "nominativus" then
+		-- Jump buff handled in on_step; nothing to apply here
+	elseif state == "accusativus" then
+		self._speed = GLAD_BASE_SPD * 1.25
+	elseif state == "dativus" then
+		local heal = math.floor(self._max_hp * 0.05)
+		self._hp   = math.min(self._hp + heal, self._max_hp)
+	elseif state == "genitivus" then
+		self._damage = GLAD_BASE_DMG + 5
+	elseif state == "ablativus" then
+		self._dmg_resist = 0.10
+	end
+end
+
+-- Transition to the next state in the cycle
+local function glad_next_state(self)
+	local idx    = glad_state_index(self._glad_state)
+	local nidx   = (idx % #GLAD_STATES) + 1
+	local new    = GLAD_STATES[nidx]
+	self._glad_state       = new
+	self._glad_state_timer = 10.0 + math.random() * 4.0
+	glad_apply_state(self, new)
+
+	-- Play transition sound
+	local snd = "gladiator_" .. new
+	local pos  = self.object:get_pos()
+	if pos then
+		minetest.sound_play(snd, {pos = pos, gain = 1.0, max_hear_distance = 30})
+	end
+
+	-- Update nametag
+	self.object:set_properties({
+		nametag       = "Joachim [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] " ..
+		                GLAD_LABELS[new],
+		nametag_color = GLAD_COLORS[new],
+	})
+
+	-- Visual flash to signal state change
+	if pos then
+		minetest.add_particlespawner({
+			amount     = 20,
+			time       = 0.4,
+			minpos     = vector.add(pos, vector.new(-0.6, 0.3, -0.6)),
+			maxpos     = vector.add(pos, vector.new( 0.6, 2.0,  0.6)),
+			minvel     = vector.new(-3, 1, -3),
+			maxvel     = vector.new( 3, 4,  3),
+			minacc     = vector.new(0, -2, 0),
+			maxacc     = vector.new(0, -1, 0),
+			minexptime = 0.2,
+			maxexptime = 0.6,
+			minsize    = 2,
+			maxsize    = 5,
+			texture    = "aura_particle.png^[colorize:" .. GLAD_COLORS[new] .. ":210",
+			glow       = 12,
+		})
+	end
+end
+
+minetest.register_entity("boss:gladiator", {
+	initial_properties = {
+		visual               = "mesh",
+		mesh                 = "character.b3d",
+		-- NOTE: replace with a dedicated gladiator texture when available
+		textures             = {"boss_joachim.png"},
+		physical             = true,
+		collide_with_objects = true,
+		collisionbox         = {-0.4, 0.0, -0.4, 0.4, 2.0, 0.4},
+		visual_size          = {x = 1.3, y = 1.3, z = 1.3},
+		makes_footstep_sound = true,
+		static_save          = false,
+		nametag              = "Joachim",
+		nametag_color        = GLAD_COLORS["nominativus"],
+	},
+
+	_hp                = GLAD_BASE_HP,
+	_max_hp            = GLAD_BASE_HP,
+	_damage            = GLAD_BASE_DMG,
+	_speed             = GLAD_BASE_SPD,
+	_dmg_resist        = 0.0,
+	_attack_cooldown   = 0,
+	_level             = 3,         -- used by drop / wave-clear logic
+
+	-- State machine
+	_glad_state        = "nominativus",
+	_glad_state_timer  = 12.0,
+
+	-- Nominativus jump
+	_jump_timer        = 0,
+	_on_ground         = true,
+
+	on_activate = function(self, staticdata)
+		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+		self.object:set_armor_groups({fleshy = 100})
+
+		-- Set initial state
+		glad_apply_state(self, self._glad_state)
+		self.object:set_properties({
+			nametag       = "Joachim [" .. self._hp .. "/" .. self._max_hp .. "] " ..
+			                GLAD_LABELS[self._glad_state],
+			nametag_color = GLAD_COLORS[self._glad_state],
+		})
+
+		-- Play spawn sound for the initial state (same logic as glad_next_state)
+		local pos = self.object:get_pos()
+		if pos then
+			minetest.sound_play("gladiator_" .. self._glad_state,
+				{pos = pos, gain = 1.0, max_hear_distance = 30})
+		end
+	end,
+
+	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+		if not puncher then return end
+		local is_stunt     = puncher:get_luaentity() and
+		                     puncher:get_luaentity().name == "trailer:stunt_double"
+		local is_boomerang = puncher:get_luaentity() and
+		                     puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
+		if not puncher:is_player() and not is_stunt and not is_boomerang then return end
+
+		local dmg = 1
+		if tool_capabilities and tool_capabilities.damage_groups
+		   and tool_capabilities.damage_groups.fleshy then
+			dmg = tool_capabilities.damage_groups.fleshy
+		end
+
+		-- Fire sword: particles
+		if puncher:is_player() then
+			local wielded = puncher:get_wielded_item()
+			local itemdef = minetest.registered_items[wielded:get_name()]
+			if itemdef and itemdef._fire_sword then
+				local fpos = self.object:get_pos()
+				if fpos then
+					minetest.add_particlespawner({
+						amount = 25, time = 0.6,
+						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
+						maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
+						minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3, maxexptime = 0.8,
+						minsize = 3, maxsize = 5,
+						texture = "draconis_fire_particle.png",
+						glow = 14,
+					})
+				end
+			end
+		end
+
+		-- Ablativus: 10 % damage reduction
+		if self._dmg_resist > 0 then
+			dmg = math.max(1, math.floor(dmg * (1.0 - self._dmg_resist)))
+		end
+
+		self._hp = self._hp - dmg
+
+		-- Update nametag
+		self.object:set_properties({
+			nametag = "Joachim [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] " ..
+			          GLAD_LABELS[self._glad_state],
+		})
+
+		if self._hp <= 0 then
+			local pos = self.object:get_pos()
+			-- Drop: use Joachim's drop (sword_diamond) for level 3
+			if pos then
+				minetest.add_item(pos, "registered:sword_diamond")
+			end
+			enemy.boss_alive = nil
+			self.object:remove()
+			enemy.check_wave_clear()
+		end
+		return true
+	end,
+
+	on_step = function(self, dtime)
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		local nearest, nearest_dist = find_nearest_player(pos)
+		if not nearest then return end
+
+		local ppos = nearest:get_pos()
+		local dir  = vector.direction(pos, ppos)
+		self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+		-- ── State machine timer ──────────────────────────────────────
+		self._glad_state_timer = self._glad_state_timer - dtime
+		if self._glad_state_timer <= 0 then
+			glad_next_state(self)
+		end
+
+		-- ── State-specific movement / buff logic ─────────────────────
+		local spd = self._speed
+
+		if self._glad_state == "nominativus" then
+			-- Random jump: every 3-5 seconds, leap 2 blocks high
+			self._jump_timer = self._jump_timer - dtime
+			if self._jump_timer <= 0 then
+				self._jump_timer = 3.0 + math.random() * 2.0
+				-- Give an upward impulse equivalent to ~2-block jump
+				-- v² = 2gh → v = sqrt(2 * 9.81 * 2) ≈ 6.26
+				local vel = self.object:get_velocity()
+				self.object:set_velocity(vector.new(vel.x, 6.3, vel.z))
+				minetest.add_particlespawner({
+					amount = 10, time = 0.3,
+					minpos = vector.add(pos, vector.new(-0.3, 0, -0.3)),
+					maxpos = vector.add(pos, vector.new( 0.3, 0.2,  0.3)),
+					minvel = vector.new(-2, 0, -2), maxvel = vector.new(2, 1, 2),
+					minacc = vector.new(0, -8, 0),  maxacc = vector.new(0, -8, 0),
+					minexptime = 0.2, maxexptime = 0.5,
+					minsize = 1, maxsize = 3,
+					texture = "aura_particle.png^[colorize:#FFD700:200",
+					glow = 8,
+				})
+			end
+			self.object:set_velocity(vector.new(
+				dir.x * spd,
+				self.object:get_velocity().y,
+				dir.z * spd))
+		else
+			-- Standard horizontal movement with gravity
+			self.object:set_velocity(vector.new(dir.x * spd, -9.81, dir.z * spd))
+		end
+
+		self.object:set_animation({x = 168, y = 187}, 30 + spd * 6, 0, true)
+
+		-- ── Melee attack ─────────────────────────────────────────────
+		self._attack_cooldown = self._attack_cooldown - dtime
+		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+			local dmg = self._damage
+			if nearest:is_player() then
+				nearest:set_hp(math.max(0, nearest:get_hp() - dmg), {type = "punch"})
+			else
+				nearest:punch(self.object, 1.0,
+					{damage_groups = {fleshy = dmg}}, vector.new(0, 0, 0))
+			end
+			self._attack_cooldown = 1.2
+			self.object:set_animation({x = 189, y = 198}, 35, 0, false)
+			minetest.after(0.5, function()
+				if self.object and self.object:get_pos() then
+					self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+				end
+			end)
+		end
+	end,
+})
+
+-- ============================================================
 -- Companion Dragon (Zwaard van Drakenkracht)
 -- Spawns when a player wields sword_dragonpower.
 -- Follows the owner and attacks nearby enemies.
@@ -1953,7 +2244,6 @@ end)
 -- ============================================================
 local SPAWN_BY_NAME = {
 	enemy_boss_dragoncall = 2,
-	enemy_boss_gladiator  = 3,
 	bram                  = 1,
 	julian                = 4,
 	rosanne               = 5,
@@ -1961,12 +2251,18 @@ local SPAWN_BY_NAME = {
 	margriet              = 7,
 }
 
+-- Names that spawn a dedicated entity rather than boss:teacher
+local SPAWN_CUSTOM = {
+	enemy_boss_gladiator = "boss:gladiator",
+}
+
 minetest.register_chatcommand("spawn", {
 	params      = "<boss_name> [count]",
 	description = "Spawn one or more bosses at your position (server only). Names: " ..
 		table.concat((function()
 			local t = {}
-			for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
+			for k in pairs(SPAWN_BY_NAME)  do t[#t+1] = k end
+			for k in pairs(SPAWN_CUSTOM)   do t[#t+1] = k end
 			table.sort(t)
 			return t
 		end)(), ", "),
@@ -1977,22 +2273,49 @@ minetest.register_chatcommand("spawn", {
 		if not pname then pname = param:match("^%s*(.-)%s*$") end
 		local count = math.min(math.max(tonumber(count_str) or 1, 1), 5)
 
+		local player = minetest.get_player_by_name(name)
+		if not player then return false, "Speler niet gevonden." end
+
+		local pos = player:get_pos()
+		local yaw = player:get_look_horizontal()
+
+		-- ── Custom entity (e.g. gladiator) ───────────────────────────
+		local custom_entity = SPAWN_CUSTOM[pname]
+		if custom_entity then
+			local spawned = 0
+			for i = 1, count do
+				local offset_x = (i - (count + 1) / 2) * 2.0
+				local spawn_pos = vector.add(pos, vector.new(
+					-math.sin(yaw) * 3 + math.cos(yaw) * offset_x,
+					0,
+					 math.cos(yaw) * 3 + math.sin(yaw) * offset_x
+				))
+				local obj = minetest.add_entity(spawn_pos, custom_entity)
+				if obj then
+					enemy.boss_alive = obj
+					spawned = spawned + 1
+				end
+			end
+			local label = pname:gsub("_", " ")
+			if spawned == 1 then
+				return true, label .. " gespawnd."
+			else
+				return true, spawned .. "× " .. label .. " gespawnd."
+			end
+		end
+
+		-- ── Standard teacher boss ─────────────────────────────────────
 		local level = SPAWN_BY_NAME[pname]
 		if not level then
 			return false, "Onbekende baas. Gebruik: " ..
 				table.concat((function()
 					local t = {}
 					for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
+					for k in pairs(SPAWN_CUSTOM)  do t[#t+1] = k end
 					table.sort(t)
 					return t
 				end)(), ", ")
 		end
-
-		local player = minetest.get_player_by_name(name)
-		if not player then return false, "Speler niet gevonden." end
-
-		local pos = player:get_pos()
-		local yaw = player:get_look_horizontal()
 
 		-- Spread bosses in a horizontal line in front of the player.
 		-- count=1 → directly 3 blocks ahead; count>1 → evenly spaced 2 blocks apart.

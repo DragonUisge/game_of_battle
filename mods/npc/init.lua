@@ -71,33 +71,50 @@ end
 
 -- Build food shop formspec
 local function build_food_formspec(npc_name, coins)
+	-- Row layout: 4 items, each 2.3 wide, starting at x=0.4 with 0.35 gap
+	-- Item x-positions: 0.4, 3.05, 5.7, 8.35
+	local ix = {0.4, 3.05, 5.7, 8.35}
+	local iw, ih = 2.3, 2.3
+	local btn_y   = 1.65      -- top of item buttons
+	local name_y  = btn_y + ih + 0.25   -- label: item name
+	local price_y = name_y + 0.45       -- label: price
+	local close_y = price_y + 0.65      -- close button y
+
+	local heal = {"+3 HP", "+5 HP", "+7 HP", "+10 HP"}  -- tooltips
+
 	return
 		"formspec_version[4]" ..
-		"size[12,8]" ..
-		"label[0.5,0.5;" .. minetest.formspec_escape(npc_name) .. "]" ..
-		"label[0.5,1.0;Je hebt " .. coins .. " munten.]" ..
+		"size[12,"..(close_y + 0.9).."]" ..
+		"no_prepend[]" ..
+		"bgcolor[#111122;true;#0d0d1f]" ..
+		-- Header bar
+		"box[0.2,0.2;11.6,0.55;#1a2a5a]" ..
+		"label[0.4,0.38;🍴 " .. minetest.formspec_escape(npc_name) .. " — Kantine]" ..
+		-- Coin balance
+		"box[0.2,0.9;11.6,0.45;#0d1a3a]" ..
+		"label[0.4,1.06;💰 Saldo: " .. coins .. " munten]" ..
+		-- Items
+		"image_button["..ix[1]..","..btn_y..";"..iw..","..ih..";registered_apple.png;buy_apple;]" ..
+		"tooltip[buy_apple;Appel — geneest "..heal[1].."]" ..
+		"label["..ix[1]..","..name_y..";Appel]" ..
+		"label["..ix[1]..","..price_y..";2 munten]" ..
 
-		-- Appel (2 coins)
-		"image_button[0.5,1.8;2,2;registered_apple.png;buy_apple;]" ..
-		"label[0.5,4.0;Appel]" ..
-		"label[0.5,4.5;2 munten]" ..
+		"image_button["..ix[2]..","..btn_y..";"..iw..","..ih..";registered_bread.png;buy_bread;]" ..
+		"tooltip[buy_bread;Brood — geneest "..heal[2].."]" ..
+		"label["..ix[2]..","..name_y..";Brood]" ..
+		"label["..ix[2]..","..price_y..";4 munten]" ..
 
-		-- Brood (4 coins)
-		"image_button[3.0,1.8;2,2;registered_bread.png;buy_bread;]" ..
-		"label[3.0,4.0;Brood]" ..
-		"label[3.0,4.5;4 munten]" ..
+		"image_button["..ix[3]..","..btn_y..";"..iw..","..ih..";registered_fish.png;buy_fish;]" ..
+		"tooltip[buy_fish;Vis — geneest "..heal[3].."]" ..
+		"label["..ix[3]..","..name_y..";Vis]" ..
+		"label["..ix[3]..","..price_y..";6 munten]" ..
 
-		-- Vis (6 coins)
-		"image_button[5.5,1.8;2,2;registered_fish.png;buy_fish;]" ..
-		"label[5.5,4.0;Vis]" ..
-		"label[5.5,4.5;6 munten]" ..
+		"image_button["..ix[4]..","..btn_y..";"..iw..","..ih..";registered_meat.png;buy_meat;]" ..
+		"tooltip[buy_meat;Vlees — geneest "..heal[4].."]" ..
+		"label["..ix[4]..","..name_y..";Vlees]" ..
+		"label["..ix[4]..","..price_y..";8 munten]" ..
 
-		-- Vlees (8 coins)
-		"image_button[8.0,1.8;2,2;registered_meat.png;buy_meat;]" ..
-		"label[8.0,4.0;Vlees]" ..
-		"label[8.0,4.5;8 munten]" ..
-
-		"button_exit[4.5,6.5;3,0.8;close;Sluiten]"
+		"button_exit[4.25,"..close_y..";3.5,0.7;close;✖ Sluiten]"
 end
 
 -- NPC entity definition
