@@ -386,169 +386,18 @@ minetest.register_tool("registered:sword_dragonpower", {
 	},
 })
 
--- ══════════════════════════════════════════════════════════════
--- Zwaard van Vier Elementen — states: ijs / vuur / water / wind
--- Sneak + Rightclick cycles to the next element.
--- Ice (ijs)  : punch freezes the enemy inside freeze_ent.
--- Fire (vuur): punch spawns fire particles (like sword_fire).
--- Water / Wind: abilities to be implemented later.
--- ══════════════════════════════════════════════════════════════
-
-local ELEMENTS_NEXT  = {ijs = "vuur", vuur = "water", water = "wind", wind = "ijs"}
-local ELEMENTS_ITEM  = {
-	ijs   = "registered:sword_elements",
-	vuur  = "registered:sword_elements_vuur",
-	water = "registered:sword_elements_water",
-	wind  = "registered:sword_elements_wind",
-}
-local ELEMENTS_LABEL = {ijs = "Ijs", vuur = "Vuur", water = "Water", wind = "Wind"}
-
-local function elements_cycle(itemstack, user)
-	if not user or not user:is_player() then return itemstack end
-	if not user:get_player_control().sneak then return itemstack end
-	local name = itemstack:get_name()
-	local cur  = name:match("sword_elements_?(.*)$") or ""
-	if cur == "" then cur = "ijs" end
-	local nxt   = ELEMENTS_NEXT[cur] or "vuur"
-	local count = itemstack:get_count()
-	itemstack = ItemStack(ELEMENTS_ITEM[nxt])
-	itemstack:set_count(count)
-	minetest.chat_send_player(user:get_player_name(),
-		"[Elementen Zwaard] Element: " .. ELEMENTS_LABEL[nxt])
-	return itemstack
-end
-
-local ELEMENTS_CAPS = {
-	full_punch_interval = 0.3,
-	max_drop_level = 4,
-	damage_groups = {fleshy = 80},
-}
-
--- ── registered:freeze_ent ─────────────────────────────────────────────────
--- Visual ice-block that envelops a frozen entity.
--- Spawned by the ice sword on punch.  Reads target visual_size and mirrors it.
--- Zeroes the target's velocity every frame.  Unfreezes after _duration seconds.
-minetest.register_entity("registered:freeze_ent", {
-	initial_properties = {
-		visual      = "cube",
-		visual_size = {x = 1.2, y = 1.2, z = 1.2},
-		textures = {
-			"aura_particle.png^[colorize:#88CCFF:170",
-			"aura_particle.png^[colorize:#88CCFF:170",
-			"aura_particle.png^[colorize:#88CCFF:170",
-			"aura_particle.png^[colorize:#88CCFF:170",
-			"aura_particle.png^[colorize:#88CCFF:170",
-			"aura_particle.png^[colorize:#88CCFF:170",
-		},
-		physical    = false,
-		pointable   = false,
-		static_save = false,
-		glow        = 12,
-	},
-
-	_target   = nil,
-	_timer    = 0,
-	_duration = 3.5,
-
-	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
-	end,
-
-	on_step = function(self, dtime)
-		self._timer = self._timer + dtime
-		if not self._target or not self._target:get_pos() then
-			self.object:remove()
-			return
-		end
-		-- Track target
-		local tpos = self._target:get_pos()
-		self.object:set_pos(tpos)
-		-- Override velocity to zero every frame
-		self._target:set_velocity(vector.new(0, 0, 0))
-		-- Ice sparkles
-		if math.fmod(self._timer, 0.4) < dtime then
-			minetest.add_particlespawner({
-				amount = 6, time = 0.1,
-				minpos = vector.add(tpos, vector.new(-0.6, 0.1, -0.6)),
-				maxpos = vector.add(tpos, vector.new( 0.6, 1.8,  0.6)),
-				minvel = vector.new(-0.3, 0.3, -0.3),
-				maxvel = vector.new( 0.3, 1.0,  0.3),
-				minacc = vector.new(0, -0.5, 0), maxacc = vector.new(0, 0, 0),
-				minexptime = 0.5, maxexptime = 1.0,
-				minsize = 1, maxsize = 2,
-				texture = "aura_particle.png^[colorize:#AADDFF:230",
-				glow = 14,
-			})
-		end
-		-- Unfreeze after duration
-		if self._timer >= self._duration then
-			local ent = self._target:get_luaentity()
-			if ent then ent._frozen = false end
-			self.object:remove()
-		end
-	end,
-})
-
--- Helper called from boss/enemy on_punch when the ice sword hits.
--- Spawns a freeze_ent sized to the target and marks it _frozen.
-function registered_apply_freeze(target_obj)
-	local ent = target_obj:get_luaentity()
-	if not ent or ent._frozen then return end
-	ent._frozen = true
-	local tpos = target_obj:get_pos()
-	if not tpos then return end
-	local props = target_obj:get_properties()
-	local vs    = (props and props.visual_size) or {x = 1.2, y = 1.2}
-	local fent  = minetest.add_entity(tpos, "registered:freeze_ent")
-	if fent then
-		fent:set_properties({visual_size = {x = vs.x, y = vs.y, z = vs.x}})
-		local fe = fent:get_luaentity()
-		if fe then fe._target = target_obj end
-	end
-end
-
 minetest.register_tool("registered:sword_elements", {
-	description        = "Elementen Zwaard (Ijs)",
-	inventory_image    = "registered_sword_ice.png",
-	_is_elements_sword = true,
-	_elements_state    = "ijs",
-	tool_capabilities  = ELEMENTS_CAPS,
-	on_secondary_use   = elements_cycle,
-	on_place           = elements_cycle,
-})
-
-minetest.register_tool("registered:sword_elements_vuur", {
-	description        = "Elementen Zwaard (Vuur)",
-	inventory_image    = "registered_sword_fire.png",
-	_is_elements_sword = true,
-	_elements_state    = "vuur",
-	tool_capabilities  = ELEMENTS_CAPS,
-	on_secondary_use   = elements_cycle,
-	on_place           = elements_cycle,
-})
-
-minetest.register_tool("registered:sword_elements_water", {
-	description        = "Elementen Zwaard (Water)",
-	inventory_image    = "registered_sword_water.png",
-	_is_elements_sword = true,
-	_elements_state    = "water",
-	tool_capabilities  = ELEMENTS_CAPS,
-	on_secondary_use   = elements_cycle,
-	on_place           = elements_cycle,
-})
-
-minetest.register_tool("registered:sword_elements_wind", {
-	description        = "Elementen Zwaard (Wind)",
-	inventory_image    = "registered_sword_wind.png",
-	_is_elements_sword = true,
-	_elements_state    = "wind",
-	tool_capabilities  = ELEMENTS_CAPS,
-	on_secondary_use   = elements_cycle,
-	on_place           = elements_cycle,
+	description = "Zwaard van Vier Elementen",
+	inventory_image = "registered_sword_elements.png",
+	tool_capabilities = {
+		full_punch_interval = 0.3,
+		max_drop_level = 4,
+		damage_groups = {fleshy = 80},
+	},
 })
 
 minetest.register_tool("registered:pick", {
-	description = "Houweel",
+	description = "Admin Houweel",
 	inventory_image = "registered_pick.png",
 	tool_capabilities = {
 		full_punch_interval = 0.01,
@@ -751,27 +600,27 @@ minetest.register_entity("registered:appelflap_boomerang_ent", {
 })
 
 -- ══════════════════════════════════════════════════════════════
--- Fanta Bazooka — schiet Fanta-blikjes die exploderen bij impact
--- Toegevoegd door Ege
+-- Fanta Bazooka — shoots Fanta cans that explode on impact
+-- Added by Ege
 -- ══════════════════════════════════════════════════════════════
 
--- Fanta explosie: oranje splash met schade in een gebied
+-- Fanta explosion: orange splash dealing area damage
 local function fanta_explode(pos, owner)
-	-- Schade aan vijanden in de buurt (straal van 2 blokken)
+	-- Damage to nearby enemies (radius of 2 blocks)
 	for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 2.0)) do
 		if obj:is_player() then
-			-- Geen schade aan de schutter zelf
+			-- No damage to the shooter
 			if not owner or obj:get_player_name() ~= owner then
 				obj:set_hp(math.max(0, obj:get_hp() - 6), {type = "punch"})
 			end
 		else
 			local ent = obj:get_luaentity()
-			-- Schade aan vijanden (studenten en bosses)
-			-- 50 schade per Fanta: een boss (100 HP) gaat in 2 schoten neer!
+			-- Damage to enemies (students and bosses)
+			-- 50 damage per Fanta: a boss (100 HP) goes down in 2 shots!
 			if ent and ent._hp then
 				ent._hp = ent._hp - 50
 				if ent._hp <= 0 then
-					-- Student verslagen
+					-- Student defeated
 					if ent.name == "enemy:student" then
 						for i, ref in ipairs(enemy.alive_students) do
 							if ref == obj then
@@ -781,7 +630,7 @@ local function fanta_explode(pos, owner)
 						end
 						obj:remove()
 						enemy.check_wave_clear()
-					-- Boss verslagen
+					-- Boss defeated
 					elseif ent._level then
 						local bpos = obj:get_pos()
 						local BOSSES = {
@@ -807,7 +656,7 @@ local function fanta_explode(pos, owner)
 		end
 	end
 
-	-- Oranje splash-deeltjes (het Fanta-effect!)
+	-- Orange splash particles (the Fanta effect!)
 	minetest.add_particlespawner({
 		amount = 40,
 		time = 0.5,
@@ -825,7 +674,7 @@ local function fanta_explode(pos, owner)
 		glow = 10,
 	})
 
-	-- Tweede laag: witte bubbels (koolzuur!)
+	-- Second layer: white bubbles (carbonation!)
 	minetest.add_particlespawner({
 		amount = 15,
 		time = 0.3,
@@ -843,13 +692,13 @@ local function fanta_explode(pos, owner)
 		glow = 14,
 	})
 
-	-- Explosie geluid
+	-- Explosion sound
 	minetest.sound_play("default_water_footstep",
 		{pos = pos, gain = 0.8, max_hear_distance = 20})
 end
 
--- Fanta-blik projectiel entity
--- Draait in de lucht, explodeert DIRECT bij botsing met muur of vijand
+-- Fanta can projectile entity
+-- Spins in the air, explodes immediately on wall or enemy collision
 minetest.register_entity("registered:fanta_can", {
 	initial_properties = {
 		visual = "cube",
@@ -871,7 +720,7 @@ minetest.register_entity("registered:fanta_can", {
 	_owner = nil,
 	_lifetime = 0,
 	_exploded = false,
-	_last_pos = nil,  -- vorige positie voor muur-detectie
+	_last_pos = nil,  -- previous position for wall detection
 
 	on_activate = function(self)
 		self.object:set_armor_groups({immortal = 1})
@@ -882,7 +731,7 @@ minetest.register_entity("registered:fanta_can", {
 		local pos = self.object:get_pos()
 		if not pos then return end
 
-		-- Na 6 seconden automatisch verwijderen
+		-- Auto-remove after 6 seconds
 		self._lifetime = self._lifetime + dtime
 		if self._lifetime > 6 then
 			self._exploded = true
@@ -890,12 +739,12 @@ minetest.register_entity("registered:fanta_can", {
 			return
 		end
 
-		-- Draai het blikje terwijl het vliegt (cool effect)
+		-- Spin the can while it flies
 		local yaw = self.object:get_yaw() or 0
 		self.object:set_yaw(yaw + dtime * 8)
 
-		-- MUUR-BOTSING: moveresult bevat info over botsingen met nodes
-		-- Dit detecteert meteen wanneer het blikje een muur/vloer/plafond raakt
+		-- WALL COLLISION: moveresult contains node collision info
+		-- Detects immediately when the can hits a wall/floor/ceiling
 		if moveresult and moveresult.collisions and #moveresult.collisions > 0 then
 			for _, collision in ipairs(moveresult.collisions) do
 				if collision.type == "node" then
@@ -907,15 +756,15 @@ minetest.register_entity("registered:fanta_can", {
 			end
 		end
 
-		-- VIJAND-BOTSING: check objecten in de buurt
-		-- Grotere straal (1.5) omdat het blikje snel vliegt en anders
-		-- door vijanden heen kan schieten tussen twee frames
-		-- Kleine vertraging (0.1s) zodat het blikje niet meteen de schutter raakt
+		-- ENEMY COLLISION: check nearby objects
+		-- Larger radius (1.5) because the can moves fast and might pass through
+		-- enemies between two frames
+		-- Small delay (0.1s) so the can doesn't immediately hit the shooter
 		if self._lifetime > 0.1 then
 			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.5)) do
 				if obj ~= self.object then
 					if obj:is_player() then
-						-- Geen schade aan de schutter zelf
+						-- No damage to the shooter
 						if not self._owner or obj:get_player_name() ~= self._owner then
 							fanta_explode(pos, self._owner)
 							self._exploded = true
@@ -924,7 +773,7 @@ minetest.register_entity("registered:fanta_can", {
 						end
 					else
 						local ent = obj:get_luaentity()
-						-- Raak alles behalve andere Fanta-blikjes en boomerangs
+						-- Hit everything except other Fanta cans and boomerangs
 						if ent and ent.name ~= "registered:fanta_can"
 						       and ent.name ~= "registered:appelflap_boomerang_ent"
 						       and ent.name ~= "boss:drumstick_visual" then
@@ -941,38 +790,38 @@ minetest.register_entity("registered:fanta_can", {
 })
 
 -- ══════════════════════════════════════════════════════════════
--- Fanta Bazooka wapen — door Ege
--- Schiet Fanta-blikjes met rechtermuisklik.
--- Heeft munitie nodig: koop een Fanta 6-pack bij de Eetverkoper!
--- Elk 6-pack geeft 6 schoten. Zonder munitie kun je niet schieten.
--- Cooldown van 1.5 seconden zodat je niet kan spammen.
--- on_place + on_secondary_use: werkt zowel als je op een blok
--- richt als in de lucht (anders schiet hij altijd dezelfde kant op).
+-- Fanta Bazooka weapon — added by Ege
+-- Right-click to shoot Fanta cans.
+-- Requires ammo: buy a Fanta 6-pack from the food seller!
+-- Each 6-pack gives 6 shots. Cannot shoot without ammo.
+-- 1.5-second cooldown to prevent spam.
+-- on_place + on_secondary_use: works both when aiming at a block
+-- and in mid-air (otherwise it always fires in the same direction).
 -- ══════════════════════════════════════════════════════════════
 
--- Fanta munitie: koop bij de Eetverkoper als 6-pack
+-- Fanta ammo: buy from the food seller as a 6-pack
 minetest.register_craftitem("registered:fanta_ammo", {
 	description = "Fanta Blikje (munitie)",
 	inventory_image = "registered_fanta_can.png",
 	stack_max = 99,
 })
 
--- Cooldown per speler bijhouden (voorkomt machinegeweer-spam)
+-- Per-player cooldown tracker (prevents machine-gun spam)
 local fanta_cooldown = {}
 
--- Schietfunctie: wordt aangeroepen bij rechtermuisklik
--- Checkt of de speler munitie heeft, en verbruikt 1 Fanta per schot
+-- Shoot function: called on right-click
+-- Checks whether the player has ammo and consumes 1 Fanta per shot
 local function fanta_shoot(itemstack, user, pointed_thing)
 	if not user:is_player() then return end
 	local pname = user:get_player_name()
 
-	-- Cooldown: minimaal 1.5 seconden tussen elk schot
+	-- Cooldown: at least 1.5 seconds between each shot
 	local now = minetest.get_us_time() / 1000000
 	if fanta_cooldown[pname] and now - fanta_cooldown[pname] < 1.5 then
-		return itemstack  -- te snel, nog even wachten!
+		return itemstack  -- too fast, wait a moment!
 	end
 
-	-- Munitie check: heb je Fanta blikjes in je inventaris?
+	-- Ammo check: does the player have Fanta cans in inventory?
 	local inv = user:get_inventory()
 	if not inv:contains_item("main", "registered:fanta_ammo") then
 		minetest.chat_send_player(pname,
@@ -980,18 +829,18 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 		return itemstack
 	end
 
-	-- Verbruik 1 Fanta blikje als munitie
+	-- Consume 1 Fanta can as ammo
 	inv:remove_item("main", "registered:fanta_ammo 1")
 	fanta_cooldown[pname] = now
 
-	-- Startpositie: ooghoogte van de speler
+	-- Spawn position: eye-height of the player
 	local pos = user:get_pos()
 	pos.y = pos.y + 1.4
 
-	-- Kijkrichting: schiet precies waar het kruisje (+) op het scherm is
+	-- Look direction: fires exactly where the crosshair (+) points
 	local dir = user:get_look_dir()
 
-	-- Fanta-blik aanmaken en wegschieten met snelheid 25
+	-- Create the Fanta can and launch it at speed 25
 	local speed = 25
 	local can = minetest.add_entity(pos, "registered:fanta_can")
 	if can then
@@ -1002,7 +851,7 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 		end
 	end
 
-	-- Schietgeluid afspelen
+	-- Play shoot sound
 	minetest.sound_play("default_place_node_hard",
 		{pos = pos, gain = 0.6, max_hear_distance = 15})
 
@@ -1012,14 +861,14 @@ end
 minetest.register_tool("registered:fanta_bazooka", {
 	description = "Fanta Bazooka",
 	inventory_image = "registered_fanta_bazooka.png",
-	wield_scale = {x = 2.0, y = 2.0, z = 2.0},  -- groter in je hand
+	wield_scale = {x = 2.0, y = 2.0, z = 2.0},  -- larger in hand
 	tool_capabilities = {
 		full_punch_interval = 1.5,
 		max_drop_level = 2,
-		damage_groups = {fleshy = 3},  -- klap doet weinig, het gaat om de Fanta!
+		damage_groups = {fleshy = 3},  -- melee hit is weak; the Fanta does the work!
 	},
-	-- Beide callbacks nodig: on_place voor als je op een blok richt,
-	-- on_secondary_use voor als je in de lucht richt
+	-- Both callbacks needed: on_place when aiming at a block,
+	-- on_secondary_use when aiming in mid-air
 	on_secondary_use = fanta_shoot,
 	on_place = fanta_shoot,
 })

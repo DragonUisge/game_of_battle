@@ -1704,15 +1704,15 @@ end
 
 -- ============================================================
 -- Gladiator boss (boss:gladiator)
--- Naamgevallen state machine — 5 Latijnse naamvallen (zonder vocatief).
--- Elke ~12 seconden een overgang; bij elke overgang klinkt een audioclip
--- en activeer een passende buff.
+-- Latin case state machine — 5 Latin cases (no vocative).
+-- Every ~12 seconds a transition occurs; each transition plays an audio clip
+-- and applies a matching buff.
 --
---   nominativus  → springkracht: kan willekeurig 2 blokken hoog springen
---   accusativus  → +25 % snelheid
---   dativus      → geneest 5 % van max HP bij overgang
---   genitivus    → +5 platte schade bovenop basis
---   ablativus    → 10 % schadevermindering (neemt 10 % minder schade)
+--   nominativus  → jump strength: randomly jumps 2 blocks high
+--   accusativus  → +25 % speed
+--   dativus      → heals 5 % of max HP on transition
+--   genitivus    → +5 flat damage on top of base
+--   ablativus    → 10 % damage reduction (takes 10 % less damage)
 -- ============================================================
 
 local GLAD_STATES   = {"nominativus", "accusativus", "dativus", "genitivus", "ablativus"}
@@ -2019,7 +2019,7 @@ minetest.register_entity("boss:gladiator", {
 })
 
 -- ============================================================
--- Companion Dragon (Zwaard van Drakenkracht)
+-- Companion Dragon (Sword of Dragon Power)
 -- Spawns when a player wields sword_dragonpower.
 -- Follows the owner and attacks nearby enemies.
 -- Despawns when the owner drops/switches the sword or dies.
