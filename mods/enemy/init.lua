@@ -220,6 +220,7 @@ minetest.register_entity("enemy:student", {
 	_damage = 1,
 	_attack_cooldown = 0,
 	_level = 1,
+	_frozen = false,
 
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 168, y = 187}, 30, 0, true) -- walk
@@ -261,6 +262,26 @@ minetest.register_entity("enemy:student", {
 				})
 			end
 		end
+		-- Elements sword (ijs / vuur)
+		if itemdef and itemdef._is_elements_sword then
+			local estate = itemdef._elements_state or "ijs"
+			local epos   = self.object:get_pos()
+			if estate == "vuur" and epos then
+				minetest.add_particlespawner({
+					amount = 20, time = 0.5,
+					minpos = vector.add(epos, vector.new(-0.3, 0.5, -0.3)),
+					maxpos = vector.add(epos, vector.new( 0.3, 1.8,  0.3)),
+					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
+					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
+					minexptime = 0.3, maxexptime = 0.7,
+					minsize = 2, maxsize = 4,
+					texture = "draconis_fire_particle.png",
+					glow = 14,
+				})
+			elseif estate == "ijs" then
+				registered_apply_freeze(self.object)
+			end
+		end
 
 		self._hp = self._hp - dmg
 		if self._hp <= 0 then
@@ -280,6 +301,11 @@ minetest.register_entity("enemy:student", {
 	on_step = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
+
+		if self._frozen then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
 
 		-- Find nearest player (or stunt double in trailer mode)
 		local nearest = nil

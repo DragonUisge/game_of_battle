@@ -1137,6 +1137,8 @@ minetest.register_entity("boss:teacher", {
 	_margriet_timer      = 20.0,  -- first summon after 20 s
 	_margriet_summon_ref = nil,
 
+	_frozen = false,
+
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
 		self.object:set_armor_groups({fleshy = 100})
@@ -1197,6 +1199,26 @@ minetest.register_entity("boss:teacher", {
 				})
 			end
 		end
+		-- Elements sword (ijs / vuur)
+		if itemdef and itemdef._is_elements_sword then
+			local estate = itemdef._elements_state or "ijs"
+			local fpos   = self.object:get_pos()
+			if estate == "vuur" and fpos then
+				minetest.add_particlespawner({
+					amount = 25, time = 0.6,
+					minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
+					maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
+					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
+					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
+					minexptime = 0.3, maxexptime = 0.8,
+					minsize = 3, maxsize = 5,
+					texture = "draconis_fire_particle.png",
+					glow = 14,
+				})
+			elseif estate == "ijs" then
+				registered_apply_freeze(self.object)
+			end
+		end
 		end -- puncher:is_player()
 
 		self._hp = self._hp - dmg
@@ -1246,6 +1268,11 @@ minetest.register_entity("boss:teacher", {
 	on_step = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
+
+		if self._frozen then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
 
 		local nearest, nearest_dist = find_nearest_player(pos)
 		if not nearest then return end
@@ -1334,6 +1361,8 @@ minetest.register_entity("boss:summoned_dragon", {
 	_smoke_timer = 0,
 	_glow_phase = 0,
 
+	_frozen = false,
+
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 211, y = 249}, 30, 0, true) -- walk
 		self.object:set_armor_groups({fleshy = 100})
@@ -1413,6 +1442,26 @@ minetest.register_entity("boss:summoned_dragon", {
 				})
 			end
 		end
+		-- Elements sword (ijs / vuur)
+		if itemdef and itemdef._is_elements_sword then
+			local estate = itemdef._elements_state or "ijs"
+			local fpos   = self.object:get_pos()
+			if estate == "vuur" and fpos then
+				minetest.add_particlespawner({
+					amount = 30, time = 0.7,
+					minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
+					maxpos = vector.add(fpos, vector.new( 1, 3.0,  1)),
+					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 4, 1),
+					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 3, 0),
+					minexptime = 0.3, maxexptime = 0.9,
+					minsize = 3, maxsize = 6,
+					texture = "draconis_fire_particle.png",
+					glow = 14,
+				})
+			elseif estate == "ijs" then
+				registered_apply_freeze(self.object)
+			end
+		end
 		end -- puncher:is_player()
 
 		self._hp = self._hp - dmg
@@ -1450,6 +1499,11 @@ minetest.register_entity("boss:summoned_dragon", {
 	on_step = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
+
+		if self._frozen then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
 
 		local nearest, nearest_dist = find_nearest_player(pos)
 		if not nearest then return end
@@ -1784,6 +1838,8 @@ minetest.register_entity("boss:gladiator", {
 	_jump_timer        = 0,
 	_air_time          = 100.0, -- large = on ground (y_vel clamped to -9.81)
 
+	_frozen = false,
+
 	on_activate = function(self, staticdata)
 		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
 		self.object:set_armor_groups({fleshy = 100})
@@ -1838,6 +1894,26 @@ minetest.register_entity("boss:gladiator", {
 					})
 				end
 			end
+			-- Elements sword (ijs / vuur)
+			if itemdef and itemdef._is_elements_sword then
+				local estate = itemdef._elements_state or "ijs"
+				local fpos   = self.object:get_pos()
+				if estate == "vuur" and fpos then
+					minetest.add_particlespawner({
+						amount = 25, time = 0.6,
+						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
+						maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
+						minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3, maxexptime = 0.8,
+						minsize = 3, maxsize = 5,
+						texture = "draconis_fire_particle.png",
+						glow = 14,
+					})
+				elseif estate == "ijs" then
+					registered_apply_freeze(self.object)
+				end
+			end
 		end
 
 		-- Ablativus: 10 % damage reduction
@@ -1869,6 +1945,11 @@ minetest.register_entity("boss:gladiator", {
 	on_step = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
+
+		if self._frozen then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
 
 		local nearest, nearest_dist = find_nearest_player(pos)
 		if not nearest then return end
