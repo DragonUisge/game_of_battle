@@ -78,14 +78,30 @@ local function enemy_boss_dragoncall_stalk(self, dtime, pos, nearest, nearest_di
 
 	-- Transition to dash after timer expires
 	if self._enemy_boss_dragoncall_timer <= 0 then
-		self._enemy_boss_dragoncall_phase = "dash"
-		self._enemy_boss_dragoncall_timer = 0.6 -- dash duration
-
-		-- Karate cry sound
-		local cry = "hugo_karate" .. math.random(1, 4)
-		minetest.sound_play(cry, {pos = pos, gain = 1.2, max_hear_distance = 30})
-
-		-- Sprint animation
+		-- Random attack selection
+		local roll = math.random()
+		if roll < 0.35 then
+			-- Standard dash (35%)
+			self._enemy_boss_dragoncall_phase = "dash"
+			self._enemy_boss_dragoncall_timer = 0.6
+		elseif roll < 0.60 then
+			-- Spinning kick (25%)
+			self._enemy_boss_dragoncall_phase = "spinkick_approach"
+			self._enemy_boss_dragoncall_timer = 1.5
+		elseif roll < 0.80 then
+			-- Tornado (20%)
+			self._enemy_boss_dragoncall_phase = "tornado"
+			self._enemy_boss_dragoncall_timer = 2.5
+			self._spinkick_yaw = minetest.dir_to_yaw(dir)
+			self._tornado_dmg_tick = 0.25
+		else
+			-- Feint (20%)
+			self._enemy_boss_dragoncall_phase = "feint_dash"
+			self._enemy_boss_dragoncall_timer = 0.4
+		end
+		-- Karate cry for any attack
+		minetest.sound_play("hugo_karate" .. math.random(1, 4),
+			{pos = pos, gain = 1.2, max_hear_distance = 30})
 		self.object:set_animation({x = 168, y = 187}, 60, 0, true)
 	end
 end
@@ -130,7 +146,149 @@ local function enemy_boss_dragoncall_recover(self, dtime)
 
 	if self._enemy_boss_dragoncall_timer <= 0 then
 		self._enemy_boss_dragoncall_phase = "stalk"
-		self._enemy_boss_dragoncall_timer = 2.0 + math.random() * 2.0 -- 2-4 sec before next dash
+		self._enemy_boss_dragoncall_timer = 2.0 + math.random() * 2.0
+	end
+end
+
+-- Hugo spinning kick: dash close → jump → tilt back 30° → full spin → damage on land
+local function enemy_boss_dragoncall_spinkick_approach(self, dtime, pos, nearest, nearest_dist)
+	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
+	local ppos = nearest:get_pos()
+	local dir  = vector.direction(pos, ppos)
+	self.object:set_yaw(minetest.dir_to_yaw(dir))
+	self.object:set_velocity(vector.new(dir.x * 6.0, -9.81, dir.z * 6.0))
+	self.object:set_animation({x = 168, y = 187}, 60, 0, true)
+	if nearest_dist < 2.5 or self._enemy_boss_dragoncall_timer <= 0 then
+		self._enemy_boss_dragoncall_phase = "spinkick_wind"
+		self._enemy_boss_dragoncall_timer = 0.75
+		self._spinkick_yaw = minetest.dir_to_yaw(dir)
+		self.object:set_velocity(vector.new(dir.x * 1.5, 8, dir.z * 1.5))
+		minetest.sound_play("hugo_karate" .. math.random(1, 4),
+			{pos = pos, gain = 1.3, max_hear_distance = 25})
+	end
+end
+
+local function enemy_boss_dragoncall_spinkick_wind(self, dtime, pos, nearest, nearest_dist)
+	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
+	-- One full rotation over 0.75 s; also tilt back 30°
+	local spin_speed = (math.pi * 2) / 0.75
+	self._spinkick_yaw = self._spinkick_yaw + spin_speed * dtime
+	self.object:set_rotation({x = -math.pi / 6, y = self._spinkick_yaw, z = 0})
+	self.object:set_animation({x = 189, y = 198}, 50, 0, true)
+	-- Gentle drift toward player while airborne
+	local ppos = nearest:get_pos()
+	local dir  = vector.direction(pos, ppos)
+	self.object:set_velocity(vector.new(dir.x * 1.5, 0.5, dir.z * 1.5))
+	if self._enemy_boss_dragoncall_timer <= 0 then
+		-- Deal damage only on landing hit
+		if nearest_dist < 3.5 then
+			if nearest:is_player() then
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 3), {type = "punch"})
+			else
+				nearest:punch(self.object, 1.0,
+					{damage_groups = {fleshy = self._damage * 3}}, dir)
+			end
+			nearest:add_velocity(vector.multiply(dir, 5))
+			minetest.sound_play("hugo_hit", {pos = pos, gain = 1.3, max_hear_distance = 22})
+		end
+		-- Impact particles
+		minetest.add_particlespawner({
+			amount = 20, time = 0.2,
+			minpos = vector.add(pos, vector.new(-0.8, 0, -0.8)),
+			maxpos = vector.add(pos, vector.new( 0.8, 1.5,  0.8)),
+			minvel = vector.new(-4, 1, -4), maxvel = vector.new(4, 4, 4),
+			minacc = vector.new(0, -3, 0), maxacc = vector.new(0, 0, 0),
+			minexptime = 0.2, maxexptime = 0.5,
+			minsize = 1, maxsize = 3,
+			texture = "aura_particle.png^[colorize:#FFCC44:180",
+			glow = 8,
+		})
+		self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+		self._enemy_boss_dragoncall_phase = "recover"
+		self._enemy_boss_dragoncall_timer = 0.8
+	end
+end
+
+-- Hugo tornado: spin in place, continuous damage to nearby targets
+local function enemy_boss_dragoncall_tornado(self, dtime, pos, nearest, nearest_dist)
+	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
+	self._tornado_dmg_tick = self._tornado_dmg_tick - dtime
+	-- 3 full rotations per second
+	self._spinkick_yaw = self._spinkick_yaw + math.pi * 6 * dtime
+	self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+	self.object:set_velocity(vector.new(0, -9.81, 0))
+	self.object:set_animation({x = 168, y = 187}, 80, 0, true)
+	-- Wind particles
+	minetest.add_particlespawner({
+		amount = 5, time = 0.1,
+		minpos = vector.add(pos, vector.new(-1.2, 0.3, -1.2)),
+		maxpos = vector.add(pos, vector.new( 1.2, 2.0,  1.2)),
+		minvel = vector.new(-5, 0.5, -5), maxvel = vector.new(5, 2.0, 5),
+		minacc = vector.new(0, -1, 0), maxacc = vector.new(0, 0, 0),
+		minexptime = 0.2, maxexptime = 0.5,
+		minsize = 1, maxsize = 2.5,
+		texture = "aura_particle.png^[colorize:#CCFFFF:140",
+		glow = 5,
+	})
+	-- Damage nearby every 0.25 s
+	if self._tornado_dmg_tick <= 0 then
+		self._tornado_dmg_tick = 0.25
+		if nearest_dist < 2.5 then
+			if nearest:is_player() then
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+			else
+				nearest:punch(self.object, 1.0,
+					{damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+			end
+		end
+	end
+	if self._enemy_boss_dragoncall_timer <= 0 then
+		self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+		self._enemy_boss_dragoncall_phase = "recover"
+		self._enemy_boss_dragoncall_timer = 1.0
+	end
+end
+
+-- Hugo feint: fake rush past the player, hard reverse, backstab
+local function enemy_boss_dragoncall_feint_dash(self, dtime, pos, nearest, nearest_dist)
+	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
+	local ppos = nearest:get_pos()
+	local dir  = vector.direction(pos, ppos)
+	-- Overshoot: aim slightly past the player
+	self._feint_dir = dir
+	self.object:set_yaw(minetest.dir_to_yaw(dir))
+	self.object:set_velocity(vector.new(dir.x * 9, -9.81, dir.z * 9))
+	self.object:set_animation({x = 168, y = 187}, 70, 0, true)
+	if self._enemy_boss_dragoncall_timer <= 0 then
+		self._enemy_boss_dragoncall_phase = "feint_backstab"
+		self._enemy_boss_dragoncall_timer = 0.5
+		minetest.sound_play("hugo_karate" .. math.random(1, 4),
+			{pos = pos, gain = 1.1, max_hear_distance = 22})
+	end
+end
+
+local function enemy_boss_dragoncall_feint_backstab(self, dtime, pos, nearest, nearest_dist)
+	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
+	-- Reverse hard back toward player's previous position
+	local ppos = nearest:get_pos()
+	local back = vector.direction(pos, ppos)
+	self.object:set_yaw(minetest.dir_to_yaw(back))
+	self.object:set_velocity(vector.new(back.x * 10, -9.81, back.z * 10))
+	self.object:set_animation({x = 189, y = 198}, 60, 0, true)
+	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+		-- Extra damage for a back strike
+		if nearest:is_player() then
+			nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 2.5), {type = "punch"})
+		else
+			nearest:punch(self.object, 1.0,
+				{damage_groups = {fleshy = math.floor(self._damage * 2.5)}}, back)
+		end
+		self._attack_cooldown = 1.0
+		minetest.sound_play("hugo_hit", {pos = pos, gain = 1.1, max_hear_distance = 20})
+	end
+	if self._enemy_boss_dragoncall_timer <= 0 then
+		self._enemy_boss_dragoncall_phase = "recover"
+		self._enemy_boss_dragoncall_timer = 1.2
 	end
 end
 
@@ -1131,8 +1289,11 @@ minetest.register_entity("boss:teacher", {
 	_enemy_boss_dragoncall_timer = 3.0,
 	_enemy_boss_dragoncall_turned_black = false,
 	_summoned_dragon = nil,
-	_hugo_ambient_timer = 4.0,   -- interval for hugo1-4 ambient clips during linked phase
-	_hugo_speech_timer  = 18.0,  -- interval for hugo_speech during combat phases
+	_hugo_ambient_timer  = 4.0,   -- interval for hugo1-4 ambient clips during linked phase
+	_hugo_speech_timer   = 18.0,  -- interval for hugo_speech during combat phases
+	_spinkick_yaw        = 0,     -- yaw accumulator for spinning attacks
+	_tornado_dmg_tick    = 0.25,  -- damage tick counter for tornado
+	_feint_dir           = nil,   -- feint overshoot direction
 
 	-- Julian-specific state
 	_julian_phase = "normal",
@@ -1310,10 +1471,13 @@ minetest.register_entity("boss:teacher", {
 		if self._level == 2 then
 			-- hugo_speech every 15-20 s during combat phases (stalk / dash / recover)
 			local phase = self._enemy_boss_dragoncall_phase
-			if phase == "stalk" or phase == "dash" or phase == "recover" then
+			local is_combat = phase == "stalk" or phase == "dash" or phase == "recover"
+				or phase == "spinkick_approach" or phase == "spinkick_wind"
+				or phase == "tornado" or phase == "feint_dash" or phase == "feint_backstab"
+			if is_combat then
 				self._hugo_speech_timer = self._hugo_speech_timer - dtime
 				if self._hugo_speech_timer <= 0 then
-					self._hugo_speech_timer = 15.0 + math.random() * 5.0  -- 15-20 s
+					self._hugo_speech_timer = 15.0 + math.random() * 5.0
 					minetest.sound_play("hugo_speech",
 						{pos = pos, gain = 0.8, max_hear_distance = 25})
 				end
@@ -1325,6 +1489,16 @@ minetest.register_entity("boss:teacher", {
 				enemy_boss_dragoncall_dash(self, dtime, pos, nearest, nearest_dist)
 			elseif phase == "recover" then
 				enemy_boss_dragoncall_recover(self, dtime)
+			elseif phase == "spinkick_approach" then
+				enemy_boss_dragoncall_spinkick_approach(self, dtime, pos, nearest, nearest_dist)
+			elseif phase == "spinkick_wind" then
+				enemy_boss_dragoncall_spinkick_wind(self, dtime, pos, nearest, nearest_dist)
+			elseif phase == "tornado" then
+				enemy_boss_dragoncall_tornado(self, dtime, pos, nearest, nearest_dist)
+			elseif phase == "feint_dash" then
+				enemy_boss_dragoncall_feint_dash(self, dtime, pos, nearest, nearest_dist)
+			elseif phase == "feint_backstab" then
+				enemy_boss_dragoncall_feint_backstab(self, dtime, pos, nearest, nearest_dist)
 			elseif phase == "summon" then
 				enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 			elseif phase == "linked" then
