@@ -81,8 +81,8 @@ local function enemy_boss_dragoncall_stalk(self, dtime, pos, nearest, nearest_di
 		self._enemy_boss_dragoncall_phase = "dash"
 		self._enemy_boss_dragoncall_timer = 0.6 -- dash duration
 
-		-- Dragon cry sound
-		local cry = "enemy_boss_dragoncall_cry" .. math.random(1, 2)
+		-- Karate cry sound
+		local cry = "hugo_karate" .. math.random(1, 4)
 		minetest.sound_play(cry, {pos = pos, gain = 1.2, max_hear_distance = 30})
 
 		-- Sprint animation
@@ -250,6 +250,14 @@ local function enemy_boss_dragoncall_linked(self, dtime, pos, nearest)
 	self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
 	self.object:set_velocity(vector.new(0, -9.81, 0))
 	self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+
+	-- Play ambient hugo1-4 clips periodically
+	self._hugo_ambient_timer = self._hugo_ambient_timer - dtime
+	if self._hugo_ambient_timer <= 0 then
+		self._hugo_ambient_timer = 3.5 + math.random() * 3.0  -- next clip in 3.5-6.5 s
+		minetest.sound_play("hugo" .. math.random(1, 4),
+			{pos = pos, gain = 0.1, max_hear_distance = 20})
+	end
 end
 
 -- ============================================================
@@ -1123,6 +1131,8 @@ minetest.register_entity("boss:teacher", {
 	_enemy_boss_dragoncall_timer = 3.0,
 	_enemy_boss_dragoncall_turned_black = false,
 	_summoned_dragon = nil,
+	_hugo_ambient_timer = 4.0,   -- interval for hugo1-4 ambient clips during linked phase
+	_hugo_speech_timer  = 18.0,  -- interval for hugo_speech during combat phases
 
 	-- Julian-specific state
 	_julian_phase = "normal",
@@ -1298,15 +1308,26 @@ minetest.register_entity("boss:teacher", {
 
 		-- Hugo (level 2): special kung fu behavior
 		if self._level == 2 then
-			if self._enemy_boss_dragoncall_phase == "stalk" then
+			-- hugo_speech every 15-20 s during combat phases (stalk / dash / recover)
+			local phase = self._enemy_boss_dragoncall_phase
+			if phase == "stalk" or phase == "dash" or phase == "recover" then
+				self._hugo_speech_timer = self._hugo_speech_timer - dtime
+				if self._hugo_speech_timer <= 0 then
+					self._hugo_speech_timer = 15.0 + math.random() * 5.0  -- 15-20 s
+					minetest.sound_play("hugo_speech",
+						{pos = pos, gain = 0.8, max_hear_distance = 25})
+				end
+			end
+
+			if phase == "stalk" then
 				enemy_boss_dragoncall_stalk(self, dtime, pos, nearest, nearest_dist)
-			elseif self._enemy_boss_dragoncall_phase == "dash" then
+			elseif phase == "dash" then
 				enemy_boss_dragoncall_dash(self, dtime, pos, nearest, nearest_dist)
-			elseif self._enemy_boss_dragoncall_phase == "recover" then
+			elseif phase == "recover" then
 				enemy_boss_dragoncall_recover(self, dtime)
-			elseif self._enemy_boss_dragoncall_phase == "summon" then
+			elseif phase == "summon" then
 				enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
-			elseif self._enemy_boss_dragoncall_phase == "linked" then
+			elseif phase == "linked" then
 				enemy_boss_dragoncall_linked(self, dtime, pos, nearest)
 			end
 			return
