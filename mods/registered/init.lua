@@ -395,27 +395,28 @@ minetest.register_tool("registered:sword_dragonpower", {
 -- Water / Wind: abilities to be implemented later.
 -- ══════════════════════════════════════════════════════════════
 
-local ELEMENTS_NEXT  = {ijs = "vuur", vuur = "water", water = "wind", wind = "ijs"}
+local ELEMENTS_NEXT  = {ice = "fire", fire = "water", water = "wind", wind = "nothing", nothing = "ice"}
 local ELEMENTS_ITEM  = {
-	ijs   = "registered:sword_elements",
-	vuur  = "registered:sword_elements_vuur",
+	ice   = "registered:sword_elements_ice",
+	fire  = "registered:sword_elements_fire",
 	water = "registered:sword_elements_water",
 	wind  = "registered:sword_elements_wind",
+	nothing = "registered:sword_elements",
 }
-local ELEMENTS_LABEL = {ijs = "Ijs", vuur = "Vuur", water = "Water", wind = "Wind"}
+local ELEMENTS_LABEL = {ice = "Ijs", fire = "Vuur", water = "Water", wind = "Wind", nothing = "Geen"}
 
 local function elements_cycle(itemstack, user)
 	if not user or not user:is_player() then return itemstack end
 	if not user:get_player_control().sneak then return itemstack end
 	local name = itemstack:get_name()
 	local cur  = name:match("sword_elements_?(.*)$") or ""
-	if cur == "" then cur = "ijs" end
-	local nxt   = ELEMENTS_NEXT[cur] or "vuur"
+	if cur == "" then cur = "nothing" end
+	local nxt   = ELEMENTS_NEXT[cur] or "fire"
 	local count = itemstack:get_count()
 	itemstack = ItemStack(ELEMENTS_ITEM[nxt])
 	itemstack:set_count(count)
 	minetest.chat_send_player(user:get_player_name(),
-		"[Elementen Zwaard] Element: " .. ELEMENTS_LABEL[nxt])
+		"Element: " .. ELEMENTS_LABEL[nxt])
 	return itemstack
 end
 
@@ -509,27 +510,37 @@ function registered_apply_freeze(target_obj)
 end
 
 minetest.register_tool("registered:sword_elements", {
-	description        = "Elementen Zwaard (Ijs)",
-	inventory_image    = "registered_sword_ice.png",
+	description        = "Zwaard van de Vier Elementen",
+	inventory_image    = "registered_sword_elements.png",
 	_is_elements_sword = true,
-	_elements_state    = "ijs",
+	_elements_state    = "nothing",
 	tool_capabilities  = ELEMENTS_CAPS,
 	on_secondary_use   = elements_cycle,
 	on_place           = elements_cycle,
 })
 
-minetest.register_tool("registered:sword_elements_vuur", {
-	description        = "Elementen Zwaard (Vuur)",
+minetest.register_tool("registered:sword_elements_ice", {
+	description        = "Zwaard van de Vier Elementen (Ijs)",
+	inventory_image    = "registered_sword_ice.png",
+	_is_elements_sword = true,
+	_elements_state    = "ice",
+	tool_capabilities  = ELEMENTS_CAPS,
+	on_secondary_use   = elements_cycle,
+	on_place           = elements_cycle,
+})
+
+minetest.register_tool("registered:sword_elements_fire", {
+	description        = "Zwaard van de Vier Elementen (Vuur)",
 	inventory_image    = "registered_sword_fire.png",
 	_is_elements_sword = true,
-	_elements_state    = "vuur",
+	_elements_state    = "fire",
 	tool_capabilities  = ELEMENTS_CAPS,
 	on_secondary_use   = elements_cycle,
 	on_place           = elements_cycle,
 })
 
 minetest.register_tool("registered:sword_elements_water", {
-	description        = "Elementen Zwaard (Water)",
+	description        = "Zwaard van de Vier Elementen (Water)",
 	inventory_image    = "registered_sword_water.png",
 	_is_elements_sword = true,
 	_elements_state    = "water",
@@ -539,7 +550,7 @@ minetest.register_tool("registered:sword_elements_water", {
 })
 
 minetest.register_tool("registered:sword_elements_wind", {
-	description        = "Elementen Zwaard (Wind)",
+	description        = "Zwaard van de Vier Elementen (Wind)",
 	inventory_image    = "registered_sword_wind.png",
 	_is_elements_sword = true,
 	_elements_state    = "wind",

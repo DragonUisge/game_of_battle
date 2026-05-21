@@ -1199,11 +1199,11 @@ minetest.register_entity("boss:teacher", {
 				})
 			end
 		end
-		-- Elements sword (ijs / vuur)
+		-- Elements sword (ice / fire)
 		if itemdef and itemdef._is_elements_sword then
-			local estate = itemdef._elements_state or "ijs"
+			local estate = itemdef._elements_state or "ice"
 			local fpos   = self.object:get_pos()
-			if estate == "vuur" and fpos then
+			if estate == "fire" and fpos then
 				minetest.add_particlespawner({
 					amount = 25, time = 0.6,
 					minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
@@ -1215,7 +1215,7 @@ minetest.register_entity("boss:teacher", {
 					texture = "draconis_fire_particle.png",
 					glow = 14,
 				})
-			elseif estate == "ijs" then
+			elseif estate == "ice" then
 				registered_apply_freeze(self.object)
 			end
 		end
@@ -1442,11 +1442,11 @@ minetest.register_entity("boss:summoned_dragon", {
 				})
 			end
 		end
-		-- Elements sword (ijs / vuur)
+		-- Elements sword (ice / fire)
 		if itemdef and itemdef._is_elements_sword then
-			local estate = itemdef._elements_state or "ijs"
+			local estate = itemdef._elements_state or "ice"
 			local fpos   = self.object:get_pos()
-			if estate == "vuur" and fpos then
+			if estate == "fire" and fpos then
 				minetest.add_particlespawner({
 					amount = 30, time = 0.7,
 					minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
@@ -1458,7 +1458,7 @@ minetest.register_entity("boss:summoned_dragon", {
 					texture = "draconis_fire_particle.png",
 					glow = 14,
 				})
-			elseif estate == "ijs" then
+			elseif estate == "ice" then
 				registered_apply_freeze(self.object)
 			end
 		end
@@ -1894,11 +1894,11 @@ minetest.register_entity("boss:gladiator", {
 					})
 				end
 			end
-			-- Elements sword (ijs / vuur)
+			-- Elements sword (ice / fire)
 			if itemdef and itemdef._is_elements_sword then
-				local estate = itemdef._elements_state or "ijs"
+				local estate = itemdef._elements_state or "ice"
 				local fpos   = self.object:get_pos()
-				if estate == "vuur" and fpos then
+				if estate == "fire" and fpos then
 					minetest.add_particlespawner({
 						amount = 25, time = 0.6,
 						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
@@ -1910,7 +1910,7 @@ minetest.register_entity("boss:gladiator", {
 						texture = "draconis_fire_particle.png",
 						glow = 14,
 					})
-				elseif estate == "ijs" then
+				elseif estate == "ice" then
 					registered_apply_freeze(self.object)
 				end
 			end

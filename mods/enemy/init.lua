@@ -262,11 +262,11 @@ minetest.register_entity("enemy:student", {
 				})
 			end
 		end
-		-- Elements sword (ijs / vuur)
+		-- Elements sword (ice / fire)
 		if itemdef and itemdef._is_elements_sword then
-			local estate = itemdef._elements_state or "ijs"
+			local estate = itemdef._elements_state or "ice"
 			local epos   = self.object:get_pos()
-			if estate == "vuur" and epos then
+			if estate == "fire" and epos then
 				minetest.add_particlespawner({
 					amount = 20, time = 0.5,
 					minpos = vector.add(epos, vector.new(-0.3, 0.5, -0.3)),
@@ -278,7 +278,7 @@ minetest.register_entity("enemy:student", {
 					texture = "draconis_fire_particle.png",
 					glow = 14,
 				})
-			elseif estate == "ijs" then
+			elseif estate == "ice" then
 				registered_apply_freeze(self.object)
 			end
 		end
