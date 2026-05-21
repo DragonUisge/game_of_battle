@@ -383,17 +383,169 @@ minetest.register_tool("registered:sword_dragonpower", {
 		full_punch_interval = 0.4,
 		max_drop_level = 3,
 		damage_groups = {fleshy = 190},
+		wield_scale = {x = 2.0, y = 2.0, z = 2.0},
 	},
 })
 
-minetest.register_tool("registered:sword_elements", {
-	description = "Zwaard van Vier Elementen",
-	inventory_image = "registered_sword_elements.png",
-	tool_capabilities = {
-		full_punch_interval = 0.3,
-		max_drop_level = 4,
-		damage_groups = {fleshy = 80},
+-- ══════════════════════════════════════════════════════════════
+-- Sword of Four Elements — states: ijs / vuur / water / wind
+-- Sneak + Rightclick cycles to the next element.
+-- Ice (ijs)  : punch freezes the enemy inside freeze_ent.
+-- Fire (vuur): punch spawns fire particles (like sword_fire).
+-- Water / Wind: abilities to be implemented later.
+-- ══════════════════════════════════════════════════════════════
+
+local ELEMENTS_NEXT  = {ijs = "vuur", vuur = "water", water = "wind", wind = "ijs"}
+local ELEMENTS_ITEM  = {
+	ijs   = "registered:sword_elements",
+	vuur  = "registered:sword_elements_vuur",
+	water = "registered:sword_elements_water",
+	wind  = "registered:sword_elements_wind",
+}
+local ELEMENTS_LABEL = {ijs = "Ijs", vuur = "Vuur", water = "Water", wind = "Wind"}
+
+local function elements_cycle(itemstack, user)
+	if not user or not user:is_player() then return itemstack end
+	if not user:get_player_control().sneak then return itemstack end
+	local name = itemstack:get_name()
+	local cur  = name:match("sword_elements_?(.*)$") or ""
+	if cur == "" then cur = "ijs" end
+	local nxt   = ELEMENTS_NEXT[cur] or "vuur"
+	local count = itemstack:get_count()
+	itemstack = ItemStack(ELEMENTS_ITEM[nxt])
+	itemstack:set_count(count)
+	minetest.chat_send_player(user:get_player_name(),
+		"[Elementen Zwaard] Element: " .. ELEMENTS_LABEL[nxt])
+	return itemstack
+end
+
+local ELEMENTS_CAPS = {
+	full_punch_interval = 0.3,
+	max_drop_level = 4,
+	damage_groups = {fleshy = 80},
+}
+
+-- ── registered:freeze_ent ─────────────────────────────────────────────────
+-- Visual ice-block that envelops a frozen entity.
+-- Spawned by the ice sword on punch. Reads target visual_size and mirrors it.
+-- Zeroes the target's velocity every frame. Unfreezes after _duration seconds.
+minetest.register_entity("registered:freeze_ent", {
+	initial_properties = {
+		visual      = "cube",
+		visual_size = {x = 1.2, y = 1.2, z = 1.2},
+		textures = {
+			"aura_particle.png^[colorize:#88CCFF:170",
+			"aura_particle.png^[colorize:#88CCFF:170",
+			"aura_particle.png^[colorize:#88CCFF:170",
+			"aura_particle.png^[colorize:#88CCFF:170",
+			"aura_particle.png^[colorize:#88CCFF:170",
+			"aura_particle.png^[colorize:#88CCFF:170",
+		},
+		physical    = false,
+		pointable   = false,
+		static_save = false,
+		glow        = 12,
 	},
+
+	_target   = nil,
+	_timer    = 0,
+	_duration = 3.5,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime)
+		self._timer = self._timer + dtime
+		if not self._target or not self._target:get_pos() then
+			self.object:remove()
+			return
+		end
+		-- Track target position
+		local tpos = self._target:get_pos()
+		self.object:set_pos(tpos)
+		-- Override velocity to zero every frame
+		self._target:set_velocity(vector.new(0, 0, 0))
+		-- Ice sparkles
+		if math.fmod(self._timer, 0.4) < dtime then
+			minetest.add_particlespawner({
+				amount = 6, time = 0.1,
+				minpos = vector.add(tpos, vector.new(-0.6, 0.1, -0.6)),
+				maxpos = vector.add(tpos, vector.new( 0.6, 1.8,  0.6)),
+				minvel = vector.new(-0.3, 0.3, -0.3),
+				maxvel = vector.new( 0.3, 1.0,  0.3),
+				minacc = vector.new(0, -0.5, 0), maxacc = vector.new(0, 0, 0),
+				minexptime = 0.5, maxexptime = 1.0,
+				minsize = 1, maxsize = 2,
+				texture = "aura_particle.png^[colorize:#AADDFF:230",
+				glow = 14,
+			})
+		end
+		-- Unfreeze after duration
+		if self._timer >= self._duration then
+			local ent = self._target:get_luaentity()
+			if ent then ent._frozen = false end
+			self.object:remove()
+		end
+	end,
+})
+
+-- Helper called from boss/enemy on_punch when the ice sword hits.
+-- Spawns a freeze_ent sized to the target and marks it _frozen.
+function registered_apply_freeze(target_obj)
+	local ent = target_obj:get_luaentity()
+	if not ent or ent._frozen then return end
+	ent._frozen = true
+	local tpos = target_obj:get_pos()
+	if not tpos then return end
+	local props = target_obj:get_properties()
+	local vs    = (props and props.visual_size) or {x = 1.2, y = 1.2}
+	local fent  = minetest.add_entity(tpos, "registered:freeze_ent")
+	if fent then
+		fent:set_properties({visual_size = {x = vs.x, y = vs.y, z = vs.x}})
+		local fe = fent:get_luaentity()
+		if fe then fe._target = target_obj end
+	end
+end
+
+minetest.register_tool("registered:sword_elements", {
+	description        = "Elementen Zwaard (Ijs)",
+	inventory_image    = "registered_sword_ice.png",
+	_is_elements_sword = true,
+	_elements_state    = "ijs",
+	tool_capabilities  = ELEMENTS_CAPS,
+	on_secondary_use   = elements_cycle,
+	on_place           = elements_cycle,
+})
+
+minetest.register_tool("registered:sword_elements_vuur", {
+	description        = "Elementen Zwaard (Vuur)",
+	inventory_image    = "registered_sword_fire.png",
+	_is_elements_sword = true,
+	_elements_state    = "vuur",
+	tool_capabilities  = ELEMENTS_CAPS,
+	on_secondary_use   = elements_cycle,
+	on_place           = elements_cycle,
+})
+
+minetest.register_tool("registered:sword_elements_water", {
+	description        = "Elementen Zwaard (Water)",
+	inventory_image    = "registered_sword_water.png",
+	_is_elements_sword = true,
+	_elements_state    = "water",
+	tool_capabilities  = ELEMENTS_CAPS,
+	on_secondary_use   = elements_cycle,
+	on_place           = elements_cycle,
+})
+
+minetest.register_tool("registered:sword_elements_wind", {
+	description        = "Elementen Zwaard (Wind)",
+	inventory_image    = "registered_sword_wind.png",
+	_is_elements_sword = true,
+	_elements_state    = "wind",
+	tool_capabilities  = ELEMENTS_CAPS,
+	on_secondary_use   = elements_cycle,
+	on_place           = elements_cycle,
 })
 
 minetest.register_tool("registered:pick", {
