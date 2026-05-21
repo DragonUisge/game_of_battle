@@ -111,6 +111,7 @@ local function enemy_boss_dragoncall_dash(self, dtime, pos, nearest, nearest_dis
 			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage * 2}}, vector.new(0,0,0))
 		end
 		self._attack_cooldown = 0.4
+		minetest.sound_play("hugo_hit", {pos = pos, gain = 1.0, max_hear_distance = 20})
 		self.object:set_animation({x = 189, y = 198}, 50, 0, false)
 	end
 
@@ -810,6 +811,10 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			end
 			self._draw_sound = minetest.sound_play("rosanne_draw",
 				{pos = pos, gain = 1.0, max_hear_distance = 20, loop = true})
+			-- Random voice clip while drawing
+			local rosanne_clips = {"rosanne_doodle", "rosanne_tch"}
+			minetest.sound_play(rosanne_clips[math.random(1, #rosanne_clips)],
+				{pos = pos, gain = 1.2, max_hear_distance = 25})
 			-- Jump/float up
 			self.object:set_velocity(vector.new(0, 5, 0))
 			for _, p in ipairs(minetest.get_connected_players()) do
@@ -1038,6 +1043,8 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 				nametag_color = "#FF0000",
 			})
 			minetest.chat_send_all("Margriet is woedend!")
+			minetest.sound_play("margriet" .. math.random(1, 2),
+				{pos = pos, gain = 1.3, max_hear_distance = 35})
 		else
 			-- Continue attacking while protected
 			self.object:set_yaw(minetest.dir_to_yaw(dir))
