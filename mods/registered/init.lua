@@ -445,8 +445,8 @@ local function water_splash(pos)
 		texture = "water_particle.png^[colorize:#4488FF:200",
 		glow = 8,
 	})
-	minetest.sound_play("default_water_footstep",
-		{pos = pos, gain = 0.9, max_hear_distance = 18})
+	minetest.sound_play("elements_sword_water",
+		{pos = pos, gain = 1, max_hear_distance = 20})
 end
 
 minetest.register_entity("registered:water_ball", {
@@ -761,8 +761,6 @@ local function wind_trigger(player)
 	-- Hide player and attach to clone (player sees the world from clone's position)
 	player:set_properties({visual_size = {x = 0, y = 0, z = 0}})
 	player:set_attach(clone, "", vector.new(0, 0.9, 0), vector.new(0, 0, 0))
-
-	minetest.sound_play("default_place_node_hard", {pos = pos, gain = 0.4, max_hear_distance = 18})
 end
 
 -- Double-jump detector: runs every frame.
@@ -791,6 +789,7 @@ minetest.register_globalstep(function(dtime)
 						-- Double-jump confirmed — trigger the wind trick
 						st.active = true
 						wind_trigger(player)
+						minetest.sound_play("elements_sword_wind", {pos = player:get_pos(), gain = 0.5, max_hear_distance = 18})
 					else
 						st.last_time = now
 					end
