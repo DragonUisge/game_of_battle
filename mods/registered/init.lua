@@ -426,6 +426,388 @@ local ELEMENTS_CAPS = {
 	damage_groups = {fleshy = 80},
 }
 
+-- ══════════════════════════════════════════════════════════════
+-- Water Ball — projectile fired by the water element sword (LMB).
+-- Travels in the look direction. On contact: darkens the enemy
+-- (wet overlay), deals 10 damage, disappears. Leaves droplets.
+-- ══════════════════════════════════════════════════════════════
+
+local function water_splash(pos)
+	minetest.add_particlespawner({
+		amount = 24, time = 0.3,
+		minpos = vector.add(pos, vector.new(-0.4, -0.4, -0.4)),
+		maxpos = vector.add(pos, vector.new( 0.4,  0.4,  0.4)),
+		minvel = vector.new(-5,  1, -5),
+		maxvel = vector.new( 5,  6,  5),
+		minacc = vector.new(0, -9, 0), maxacc = vector.new(0, -6, 0),
+		minexptime = 0.25, maxexptime = 0.7,
+		minsize = 2, maxsize = 5,
+		texture = "water_particle.png^[colorize:#4488FF:200",
+		glow = 8,
+	})
+	minetest.sound_play("default_water_footstep",
+		{pos = pos, gain = 0.9, max_hear_distance = 18})
+end
+
+minetest.register_entity("registered:water_ball", {
+	initial_properties = {
+		visual          = "cube",
+		visual_size     = {x = 0.45, y = 0.45, z = 0.45},
+		textures        = {
+			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#2266CC:180",
+		},
+		physical             = true,
+		collide_with_objects = false,
+		collisionbox         = {-0.18, -0.18, -0.18, 0.18, 0.18, 0.18},
+		static_save          = false,
+		pointable            = false,
+		use_texture_alpha    = true,
+		glow                 = 10,
+	},
+
+	_owner    = nil,
+	_lifetime = 0,
+	_hit      = false,
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+	end,
+
+	on_step = function(self, dtime, moveresult)
+		if self._hit then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		self._lifetime = self._lifetime + dtime
+
+		-- Auto-remove after 5 s
+		if self._lifetime > 5 then
+			water_splash(pos)
+			self._hit = true
+			self.object:remove()
+			return
+		end
+
+		-- Trailing droplet particles
+		if math.fmod(self._lifetime, 0.07) < dtime then
+			minetest.add_particlespawner({
+				amount = 5, time = 0.1,
+				minpos = vector.add(pos, vector.new(-0.12, -0.12, -0.12)),
+				maxpos = vector.add(pos, vector.new( 0.12,  0.12,  0.12)),
+				minvel = vector.new(-0.4, -0.4, -0.4),
+				maxvel = vector.new( 0.4,  0.4,  0.4),
+				minacc = vector.new(0, -3, 0), maxacc = vector.new(0, -1, 0),
+				minexptime = 0.15, maxexptime = 0.4,
+				minsize = 1, maxsize = 3,
+				texture = "water_particle.png^[colorize:#4488FF:200",
+				glow = 8,
+			})
+		end
+
+		-- Node (wall / floor / ceiling) collision
+		if moveresult and moveresult.collisions then
+			for _, col in ipairs(moveresult.collisions) do
+				if col.type == "node" then
+					water_splash(pos)
+					self._hit = true
+					self.object:remove()
+					return
+				end
+			end
+		end
+
+		-- Object collision (entities and other players)
+		if self._lifetime > 0.1 then
+			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 0.9)) do
+				if obj == self.object then
+					-- skip self
+				elseif obj:is_player() then
+					local pname = obj:get_player_name()
+					if not self._owner or pname ~= self._owner then
+						obj:set_hp(math.max(0, obj:get_hp() - 10), {type = "punch"})
+						water_splash(pos)
+						self._hit = true
+						self.object:remove()
+						return
+					end
+				else
+					local ent = obj:get_luaentity()
+					if ent and ent._hp
+					       and ent.name ~= "registered:water_ball"
+					       and ent.name ~= "registered:freeze_ent"
+					       and ent.name ~= "registered:wind_clone"
+					       and ent.name ~= "boss:drumstick_visual" then
+						-- Wet-darken the enemy (only once per entity)
+						if not ent._wet then
+							local props = obj:get_properties()
+							if props and props.textures then
+								local wet = {}
+								for i, t in ipairs(props.textures) do
+									wet[i] = t .. "^[colorize:#001133:80"
+								end
+								obj:set_properties({textures = wet})
+							end
+							ent._wet = true
+						end
+						-- Deal 10 damage
+						obj:punch(self.object, 1.0,
+							{full_punch_interval = 1.0, damage_groups = {fleshy = 10}}, nil)
+						water_splash(pos)
+						self._hit = true
+						self.object:remove()
+						return
+					end
+				end
+			end
+		end
+	end,
+})
+
+-- ══════════════════════════════════════════════════════════════
+-- Wind Clone — spawned by the wind sword double-jump trick.
+-- Mimics the player (same skin, mesh), performs a cinematic
+-- jump-flip-to-ceiling sequence, then dissolves.
+-- The real player is hidden and attached to the clone during
+-- the trick, then detached and restored.
+-- ══════════════════════════════════════════════════════════════
+
+-- Per-player double-jump tracking: {last_time, was_pressed, active}
+local wind_jump_state = {}
+
+minetest.register_entity("registered:wind_clone", {
+	initial_properties = {
+		visual          = "mesh",
+		mesh            = "character.b3d",
+		textures        = {"character.png"},
+		visual_size     = {x = 1, y = 1, z = 1},
+		physical        = false,   -- we drive position/velocity manually
+		static_save     = false,
+		pointable       = false,
+	},
+
+	_owner_name = nil,
+	_phase      = "rise",   -- rise → tilt → ceiling → hold → vanish
+	_timer      = 0,
+	_start_yaw  = 0,
+	_ceiling_y  = nil,   -- world Y of the ceiling block bottom face (set by wind_trigger)
+
+	on_activate = function(self)
+		self.object:set_armor_groups({immortal = 1})
+		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+	end,
+
+	on_step = function(self, dtime)
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		self._timer = self._timer + dtime
+
+		local player = self._owner_name and minetest.get_player_by_name(self._owner_name)
+
+		-- Safety: if owner disconnected, clean up quietly
+		if not player then
+			self.object:remove()
+			return
+		end
+
+		local yaw = self._start_yaw
+
+		-- Ceiling guard: stop rising as soon as we reach the ceiling block.
+		-- Applies to every upward phase so the player can never pass through walls.
+		if self._ceiling_y
+		   and self._phase ~= "hold"
+		   and self._phase ~= "vanish"
+		   and pos.y >= self._ceiling_y then
+			self.object:set_pos(vector.new(pos.x, self._ceiling_y, pos.z))
+			self.object:set_velocity(vector.new(0, 0, 0))
+			self.object:set_rotation(vector.new(0, yaw, math.pi))
+			self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+			self._timer = 0
+			self._phase = "hold"
+		end
+
+		if self._phase == "rise" then
+			-- Float upward with walk animation; begin tilting slightly
+			self.object:set_velocity(vector.new(0, 9.0, 0))
+			local t    = math.min(self._timer / 0.33, 1.0)
+			local roll = t * (math.pi * 0.25)   -- 0 → 45°
+			self.object:set_rotation(vector.new(0, yaw, roll))
+			if self._timer >= 0.33 then
+				self._timer = 0
+				self._phase = "tilt"
+				self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+			end
+
+		elseif self._phase == "tilt" then
+			-- Slow rise; tilt from 45° to 90° (fully on its side)
+			self.object:set_velocity(vector.new(0, 3.0, 0))
+			local t    = math.min(self._timer / 0.28, 1.0)
+			local roll = (math.pi * 0.25) + t * (math.pi * 0.25)  -- 45° → 90°
+			self.object:set_rotation(vector.new(0, yaw, roll))
+			if self._timer >= 0.28 then
+				self._timer = 0
+				self._phase = "ceiling"
+			end
+
+		elseif self._phase == "ceiling" then
+			-- Flip from side (90°) to fully upside-down (180°) while rising fast
+			self.object:set_velocity(vector.new(0, 11.0, 0))
+			local t    = math.min(self._timer / 0.23, 1.0)
+			local roll = (math.pi * 0.5) + t * (math.pi * 0.5)  -- 90° → 180°
+			self.object:set_rotation(vector.new(0, yaw, roll))
+			if self._timer >= 0.23 then
+				self._timer = 0
+				self._phase = "hold"
+				self.object:set_velocity(vector.new(0, 0, 0))
+				self.object:set_rotation(vector.new(0, yaw, math.pi))
+			end
+
+		elseif self._phase == "hold" then
+			-- Frozen upside-down against the "ceiling" for a beat
+			self.object:set_velocity(vector.new(0, 0, 0))
+			if self._timer >= 0.25 then
+				self._timer = 0
+				self._phase = "vanish"
+				-- Detach and restore player before entity dissolves
+				local cpos = self.object:get_pos()
+				player:set_detach()
+				if cpos then
+					player:set_pos(vector.new(cpos.x, cpos.y - 1.8, cpos.z))
+				end
+				player:set_properties({visual_size = {x = 1, y = 1, z = 1}})
+				player:set_velocity(vector.new(0, 0, 0))
+				wind_jump_state[self._owner_name] = nil
+			end
+
+		elseif self._phase == "vanish" then
+			-- Shrink and dissolve with wind-puff particles
+			self.object:set_velocity(vector.new(0, 0, 0))
+			local t = math.min(self._timer / 0.18, 1.0)
+			local s = 1.0 - t
+			self.object:set_properties({visual_size = {x = s, y = s, z = s}})
+			if math.fmod(self._timer, 0.09) < dtime then
+				minetest.add_particlespawner({
+					amount = 8, time = 0.1,
+					minpos = vector.add(pos, vector.new(-0.5, -0.5, -0.5)),
+					maxpos = vector.add(pos, vector.new( 0.5,  1.5,  0.5)),
+					minvel = vector.new(-3, -2, -3),
+					maxvel = vector.new( 3,  2,  3),
+					minacc = vector.new(0, -1, 0), maxacc = vector.new(0, 0, 0),
+					minexptime = 0.15, maxexptime = 0.45,
+					minsize = 1, maxsize = 3,
+					texture = "aura_particle.png^[colorize:#AADDFF:160",
+					glow = 6,
+				})
+			end
+			if self._timer >= 0.35 then
+				self.object:remove()
+			end
+		end
+	end,
+})
+
+-- Trigger function: hides the player, spawns the clone and attaches player to it.
+local function wind_trigger(player)
+	local pname = player:get_player_name()
+	local pos   = player:get_pos()
+
+	-- Raycast upward to find the ceiling height.
+	-- The entity will stop rising when its feet (origin) reach this Y.
+	-- With roll=π the character appears upside-down: its feet are at the
+	-- entity origin, so the feet touch the ceiling at ceiling_block.y.
+	local ray_from  = vector.new(pos.x, pos.y + 0.3, pos.z)
+	local ray_to    = vector.new(pos.x, pos.y + 14,  pos.z)
+	local ceiling_y = pos.y + 14   -- fallback: no ceiling found within 14 blocks
+	local ray = minetest.raycast(ray_from, ray_to, false, false)
+	for pt in ray do
+		if pt.type == "node" then
+			-- Bottom face of the solid ceiling block; leave 0.05 gap to avoid clipping
+			ceiling_y = pt.under.y - 0.05
+			break
+		end
+	end
+	-- Always keep at least 2.5 units of vertical room for the animation
+	ceiling_y = math.max(ceiling_y, pos.y + 2.5)
+
+	-- Read player's skin texture for accurate clone appearance
+	local skin = "character.png"
+	local pprops = player:get_properties()
+	if pprops and pprops.textures and pprops.textures[1] then
+		skin = pprops.textures[1]
+	end
+
+	local clone = minetest.add_entity(pos, "registered:wind_clone")
+	if not clone then
+		wind_jump_state[pname] = nil
+		return
+	end
+
+	local yaw = player:get_look_horizontal()
+	clone:set_yaw(yaw)
+	clone:set_properties({textures = {skin}})
+
+	local ent = clone:get_luaentity()
+	if ent then
+		ent._owner_name = pname
+		ent._start_yaw  = yaw
+		ent._ceiling_y  = ceiling_y
+	end
+
+	-- Hide player and attach to clone (player sees the world from clone's position)
+	player:set_properties({visual_size = {x = 0, y = 0, z = 0}})
+	player:set_attach(clone, "", vector.new(0, 0.9, 0), vector.new(0, 0, 0))
+
+	minetest.sound_play("default_place_node_hard", {pos = pos, gain = 0.4, max_hear_distance = 18})
+end
+
+-- Double-jump detector: runs every frame.
+-- Fires wind_trigger when the player taps jump twice in < 0.4 s
+-- while holding the wind sword.
+minetest.register_globalstep(function(dtime)
+	for _, player in ipairs(minetest.get_connected_players()) do
+		local pname = player:get_player_name()
+		local item  = player:get_wielded_item()
+
+		if item:get_name() == "registered:sword_elements_wind" then
+			local ctrl = player:get_player_control()
+			local st   = wind_jump_state[pname]
+			if not st then
+				st = {last_time = 0, was_pressed = false, active = false}
+				wind_jump_state[pname] = st
+			end
+
+			if not st.active then
+				local now = minetest.get_us_time() / 1e6
+				if ctrl.jump and not st.was_pressed then
+					-- Rising edge: jump key just pressed
+					st.was_pressed = true
+					local gap = now - (st.last_time or 0)
+					if gap < 0.4 and gap > 0.05 then
+						-- Double-jump confirmed — trigger the wind trick
+						st.active = true
+						wind_trigger(player)
+					else
+						st.last_time = now
+					end
+				elseif not ctrl.jump then
+					st.was_pressed = false
+				end
+			end
+		else
+			-- Not holding wind sword: reset state (but don't interrupt active trick)
+			local st = wind_jump_state[pname]
+			if st and not st.active then
+				wind_jump_state[pname] = nil
+			end
+		end
+	end
+end)
+
 -- ── registered:freeze_ent ─────────────────────────────────────────────────
 -- Visual ice-block that envelops a frozen entity.
 -- Spawned by the ice sword on punch. Reads target visual_size and mirrors it.
@@ -561,6 +943,22 @@ minetest.register_tool("registered:sword_elements_water", {
 	tool_capabilities  = ELEMENTS_CAPS,
 	on_secondary_use   = elements_cycle,
 	on_place           = elements_cycle,
+	-- LMB: fire a water ball
+	on_use = function(itemstack, user, pointed_thing)
+		if not user or not user:is_player() then return end
+		local pos = user:get_pos()
+		pos.y = pos.y + 1.4   -- eye height
+		local dir  = user:get_look_dir()
+		local ball = minetest.add_entity(pos, "registered:water_ball")
+		if ball then
+			ball:set_velocity(vector.multiply(dir, 22))
+			local ent = ball:get_luaentity()
+			if ent then ent._owner = user:get_player_name() end
+		end
+		minetest.sound_play("default_water_footstep",
+			{pos = pos, gain = 0.5, max_hear_distance = 12})
+		return itemstack
+	end,
 })
 
 minetest.register_tool("registered:sword_elements_wind", {
@@ -571,6 +969,14 @@ minetest.register_tool("registered:sword_elements_wind", {
 	tool_capabilities  = ELEMENTS_CAPS,
 	on_secondary_use   = elements_cycle,
 	on_place           = elements_cycle,
+	-- Ability triggered by double-tap jump (see globalstep below)
+	on_use = function(itemstack, user, pointed_thing)
+		if user and user:is_player() then
+			minetest.chat_send_player(user:get_player_name(),
+				"dubbel tap Spatie om de Tornado van Wind te activeren!")
+		end
+		return itemstack
+	end,
 })
 
 minetest.register_tool("registered:pick", {
