@@ -454,12 +454,12 @@ minetest.register_entity("registered:water_ball", {
 		visual          = "cube",
 		visual_size     = {x = 0.45, y = 0.45, z = 0.45},
 		textures        = {
-			"water_particle.png^[colorize:#2266CC:180",
-			"water_particle.png^[colorize:#2266CC:180",
-			"water_particle.png^[colorize:#2266CC:180",
-			"water_particle.png^[colorize:#2266CC:180",
-			"water_particle.png^[colorize:#2266CC:180",
-			"water_particle.png^[colorize:#2266CC:180",
+			"water_particle.png^[colorize:#03b1fc:180",
+			"water_particle.png^[colorize:#03b1fc:180",
+			"water_particle.png^[colorize:#03b1fc:180",
+			"water_particle.png^[colorize:#03b1fc:180",
+			"water_particle.png^[colorize:#03b1fc:180",
+			"water_particle.png^[colorize:#03b1fc:180",
 		},
 		physical             = true,
 		collide_with_objects = false,
@@ -504,7 +504,7 @@ minetest.register_entity("registered:water_ball", {
 				minacc = vector.new(0, -3, 0), maxacc = vector.new(0, -1, 0),
 				minexptime = 0.15, maxexptime = 0.4,
 				minsize = 1, maxsize = 3,
-				texture = "water_particle.png^[colorize:#4488FF:200",
+				texture = "water_particle.png^[colorize:#03b1fc:200",
 				glow = 8,
 			})
 		end

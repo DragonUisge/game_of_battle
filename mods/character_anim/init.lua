@@ -372,8 +372,39 @@ function handle_player_animations(dtime, player)
 	end
 end
 
+-- Animation ranges matching player/init.lua set_local_animation call.
+-- We hardcode them here because character_anim installs its hook *after*
+-- player/init.lua has already called set_local_animation on join, so
+-- pdata.local_animation is never populated via the hooked method.
+local ANIM_STAND = {x = 0,   y = 79}
+local ANIM_WALK  = {x = 168, y = 187}
+local ANIM_MINE  = {x = 189, y = 198}
+local ANIM_WMINE = {x = 200, y = 219}
+local ANIM_SPEED = 30
+
 minetest.register_globalstep(function(dtime)
 	for _, player in pairs(minetest.get_connected_players()) do
+		-- Auto-select the correct animation range based on movement and interaction.
+		-- character_anim disables local_animation in the engine, so we must do it ourselves.
+		local ctrl     = player:get_player_control()
+		local moving   = ctrl.up or ctrl.down or ctrl.left or ctrl.right
+		local interact = character_anim.is_interacting(player)
+		local new_range
+		if moving and interact then
+			new_range = ANIM_WMINE
+		elseif interact then
+			new_range = ANIM_MINE
+		elseif moving then
+			new_range = ANIM_WALK
+		else
+			new_range = ANIM_STAND
+		end
+		local pdata = get_playerdata(player)
+		local cur = pdata.animation
+		-- Only switch when the range actually changes to avoid restarting the frame clock
+		if not cur or cur[1].x ~= new_range.x or cur[1].y ~= new_range.y then
+			player:set_animation(new_range, ANIM_SPEED, 0, true)
+		end
 		handle_player_animations(dtime, player)
 	end
 end)
