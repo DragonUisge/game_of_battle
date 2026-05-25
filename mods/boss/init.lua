@@ -1168,8 +1168,6 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 				self._margriet_summon_ref = new_obj
 				local bname = BOSSES[pick] and BOSSES[pick].name or "?"
 				minetest.chat_send_all("Margriet roept " .. bname .. " op!")
-				minetest.sound_play("dragon_roar1", {
-					pos = spawn_pos, gain = 1.0, max_hear_distance = 40})
 				-- Summon flash
 				minetest.add_particlespawner({
 					amount  = 30,
