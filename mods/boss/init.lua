@@ -1550,12 +1550,12 @@ minetest.register_entity("boss:summoned_dragon", {
 
 	_hp = 100,
 	_max_hp = 20,
-	_damage = 5,
+	_damage = 3,
 	_attack_cooldown = 0,
 	_roar_timer = 3.0,
 	_breath_timer = 0,
 	_anim_timer = 0,  -- prevent animation restart mid-play
-	_current_anim = "walk",
+	_current_anim = "fly",
 	_master = nil,  -- Hugo objectref
 	_aura_timer = 0,
 	_smoke_timer = 0,
@@ -1684,9 +1684,9 @@ minetest.register_entity("boss:summoned_dragon", {
 				minetest.sound_play("dragon_roar2", {pos = pos, gain = 7.0, max_hear_distance = 60})
 			end
 
-			-- Drop fire sword
+			-- Drop diamond sword
 			if pos then
-				minetest.add_item(pos, "registered:sword_fire")
+				minetest.add_item(pos, "registered:sword_diamond")
 			end
 
 			-- Kill Hugo via the linked check (remove Dragon, enemy_boss_dragoncall_linked detects it)
@@ -1820,23 +1820,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				texture = "draconis_fire_particle.png",
 				glow = 14,
 			})
-			-- Outer flame spray (wider, softer)
-			minetest.add_particlespawner({
-				amount = 30,
-				time = 0.8,
-				minpos = mouth,
-				maxpos = vector.add(mouth, vector.new(0.5, 0.5, 0.5)),
-				minvel = vector.add(vector.multiply(breath_dir, 4), vector.new(-2, 0, -2)),
-				maxvel = vector.add(vector.multiply(breath_dir, 8), vector.new(2, 3, 2)),
-				minacc = vector.new(0, 0.5, 0),
-				maxacc = vector.new(0, 2, 0),
-				minexptime = 0.4,
-				maxexptime = 1.0,
-				minsize = 4,
-				maxsize = 9,
-				texture = "aura_particle.png^[colorize:#FF4400:80",
-				glow = 12,
-			})
+			
 			-- Ground scorch (fire on impact area)
 			minetest.add_particlespawner({
 				amount = 20,
