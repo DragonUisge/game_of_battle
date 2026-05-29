@@ -67,11 +67,11 @@ local quaternion_to_euler_rot_deg = modlib.quaternion.to_euler_rotation_irrlicht
 -- HACK quaternion multiplication should be fixed in modlib eventually
 local function quaternion_compose(other, self)
 	local X, Y, Z, W = unpack(self)
-	return modlib.quaternion.normalize{
-		(other[4] * X) + (other[1] * W) + (other[2] * Z) - (other[3] * Y);
-		(other[4] * Y) + (other[2] * W) + (other[3] * X) - (other[1] * Z);
-		(other[4] * Z) + (other[3] * W) + (other[1] * Y) - (other[2] * X);
-		(other[4] * W) - (other[1] * X) - (other[2] * Y) - (other[3] * Z);
+	return modlib.quaternion.normalize {
+		(other[4] * X) + (other[1] * W) + (other[2] * Z) - (other[3] * Y),
+		(other[4] * Y) + (other[2] * W) + (other[3] * X) - (other[1] * Z),
+		(other[4] * Z) + (other[3] * W) + (other[1] * Y) - (other[2] * X),
+		(other[4] * W) - (other[1] * X) - (other[2] * Y) - (other[3] * Z),
 	}
 end
 
@@ -116,7 +116,7 @@ core.register_entity(entity_name, {
 		physical = false,
 		collide_with_objects = false,
 		pointable = false,
-		visual = "wielditem" ,
+		visual = "wielditem",
 		wield_item = "",
 		is_visible = false,
 		backface_culling = false,
@@ -127,7 +127,7 @@ core.register_entity(entity_name, {
 	},
 	on_activate = function(self)
 		local object = self.object
-		object:set_armor_groups{immortal = 1}
+		object:set_armor_groups { immortal = 1 }
 	end,
 	_force_resend = function(self) -- HACK
 		self.object:set_pos(self.object:get_pos())
@@ -135,14 +135,15 @@ core.register_entity(entity_name, {
 	_update_attachment = function(self)
 		if not self._item then return end
 		local object = self.object
-		local attachment = visible_wielditem.get_attachment(self._player:get_properties().mesh, self._item:get_name() or "")
+		local attachment = visible_wielditem.get_attachment(self._player:get_properties().mesh,
+			self._item:get_name() or "")
 		-- TODO softcode
 		local stack_scale = 1
 		if self._item:get_definition().type ~= "tool" then
 			stack_scale = 0.75 + 0.5 * math.min(1, self._item:get_count() / self._item:get_stack_max())
 		end
 		local vsize = attachment.scale * stack_scale
-		object:set_properties{visual_size = vector.new(vsize, vsize, vsize)}
+		object:set_properties { visual_size = vector.new(vsize, vsize, vsize) }
 		object:set_attach(self._player,
 			attachment.bonename,
 			vector.multiply(vector.offset(attachment.position, 0, vsize / 2, 0), 10),
@@ -162,13 +163,13 @@ core.register_entity(entity_name, {
 		self._item = item
 		local object = self.object
 		if item:is_empty() or not get_player_data(self._player).visible then
-			object:set_properties{
+			object:set_properties {
 				is_visible = false,
 				wield_item = ""
 			}
 			return
 		end
-		object:set_properties{
+		object:set_properties {
 			is_visible = true,
 			wield_item = item:to_string(),
 			glow = item:get_definition().light_source or 0
