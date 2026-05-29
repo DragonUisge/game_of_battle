@@ -1,17 +1,17 @@
 local minetest, modlib, pairs, ipairs
-	= minetest, modlib, pairs, ipairs
+                                      = minetest, modlib, pairs, ipairs
 
 -- TODO support for server texture packs (and possibly client TPs in singleplayer?)
-local media_foldernames = {"textures", "sounds", "media", "models", "locale"}
-local media_extensions = modlib.table.set{
+local media_foldernames               = { "textures", "sounds", "media", "models", "locale" }
+local media_extensions                = modlib.table.set {
 	-- Textures
-	"png", "jpg", "bmp", "tga", "pcx", "ppm", "psd", "wal", "rgb";
+	"png", "jpg", "bmp", "tga", "pcx", "ppm", "psd", "wal", "rgb",
 	-- Sounds
-	"ogg";
+	"ogg",
 	-- Models
-	"x", "b3d", "md2", "obj";
+	"x", "b3d", "md2", "obj",
 	-- Translations
-	"tr";
+	"tr",
 }
 
 local function collect_media(modname)
@@ -22,14 +22,14 @@ local function collect_media(modname)
 		for _, filename in pairs(filenames) do
 			local _, ext = modlib.file.get_extension(filename)
 			if media_extensions[ext] then
-				media[filename] = modlib.file.concat_path{folderpath, filename}
+				media[filename] = modlib.file.concat_path { folderpath, filename }
 			end
 		end
 		-- Traverse subfolders
 		local foldernames = minetest.get_dir_list(folderpath, true)
 		for _, foldername in pairs(foldernames) do
-			if not foldername:match"^[_%.]" then -- ignore hidden subfolders / subfolders starting with `_`
-				traverse(modlib.file.concat_path{folderpath, foldername})
+			if not foldername:match "^[_%.]" then -- ignore hidden subfolders / subfolders starting with `_`
+				traverse(modlib.file.concat_path { folderpath, foldername })
 			end
 		end
 	end
@@ -58,4 +58,4 @@ for _, mod in ipairs(modlib.minetest.get_mod_load_order()) do
 	end
 end
 
-return {paths = paths, mods = mods, overridden_paths = overridden_paths, overridden_mods = overridden_mods}
+return { paths = paths, mods = mods, overridden_paths = overridden_paths, overridden_mods = overridden_mods }

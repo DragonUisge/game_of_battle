@@ -1,9 +1,9 @@
 -- Localize globals
 local assert, math, modlib, setmetatable, string, table
-	= assert, math, modlib, setmetatable, string, table
+                                                        = assert, math, modlib, setmetatable, string, table
 
 -- Set environment
-local _ENV = {}
+local _ENV                                              = {}
 setfenv(1, _ENV)
 
 function upper_first(text) return text:sub(1, 1):upper() .. text:sub(2) end
@@ -12,14 +12,14 @@ function lower_first(text) return text:sub(1, 1):lower() .. text:sub(2) end
 
 function starts_with(text, prefix) return text:sub(1, #prefix) == prefix end
 
-function ends_with(text, suffix) return text:sub(-#suffix) == suffix end
+function ends_with(text, suffix) return text:sub(- #suffix) == suffix end
 
 function contains(str, substr, plain)
 	return not not str:find(substr, 1, plain == nil and true or plain)
 end
 
 function trim_spacing(text)
-	return text:match"^%s*(.-)%s*$"
+	return text:match "^%s*(.-)%s*$"
 end
 
 local inputstream_metatable = {
@@ -35,7 +35,7 @@ local inputstream_metatable = {
 }
 --> inputstream "handle"; only allows reading characters (given a count), seeking does not accept any arguments
 function inputstream(text)
-	return setmetatable({text = text, cursor = 0}, inputstream_metatable)
+	return setmetatable({ text = text, cursor = 0 }, inputstream_metatable)
 end
 
 function hexdump(text)
@@ -120,11 +120,10 @@ function lines(str)
 	end
 end
 
-
-local zero = string.byte"0"
-local nine = string.byte"9"
-local letter_a = string.byte"A"
-local letter_f = string.byte"F"
+local zero = string.byte "0"
+local nine = string.byte "9"
+local letter_a = string.byte "A"
+local letter_f = string.byte "F"
 
 function is_hexadecimal(byte)
 	return byte >= zero and byte <= nine or byte >= letter_a and byte <= letter_f
@@ -138,7 +137,7 @@ end
 
 escape_magic_chars = escape_pattern
 
-local keywords = modlib.table.set{"and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"}
+local keywords = modlib.table.set { "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while" }
 keywords["goto"] = true -- Lua 5.2 (LuaJIT) support
 
 function is_keyword(text)
@@ -146,7 +145,7 @@ function is_keyword(text)
 end
 
 function is_identifier(text)
-	return (not keywords[text]) and text:match"^[A-Za-z_][A-Za-z%d_]*$"
+	return (not keywords[text]) and text:match "^[A-Za-z_][A-Za-z%d_]*$"
 end
 
 local function inextchar(text, i)
@@ -177,8 +176,8 @@ local function _random_bytes(count)
 end
 
 function random_bytes(
-	-- number, how many random bytes the string should have, defaults to 1
-	-- limited by stack size
+-- number, how many random bytes the string should have, defaults to 1
+-- limited by stack size
 	count
 )
 	count = count or 1

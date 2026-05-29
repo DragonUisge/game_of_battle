@@ -2,21 +2,21 @@ local colorspec = modlib.minetest.colorspec
 
 local texmod = {}
 local mod = {}
-local metatable = {__index = mod}
+local metatable = { __index = mod }
 
 local function new(self)
 	return setmetatable(self, metatable)
 end
 
 -- `texmod{...}` may be used to create texture modifiers, bypassing the checks
-setmetatable(texmod, {__call = new})
+setmetatable(texmod, { __call = new })
 
 -- Constructors / "generators"
 
 function texmod.file(filename)
 	-- See `TEXTURENAME_ALLOWED_CHARS` in Minetest (`src/network/networkprotocol.h`)
-	assert(not filename:find"[^%w_.-]", "invalid characters in file name")
-	return new{
+	assert(not filename:find "[^%w_.-]", "invalid characters in file name")
+	return new {
 		type = "file",
 		filename = filename
 	}
@@ -24,7 +24,7 @@ end
 
 function texmod.png(data)
 	assert(type(data) == "string")
-	return new{
+	return new {
 		type = "png",
 		data = data
 	}
@@ -38,7 +38,7 @@ function texmod.combine(w, h, blits)
 		assert(blit.y % 1 == 0)
 		assert(blit.texture)
 	end
-	return new{
+	return new {
 		type = "combine",
 		w = w,
 		h = h,
@@ -47,7 +47,7 @@ function texmod.combine(w, h, blits)
 end
 
 function texmod.inventorycube(top, left, right)
-	return new{
+	return new {
 		type = "inventorycube",
 		top = top,
 		left = left,
@@ -59,7 +59,7 @@ end
 function texmod.fill(w, h, color)
 	assert(w % 1 == 0 and w > 0)
 	assert(h % 1 == 0 and h > 0)
-	return new{
+	return new {
 		type = "fill",
 		w = w,
 		h = h,
@@ -79,7 +79,7 @@ function mod:fill(w, h, x, y, color)
 	assert(h % 1 == 0 and h > 0)
 	assert(x % 1 == 0 and x >= 0)
 	assert(y % 1 == 0 and y >= 0)
-	return new{
+	return new {
 		type = "fill",
 		base = self,
 		w = w,
@@ -92,7 +92,7 @@ end
 
 -- This is the real "overlay", associated with `^`.
 function mod:blit(overlay)
-	return new{
+	return new {
 		type = "blit",
 		base = self,
 		over = overlay
@@ -100,14 +100,14 @@ function mod:blit(overlay)
 end
 
 function mod:brighten()
-	return new{
+	return new {
 		type = "brighten",
 		base = self,
 	}
 end
 
 function mod:noalpha()
-	return new{
+	return new {
 		type = "noalpha",
 		base = self
 	}
@@ -116,7 +116,7 @@ end
 function mod:resize(w, h)
 	assert(w % 1 == 0 and w > 0)
 	assert(h % 1 == 0 and h > 0)
-	return new{
+	return new {
 		type = "resize",
 		base = self,
 		w = w,
@@ -130,7 +130,7 @@ end
 
 function mod:makealpha(r, g, b)
 	assert_uint8(r); assert_uint8(g); assert_uint8(b)
-	return new{
+	return new {
 		type = "makealpha",
 		base = self,
 		r = r, g = g, b = b
@@ -139,7 +139,7 @@ end
 
 function mod:opacity(ratio)
 	assert_uint8(ratio)
-	return new{
+	return new {
 		type = "opacity",
 		base = self,
 		ratio = ratio
@@ -151,7 +151,7 @@ local function tobool(val)
 end
 
 function mod:invert(channels --[[set with keys "r", "g", "b", "a"]])
-	return new{
+	return new {
 		type = "invert",
 		base = self,
 		r = tobool(channels.r),
@@ -183,28 +183,28 @@ do
 		local a_1_1, a_1_2, a_2_1, a_2_2 = unpack(a)
 		local b_1_1, b_1_2, b_2_1, b_2_2 = unpack(b)
 		return {
-			a_1_1 * b_1_1 + a_2_1 * b_1_2, a_1_2 * b_1_1 + a_2_2 * b_1_2;
+			a_1_1 * b_1_1 + a_2_1 * b_1_2, a_1_2 * b_1_1 + a_2_2 * b_1_2,
 			a_1_1 * b_2_1 + a_2_1 * b_2_2, a_1_2 * b_2_1 + a_2_2 * b_2_2
 		}
 	end
-	local r90 ={
-		0, -1;
+	local r90 = {
+		0, -1,
 		1, 0
 	}
 	local fx = {
-		-1, 0;
+		-1, 0,
 		0, 1
 	}
 	local fy = {
-		1, 0;
+		1, 0,
 		0, -1
 	}
 	local r180 = mat_2x2_compose(r90, r90)
 	local r270 = mat_2x2_compose(r180, r90)
 	local fxr90 = mat_2x2_compose(fx, r90)
 	local fyr90 = mat_2x2_compose(fy, r90)
-	local transform_mats = {[0] = {1, 0; 0, 1}, r90, r180, r270, fx, fxr90, fy, fyr90}
-	local transform_idx_by_name = {i = 0, r90 = 1, r180 = 2, r270 = 3, fx = 4, fxr90 = 5, fy = 6, fyr90 = 7}
+	local transform_mats = { [0] = { 1, 0, 0, 1 }, r90, r180, r270, fx, fxr90, fy, fyr90 }
+	local transform_idx_by_name = { i = 0, r90 = 1, r180 = 2, r270 = 3, fx = 4, fxr90 = 5, fy = 6, fyr90 = 7 }
 	-- Lookup tables for getting the flipped axis / rotation angle
 	local flip_by_idx = {
 		[4] = "x",
@@ -222,7 +222,7 @@ do
 	local idx_by_mat_2x2 = {}
 	local function transform_idx(mat)
 		-- note: assumes mat[i] in {-1, 0, 1}
-		return mat[1] + 3*(mat[2] + 3*(mat[3] + 3*mat[4]))
+		return mat[1] + 3 * (mat[2] + 3 * (mat[3] + 3 * mat[4]))
 	end
 	for i = 0, 7 do
 		idx_by_mat_2x2[transform_idx(transform_mats[i])] = i
@@ -230,12 +230,12 @@ do
 	-- Compute a multiplication table
 	local composition_idx = {}
 	local function ij_idx(i, j)
-		return i*8 + j
+		return i * 8 + j
 	end
 	for i = 0, 7 do
 		for j = 0, 7 do
 			composition_idx[ij_idx(i, j)] = assert(idx_by_mat_2x2[
-				transform_idx(mat_2x2_compose(transform_mats[i], transform_mats[j]))])
+			transform_idx(mat_2x2_compose(transform_mats[i], transform_mats[j]))])
 		end
 	end
 	function mod:transform(...)
@@ -253,7 +253,7 @@ do
 		end
 		assert(transform_mats[idx])
 		if idx == 0 then return base end -- identity
-		return new{
+		return new {
 			type = "transform",
 			base = base,
 			idx = idx,
@@ -267,7 +267,7 @@ end
 function mod:verticalframe(framecount, frame)
 	assert(framecount >= 1)
 	assert(frame >= 0)
-	return new{
+	return new {
 		type = "verticalframe",
 		base = self,
 		framecount = framecount,
@@ -286,7 +286,7 @@ local function crack(self, name, ...)
 	assert(tilecount >= 1)
 	assert(framecount >= 1)
 	assert(frame >= 0)
-	return new{
+	return new {
 		type = name,
 		base = self,
 		tilecount = tilecount,
@@ -302,6 +302,7 @@ end
 function mod:cracko(...)
 	return crack(self, "cracko", ...)
 end
+
 mod.crack_with_opacity = mod.cracko
 
 function mod:sheet(w, h, x, y)
@@ -309,7 +310,7 @@ function mod:sheet(w, h, x, y)
 	assert(h % 1 == 0 and h >= 1)
 	assert(x % 1 == 0 and x >= 0)
 	assert(y % 1 == 0 and y >= 0)
-	return new{
+	return new {
 		type = "sheet",
 		base = self,
 		w = w,
@@ -320,7 +321,7 @@ function mod:sheet(w, h, x, y)
 end
 
 function mod:screen(color)
-	return new{
+	return new {
 		type = "screen",
 		base = self,
 		color = colorspec.from_any(color),
@@ -328,7 +329,7 @@ function mod:screen(color)
 end
 
 function mod:multiply(color)
-	return new{
+	return new {
 		type = "multiply",
 		base = self,
 		color = colorspec.from_any(color)
@@ -346,7 +347,7 @@ function mod:colorize(color, ratio)
 			ratio = nil
 		end
 	end
-	return new{
+	return new {
 		type = "colorize",
 		base = self,
 		color = color,
@@ -360,7 +361,7 @@ local function hsl(type, s_def, s_max, l_def)
 		assert_int_range(h, -180, 180)
 		assert_int_range(s, 0, s_max)
 		assert_int_range(l, -100, 100)
-		return new{
+		return new {
 			type = type,
 			base = self,
 			hue = h,
@@ -377,7 +378,7 @@ function mod:contrast(contrast, brightness)
 	brightness = brightness or 0
 	assert_int_range(contrast, -127, 127)
 	assert_int_range(brightness, -127, 127)
-	return new{
+	return new {
 		type = "contrast",
 		base = self,
 		contrast = contrast,
@@ -386,7 +387,7 @@ function mod:contrast(contrast, brightness)
 end
 
 function mod:mask(mask_texmod)
-	return new{
+	return new {
 		type = "mask",
 		base = self,
 		_mask = mask_texmod
@@ -394,7 +395,7 @@ function mod:mask(mask_texmod)
 end
 
 function mod:hardlight(overlay)
-	return new{
+	return new {
 		type = "hardlight",
 		base = self,
 		over = overlay
@@ -411,7 +412,7 @@ end
 
 function mod:lowpart(percent, overlay)
 	assert(percent % 1 == 0 and percent >= 0 and percent <= 100)
-	return new{
+	return new {
 		type = "lowpart",
 		base = self,
 		percent = percent,

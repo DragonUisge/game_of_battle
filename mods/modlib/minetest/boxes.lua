@@ -1,20 +1,20 @@
 -- Localize globals
 local assert, ipairs, math, minetest, table, type, vector
-	= assert, ipairs, math, minetest, table, type, vector
+                                                          = assert, ipairs, math, minetest, table, type, vector
 
 -- Set environment
-local _ENV = ...
+local _ENV                                                = ...
 setfenv(1, _ENV)
 
 -- Minetest allows shorthand box = {...} instead of {{...}}
 local function get_boxes(box_or_boxes)
-	return type(box_or_boxes[1]) == "number" and {box_or_boxes} or box_or_boxes
+	return type(box_or_boxes[1]) == "number" and { box_or_boxes } or box_or_boxes
 end
 
-local has_boxes_prop = {collision_box = "walkable", selection_box = "pointable"}
+local has_boxes_prop = { collision_box = "walkable", selection_box = "pointable" }
 
 -- Required for raycast box IDs to be accurate
-local connect_sides_order = {"top", "bottom", "front", "left", "back", "right"}
+local connect_sides_order = { "top", "bottom", "front", "left", "back", "right" }
 
 local connect_sides_directions = {
 	top = vector.new(0, 1, 0),
@@ -32,11 +32,11 @@ local function get_node_boxes(pos, type)
 	if not node_def or node_def[has_boxes_prop[type]] == false then
 		return {}
 	end
-	local boxes = {{-0.5, -0.5, -0.5, 0.5, 0.5, 0.5}}
+	local boxes = { { -0.5, -0.5, -0.5, 0.5, 0.5, 0.5 } }
 	local def_node_box = node_def.drawtype == "nodebox" and node_def.node_box
 	local def_box = node_def[type] or def_node_box -- will evaluate to def_node_box for type = nil
 	if not def_box then
-		return boxes -- default to regular box
+		return boxes                            -- default to regular box
 	end
 	local box_type = def_box.type
 	if box_type == "regular" then
@@ -52,31 +52,32 @@ local function get_node_boxes(pos, type)
 			box[5] = level
 		end
 	elseif box_type == "wallmounted" then
-		local dir = minetest.wallmounted_to_dir((paramtype2 == "colorwallmounted" and node.param2 % 8 or node.param2) or 0)
+		local dir = minetest.wallmounted_to_dir((paramtype2 == "colorwallmounted" and node.param2 % 8 or node.param2) or
+		0)
 		local box
 		-- The (undocumented!) node box defaults below are taken from `NodeBox::reset`
 		if dir.y > 0 then
-			box = def_box.wall_top or {-0.5, 0.5 - 1/16, -0.5, 0.5, 0.5, 0.5}
+			box = def_box.wall_top or { -0.5, 0.5 - 1 / 16, -0.5, 0.5, 0.5, 0.5 }
 		elseif dir.y < 0 then
-			box = def_box.wall_bottom or {-0.5, -0.5, -0.5, 0.5, -0.5 + 1/16, 0.5}
+			box = def_box.wall_bottom or { -0.5, -0.5, -0.5, 0.5, -0.5 + 1 / 16, 0.5 }
 		else
-			box = def_box.wall_side or {-0.5, -0.5, -0.5, -0.5 + 1/16, 0.5, 0.5}
+			box = def_box.wall_side or { -0.5, -0.5, -0.5, -0.5 + 1 / 16, 0.5, 0.5 }
 			if dir.z > 0 then
-				box = {box[3], box[2], -box[4], box[6], box[5], -box[1]}
+				box = { box[3], box[2], -box[4], box[6], box[5], -box[1] }
 			elseif dir.z < 0 then
-				box = {-box[6], box[2], box[1], -box[3], box[5], box[4]}
+				box = { -box[6], box[2], box[1], -box[3], box[5], box[4] }
 			elseif dir.x > 0 then
-				box = {-box[4], box[2], box[3], -box[1], box[5], box[6]}
+				box = { -box[4], box[2], box[3], -box[1], box[5], box[6] }
 			else
-				box = {box[1], box[2], -box[6], box[4], box[5], -box[3]}
+				box = { box[1], box[2], -box[6], box[4], box[5], -box[3] }
 			end
 		end
-		return {assert(box, "incomplete wallmounted collisionbox definition of " .. node.name)}
+		return { assert(box, "incomplete wallmounted collisionbox definition of " .. node.name) }
 	end
 	if box_type == "connected" then
 		boxes = table.copy(boxes)
 		local connect_sides = connect_sides_directions -- (ab)use directions as a "set" of sides
-		if node_def.connect_sides then -- build set of sides from given list
+		if node_def.connect_sides then           -- build set of sides from given list
 			connect_sides = {}
 			for _, side in ipairs(node_def.connect_sides) do
 				connect_sides[side] = true
@@ -121,11 +122,13 @@ local function get_node_boxes(pos, type)
 		local param2 = paramtype2 == "colorfacedir" and node.param2 % 32 or node.param2 or 0
 		if param2 ~= 0 then
 			boxes = table.copy(boxes)
-			local axis = ({5, 6, 3, 4, 1, 2})[math.floor(param2 / 4) + 1]
+			local axis = ({ 5, 6, 3, 4, 1, 2 })[math.floor(param2 / 4) + 1]
 			local other_axis_1, other_axis_2 = (axis % 3) + 1, ((axis + 1) % 3) + 1
 			local rotation = (param2 % 4) / 2 * math.pi
 			local flip = axis > 3
-			if flip then axis = axis - 3; rotation = -rotation end
+			if flip then
+				axis = axis - 3; rotation = -rotation
+			end
 			local sin, cos = math.sin(rotation), math.cos(rotation)
 			if axis == 2 then
 				sin = -sin

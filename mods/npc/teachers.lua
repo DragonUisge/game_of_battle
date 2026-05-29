@@ -117,27 +117,27 @@ minetest.register_entity("npc:classroom_teacher", {
 	initial_properties = {
 		visual               = "mesh",
 		mesh                 = "character.b3d",
-		textures             = {"npc_wapenverkoper.png"},
+		textures             = { "npc_wapenverkoper.png" },
 		physical             = true,
 		collide_with_objects = false,
-		collisionbox         = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
-		visual_size          = {x = 1, y = 1, z = 1},
+		collisionbox         = { -0.3, 0.0, -0.3, 0.3, 1.7, 0.3 },
+		visual_size          = { x = 1, y = 1, z = 1 },
 		makes_footstep_sound = false,
 		nametag              = "",
 		nametag_color        = "#FFFF55",
 		static_save          = false,
 	},
 
-	_subject      = "",
-	_teacher_name = "",
-	_lines        = {},
-	_line_idx     = 1,
+	_subject           = "",
+	_teacher_name      = "",
+	_lines             = {},
+	_line_idx          = 1,
 
-	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 0, y = 79}, 30, 0, true)
+	on_activate        = function(self, staticdata)
+		self.object:set_animation({ x = 0, y = 79 }, 30, 0, true)
 	end,
 
-	on_rightclick = function(self, clicker)
+	on_rightclick      = function(self, clicker)
 		if not clicker or not clicker:is_player() then return end
 		local pname = clicker:get_player_name()
 		if #self._lines == 0 then return end
@@ -147,11 +147,11 @@ minetest.register_entity("npc:classroom_teacher", {
 			minetest.colorize("#FFFF55", "[" .. self._teacher_name .. "] ") .. line)
 	end,
 
-	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
-		return true  -- onkwetsbaar
+	on_punch           = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+		return true -- onkwetsbaar
 	end,
 
-	on_step = function(self, dtime)
+	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 		local nearest, nearest_dist = nil, math.huge
@@ -174,7 +174,7 @@ local function spawn_teacher(def)
 	if not obj then return end
 	obj:set_properties({
 		nametag  = def.teacher .. " (" .. def.subject .. ")",
-		textures = {def.texture},
+		textures = { def.texture },
 	})
 	local lua = obj:get_luaentity()
 	if lua then
@@ -237,9 +237,10 @@ end)
 -- ── /set_teacher_pos <vak> ────────────────────────────────────────────────────
 minetest.register_chatcommand("set_teacher_pos", {
 	params      = "<vak>",
-	description = "Herplaats leraar op jouw positie (server). Vakken: Frans/Wiskunde/Nederlands/Natuurkunde/Biologie/Engels",
-	privs       = {server = true},
-	func = function(name, param)
+	description =
+	"Herplaats leraar op jouw positie (server). Vakken: Frans/Wiskunde/Nederlands/Natuurkunde/Biologie/Engels",
+	privs       = { server = true },
+	func        = function(name, param)
 		local player = minetest.get_player_by_name(name)
 		if not player then return false, "Speler niet gevonden." end
 		local subject = param:match("^%s*(.-)%s*$")

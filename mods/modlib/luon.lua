@@ -1,13 +1,17 @@
 -- Lua module to serialize values as Lua code
 
 local assert, error, rawget, pairs, pcall, type, setfenv, setmetatable, select, loadstring, loadfile
-	= assert, error, rawget, pairs, pcall, type, setfenv, setmetatable, select, loadstring, loadfile
+                                                                                                     = assert, error,
+	rawget, pairs, pcall, type, setfenv, setmetatable, select, loadstring, loadfile
 
 local table_concat, string_format, math_huge
-	= table.concat, string.format, math.huge
+                                                                                                     = table.concat,
+	string.format, math.huge
 
-local count_objects = modlib.table.count_objects
-local is_identifier = modlib.text.is_identifier
+local count_objects                                                                                  = modlib.table
+.count_objects
+local is_identifier                                                                                  = modlib.text
+.is_identifier
 
 local function quote(string)
 	return string_format("%q", string)
@@ -15,7 +19,7 @@ end
 
 local _ENV = {}
 setfenv(1, _ENV)
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 _ENV.metatable = metatable
 
 function new(self)
@@ -43,17 +47,17 @@ function write(self, value, write)
 		-- Object must appear more than once. If it is a string, the reference has to be shorter than the string.
 		if count >= 2 and (type_ ~= "string" or #reference + 5 < #object) then
 			if refnum == 1 then
-				write"local _={};" -- initialize reference table
+				write "local _={};" -- initialize reference table
 			end
-			write"_["
+			write "_["
 			write(reference)
-			write"]="
+			write "]="
 			if type_ == "table" then
-				write"{}"
+				write "{}"
 			elseif type_ == "string" then
 				write(quote(object))
 			end
-			write";"
+			write ";"
 			references[object] = reference
 			if type_ == "table" then
 				to_fill[object] = reference
@@ -69,21 +73,25 @@ function write(self, value, write)
 	local function dump(value)
 		-- Primitive types
 		if value == nil then
-			return write"nil"
-		end if value == true then
-			return write"true"
-		end if value == false then
-			return write"false"
+			return write "nil"
+		end
+		if value == true then
+			return write "true"
+		end
+		if value == false then
+			return write "false"
 		end
 		local type_ = type(value)
 		if type_ == "number" then
 			-- Explicit handling of special values for forwards compatibility
 			if value ~= value then -- nan
-				return write"0/0"
-			end if value == math_huge then
-				return write"1/0"
-			end if value == -math_huge then
-				return write"-1/0"
+				return write "0/0"
+			end
+			if value == math_huge then
+				return write "1/0"
+			end
+			if value == -math_huge then
+				return write "-1/0"
 			end
 			return write(string_format("%.17g", value))
 		end
@@ -91,19 +99,21 @@ function write(self, value, write)
 		local ref = references[value]
 		if ref then
 			-- Referenced
-			write"_["
+			write "_["
 			write(ref)
-			return write"]"
-		end if type_ == "string" then
+			return write "]"
+		end
+		if type_ == "string" then
 			return write(quote(value))
-		end if type_ == "table" then
-			write"{"
+		end
+		if type_ == "table" then
+			write "{"
 			-- First write list keys:
 			-- Don't use the table length #value here as it may horribly fail
 			-- for tables which use large integers as keys in the hash part;
 			-- stop at the first "hole" (nil value) instead
 			local len = 0
-			local first = true -- whether this is the first entry, which may not have a leading comma
+			local first = true       -- whether this is the first entry, which may not have a leading comma
 			while true do
 				local v = rawget(value, len + 1) -- use rawget to avoid metatables like the vector metatable
 				if v == nil then break end
@@ -119,15 +129,15 @@ function write(self, value, write)
 					if use_short_key(k) then
 						write(k)
 					else
-						write"["
+						write "["
 						dump(k)
-						write"]"
+						write "]"
 					end
-					write"="
+					write "="
 					dump(v)
 				end
 			end
-			return write"}"
+			return write "}"
 		end
 		-- TODO move aux_write to start, to allow dealing with metatables etc.?
 		return (function(func, ...)
@@ -136,38 +146,38 @@ function write(self, value, write)
 				return error("unsupported type: " .. type_)
 			end
 			write(func)
-			write"("
+			write "("
 			local n = select("#", ...)
 			for i = 1, n - 1 do
 				dump(select(i, ...))
-				write","
+				write ","
 			end
 			if n > 0 then
 				dump(select(n, ...))
 			end
-			write")"
+			write ")"
 		end)(self:aux_write(value))
 	end
 	-- Write the statements to fill circular tables
 	for table, ref in pairs(to_fill) do
 		for k, v in pairs(table) do
-			write"_["
+			write "_["
 			write(ref)
-			write"]"
+			write "]"
 			if use_short_key(k) then
-				write"."
+				write "."
 				write(k)
 			else
-				write"["
+				write "["
 				dump(k)
-				write"]"
+				write "]"
 			end
-			write"="
+			write "="
 			dump(v)
-			write";"
+			write ";"
 		end
 	end
-	write"return "
+	write "return "
 	dump(value)
 end
 
@@ -188,7 +198,7 @@ end
 function read(self, ...)
 	local read = assert(...)
 	-- math.huge was serialized to inf, 0/0 was serialized to -nan by `%.17g`
-	setfenv(read, setmetatable({inf = math_huge, nan = 0/0}, {__index = self.aux_read}))
+	setfenv(read, setmetatable({ inf = math_huge, nan = 0 / 0 }, { __index = self.aux_read }))
 	local success, value_or_err = pcall(read)
 	if success then
 		return value_or_err

@@ -13,8 +13,9 @@ function get_name(filepath)
 end
 
 function split_extension(filename)
-	return filename:match"^(.*)%.(.*)$"
+	return filename:match "^(.*)%.(.*)$"
 end
+
 --! deprecated
 get_extension = split_extension
 
@@ -41,7 +42,7 @@ end
 function read(filename)
 	local file, err = io.open(filename, "r")
 	if file == nil then return nil, err end
-	local content = file:read"*a"
+	local content = file:read "*a"
 	file:close()
 	return content
 end
@@ -49,7 +50,7 @@ end
 function read_binary(filename)
 	local file, err = io.open(filename, "rb")
 	if file == nil then return nil, err end
-	local content = file:read"*a"
+	local content = file:read "*a"
 	file:close()
 	return content
 end

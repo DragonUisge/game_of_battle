@@ -1,17 +1,17 @@
 local assert, tonumber, type, setmetatable, ipairs, unpack
-	= assert, tonumber, type, setmetatable, ipairs, unpack
+                                                           = assert, tonumber, type, setmetatable, ipairs, unpack
 
 local math_floor, table_insert, table_concat
-	= math.floor, table.insert, table.concat
+                                                           = math.floor, table.insert, table.concat
 
-local obj = {}
+local obj                                                  = {}
 
-local metatable = {__index = obj}
+local metatable                                            = { __index = obj }
 
 local function read_floats(next_word, n)
 	if n == 0 then return end
 	local num = next_word()
-	assert(num:find"^%-?%d+$" or num:find"^%-?%d+%.%d+$")
+	assert(num:find "^%-?%d+$" or num:find "^%-?%d+%.%d+$")
 	return tonumber(num), read_floats(next_word, n - 1)
 end
 
@@ -30,13 +30,13 @@ local function read_indices(self, next_word)
 	if not word then return end
 	-- TODO optimize this (ideally using a vararg-ish split by `/`)
 	local vertex, texcoord, normal
-	vertex = word:match"^%-?%d+$"
+	vertex = word:match "^%-?%d+$"
 	if not vertex then
-		vertex, texcoord = word:match"^(%-?%d+)/(%-?%d+)$"
+		vertex, texcoord = word:match "^(%-?%d+)/(%-?%d+)$"
 		if not vertex then
-			vertex, normal = word:match"^(%-?%d+)//(%-?%d+)$"
+			vertex, normal = word:match "^(%-?%d+)//(%-?%d+)$"
 			if not vertex then
-				vertex, texcoord, normal = word:match"^(%-?%d+)/(%-?%d+)/(%-?%d+)$"
+				vertex, texcoord, normal = word:match "^(%-?%d+)/(%-?%d+)/(%-?%d+)$"
 			end
 		end
 	end
@@ -57,30 +57,30 @@ function obj.read_lines(
 		groups = {}
 	}
 	local groups = {}
-	local active_group = {name = "default"}
+	local active_group = { name = "default" }
 	groups[1] = active_group
 	groups.default = active_group
 	for line in ... do
 		if line:byte() ~= ("#"):byte() then
-			local next_word = line:gmatch"%S+"
+			local next_word = line:gmatch "%S+"
 			local command = next_word()
 			if command == "v" or command == "vn" then
 				local x, y, z = read_floats(next_word, 3)
 				x = -x
-				table_insert(self[command == "v" and "vertices" or "normals"], {x, y, z})
+				table_insert(self[command == "v" and "vertices" or "normals"], { x, y, z })
 			elseif command == "vt" then
 				local x, y = read_floats(next_word, 2)
 				y = 1 - y
-				table_insert(self.texcoords, {x, y})
+				table_insert(self.texcoords, { x, y })
 			elseif command == "f" then
-				table_insert(active_group, {read_indices(self, next_word)})
+				table_insert(active_group, { read_indices(self, next_word) })
 			elseif command == "g" or command == "usemtl" then
 				-- TODO consider distinguishing between materials & groups
 				local name = next_word() or "default"
 				if groups[name] then
 					active_group = groups[name]
 				else
-					active_group = {name = name}
+					active_group = { name = name }
 					table_insert(groups, active_group)
 					groups[name] = active_group
 				end
@@ -111,23 +111,24 @@ end
 --> obj object
 function obj.read_string(str)
 	-- Empty lines can be ignored
-	return obj.read_lines(str:gmatch"[^\r\n]+")
+	return obj.read_lines(str:gmatch "[^\r\n]+")
 end
 
 local function write_float(float)
 	if math_floor(float) == float then
 		return ("%d"):format(float)
 	end
-	return ("%f"):format(float):match"^(.-)0*$" -- strip trailing zeros
+	return ("%f"):format(float):match "^(.-)0*$" -- strip trailing zeros
 end
 
 local function write_index(index)
 	if index.texcoord then
 		if index.normal then
-			return("%d/%d/%d"):format(index.vertex, index.texcoord, index.normal)
+			return ("%d/%d/%d"):format(index.vertex, index.texcoord, index.normal)
 		end
 		return ("%d/%d"):format(index.vertex, index.texcoord)
-	end if index.normal then
+	end
+	if index.normal then
 		return ("%d//%d"):format(index.vertex, index.normal)
 	end
 	return ("%d"):format(index.vertex)
@@ -156,7 +157,7 @@ function obj:write_lines(
 	for _, group in ipairs(self.groups) do
 		write_line("g " .. group.name) -- this will convert `usemtl` into `g` but that shouldn't matter
 		for _, face in ipairs(group) do
-			local command = {"f"}
+			local command = { "f" }
 			for i, index in ipairs(face) do
 				command[i + 1] = write_index(index)
 			end
@@ -173,7 +174,7 @@ function obj:write_file(file_or_name)
 	end
 	self:write_lines(function(line)
 		file_or_name:write(line)
-		file_or_name:write"\n"
+		file_or_name:write "\n"
 	end)
 end
 
@@ -183,7 +184,7 @@ function obj:write_string()
 	self:write_lines(function(line)
 		table_insert(rope, line)
 	end)
-	table_insert(rope, "") -- trailing newline for good measure
+	table_insert(rope, "")       -- trailing newline for good measure
 	return table_concat(rope, "\n") -- string representation of `self`
 end
 

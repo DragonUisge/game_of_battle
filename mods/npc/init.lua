@@ -2,7 +2,7 @@
 
 -- Global table for shared functions
 npc = {}
-npc._refs = {}  -- track spawned NPC objectrefs
+npc._refs = {} -- track spawned NPC objectrefs
 
 --- Spawn an NPC entity at a position with a nametag.
 -- @param pos       vector: spawn position
@@ -19,7 +19,7 @@ function npc.spawn_npc(pos, name, texture)
 	obj:set_properties({
 		nametag = name,
 		nametag_color = "#FFFFFF",
-		textures = {texture or "npc_wapenverkoper.png"},
+		textures = { texture or "npc_wapenverkoper.png" },
 	})
 
 	local lua = obj:get_luaentity()
@@ -72,18 +72,18 @@ end
 -- Build food shop formspec
 local function build_food_formspec(npc_name, coins)
 	-- Row layout: 5 items, each 2.3 wide, starting at x=0.4 with 0.3 gap
-	local ix = {0.4, 2.9, 5.4, 7.9, 10.4}
-	local iw, ih = 2.3, 2.3
-	local btn_y   = 1.65      -- top of item buttons
-	local name_y  = btn_y + ih + 0.25   -- label: item name
-	local price_y = name_y + 0.45       -- label: price
-	local close_y = price_y + 0.65      -- close button y
+	local ix      = { 0.4, 2.9, 5.4, 7.9, 10.4 }
+	local iw, ih  = 2.3, 2.3
+	local btn_y   = 1.65                                          -- top of item buttons
+	local name_y  = btn_y + ih + 0.25                             -- label: item name
+	local price_y = name_y + 0.45                                 -- label: price
+	local close_y = price_y + 0.65                                -- close button y
 
-	local heal = {"+3 HP", "+5 HP", "+7 HP", "+10 HP", "6x munitie"}  -- tooltips
+	local heal    = { "+3 HP", "+5 HP", "+7 HP", "+10 HP", "6x munitie" } -- tooltips
 
 	return
 		"formspec_version[4]" ..
-		"size[13.1,"..(close_y + 0.9).."]" ..
+		"size[13.1," .. (close_y + 0.9) .. "]" ..
 		"no_prepend[]" ..
 		"bgcolor[#111122;true;#0d0d1f]" ..
 		-- Header bar
@@ -93,33 +93,31 @@ local function build_food_formspec(npc_name, coins)
 		"box[0.2,0.9;12.7,0.45;#0d1a3a]" ..
 		"label[0.4,1.06;💰 Saldo: " .. coins .. " munten]" ..
 		-- Items
-		"image_button["..ix[1]..","..btn_y..";"..iw..","..ih..";registered_apple.png;buy_apple;]" ..
-		"tooltip[buy_apple;Appel — geneest "..heal[1].."]" ..
-		"label["..ix[1]..","..name_y..";Appel]" ..
-		"label["..ix[1]..","..price_y..";2 munten]" ..
-
-		"image_button["..ix[2]..","..btn_y..";"..iw..","..ih..";registered_bread.png;buy_bread;]" ..
-		"tooltip[buy_bread;Brood — geneest "..heal[2].."]" ..
-		"label["..ix[2]..","..name_y..";Brood]" ..
-		"label["..ix[2]..","..price_y..";4 munten]" ..
-
-		"image_button["..ix[3]..","..btn_y..";"..iw..","..ih..";registered_fish.png;buy_fish;]" ..
-		"tooltip[buy_fish;Vis — geneest "..heal[3].."]" ..
-		"label["..ix[3]..","..name_y..";Vis]" ..
-		"label["..ix[3]..","..price_y..";6 munten]" ..
-
-		"image_button["..ix[4]..","..btn_y..";"..iw..","..ih..";registered_meat.png;buy_meat;]" ..
-		"tooltip[buy_meat;Vlees — geneest "..heal[4].."]" ..
-		"label["..ix[4]..","..name_y..";Vlees]" ..
-		"label["..ix[4]..","..price_y..";8 munten]" ..
+		"image_button[" .. ix[1] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_apple.png;buy_apple;]" ..
+		"tooltip[buy_apple;Appel — geneest " .. heal[1] .. "]" ..
+		"label[" .. ix[1] .. "," .. name_y .. ";Appel]" ..
+		"label[" .. ix[1] .. "," .. price_y .. ";2 munten]" ..
+		"image_button[" .. ix[2] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_bread.png;buy_bread;]" ..
+		"tooltip[buy_bread;Brood — geneest " .. heal[2] .. "]" ..
+		"label[" .. ix[2] .. "," .. name_y .. ";Brood]" ..
+		"label[" .. ix[2] .. "," .. price_y .. ";4 munten]" ..
+		"image_button[" .. ix[3] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_fish.png;buy_fish;]" ..
+		"tooltip[buy_fish;Vis — geneest " .. heal[3] .. "]" ..
+		"label[" .. ix[3] .. "," .. name_y .. ";Vis]" ..
+		"label[" .. ix[3] .. "," .. price_y .. ";6 munten]" ..
+		"image_button[" .. ix[4] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_meat.png;buy_meat;]" ..
+		"tooltip[buy_meat;Vlees — geneest " .. heal[4] .. "]" ..
+		"label[" .. ix[4] .. "," .. name_y .. ";Vlees]" ..
+		"label[" .. ix[4] .. "," .. price_y .. ";8 munten]" ..
 
 		-- Fanta 6-Pack (munitie voor de Fanta Bazooka)
-		"image_button["..ix[5]..","..btn_y..";"..iw..","..ih..";registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
-		"tooltip[buy_fanta_sixpack;Fanta 6-Pack — "..heal[5].."]" ..
-		"label["..ix[5]..","..name_y..";Fanta 6-Pack]" ..
-		"label["..ix[5]..","..price_y..";5 munten]" ..
+		"image_button[" .. ix[5] .. "," ..
+		btn_y .. ";" .. iw .. "," .. ih .. ";registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
+		"tooltip[buy_fanta_sixpack;Fanta 6-Pack — " .. heal[5] .. "]" ..
+		"label[" .. ix[5] .. "," .. name_y .. ";Fanta 6-Pack]" ..
+		"label[" .. ix[5] .. "," .. price_y .. ";5 munten]" ..
 
-		"button_exit[4.8,"..close_y..";3.5,0.7;close;✖ Sluiten]"
+		"button_exit[4.8," .. close_y .. ";3.5,0.7;close;✖ Sluiten]"
 end
 
 -- NPC entity definition
@@ -127,11 +125,11 @@ minetest.register_entity("npc:npc", {
 	initial_properties = {
 		visual = "mesh",
 		mesh = "character.b3d",
-		textures = {"npc_wapenverkoper.png"},
+		textures = { "npc_wapenverkoper.png" },
 		physical = true,
 		collide_with_objects = true,
-		collisionbox = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
-		visual_size = {x = 1, y = 1, z = 1},
+		collisionbox = { -0.3, 0.0, -0.3, 0.3, 1.7, 0.3 },
+		visual_size = { x = 1, y = 1, z = 1 },
 		makes_footstep_sound = false,
 		nametag = "",
 		nametag_color = "#FFFFFF",
@@ -163,13 +161,13 @@ minetest.register_entity("npc:npc", {
 			self.object:set_properties({
 				nametag = self._display_name,
 				nametag_color = "#FFFFFF",
-				textures = {self._texture},
+				textures = { self._texture },
 			})
 			npc._refs[self._display_name] = self.object
 		end
 
 		-- Play stand animation
-		self.object:set_animation({x = 0, y = 79}, 30, 0, true)
+		self.object:set_animation({ x = 0, y = 79 }, 30, 0, true)
 	end,
 
 	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
@@ -254,11 +252,11 @@ end)
 
 -- Shop formspec handler
 local SHOP_ITEMS = {
-	buy_sword_wood          = {item = "registered:sword_wood",          price = 5,  name = "Houten Zwaard"},
-	buy_sword_steel         = {item = "registered:sword_steel",         price = 15, name = "Stalen Zwaard"},
-	buy_sword_bronze        = {item = "registered:sword_bronze",        price = 25, name = "Bronzen Zwaard"},
-	buy_fanta_bazooka       = {item = "registered:fanta_bazooka",       price = 5,  name = "Fanta Bazooka"},
-	buy_appelflap_boomerang = {item = "registered:appelflap_boomerang", price = 10, name = "Appelflap Boomerang"},
+	buy_sword_wood          = { item = "registered:sword_wood", price = 5, name = "Houten Zwaard" },
+	buy_sword_steel         = { item = "registered:sword_steel", price = 15, name = "Stalen Zwaard" },
+	buy_sword_bronze        = { item = "registered:sword_bronze", price = 25, name = "Bronzen Zwaard" },
+	buy_fanta_bazooka       = { item = "registered:fanta_bazooka", price = 5, name = "Fanta Bazooka" },
+	buy_appelflap_boomerang = { item = "registered:appelflap_boomerang", price = 10, name = "Appelflap Boomerang" },
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
@@ -294,12 +292,12 @@ end)
 
 -- Food shop formspec handler
 local FOOD_ITEMS = {
-	buy_apple = {item = "registered:apple",  price = 2, name = "Appel"},
-	buy_bread = {item = "registered:bread",  price = 4, name = "Brood"},
-	buy_fish  = {item = "registered:fish",   price = 6, name = "Vis"},
-	buy_meat  = {item = "registered:meat",   price = 8, name = "Vlees"},
+	buy_apple         = { item = "registered:apple", price = 2, name = "Appel" },
+	buy_bread         = { item = "registered:bread", price = 4, name = "Brood" },
+	buy_fish          = { item = "registered:fish", price = 6, name = "Vis" },
+	buy_meat          = { item = "registered:meat", price = 8, name = "Vlees" },
 	-- Fanta 6-Pack: geeft 6x fanta_ammo (munitie voor de Fanta Bazooka)
-	buy_fanta_sixpack = {item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6},
+	buy_fanta_sixpack = { item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6 },
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)

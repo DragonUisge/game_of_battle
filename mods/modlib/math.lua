@@ -1,11 +1,13 @@
 -- Localize globals
 local assert, math, math_floor, minetest, modlib_table_reverse, os, string_char, select, setmetatable, table_insert, table_concat
-	= assert, math, math.floor, minetest, modlib.table.reverse, os, string.char, select, setmetatable, table.insert, table.concat
+                                                                                                                                  = assert,
+	math, math.floor, minetest, modlib.table.reverse, os, string.char, select, setmetatable, table.insert, table.concat
 
-local inf = math.huge
+local inf                                                                                                                         = math
+.huge
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                                                                        = {}
 setfenv(1, _ENV)
 
 -- TODO might be too invasive
@@ -13,7 +15,7 @@ setfenv(1, _ENV)
 math.randomseed(minetest and minetest.get_us_time() or os.time() + os.clock())
 for _ = 1, 100 do math.random() end
 
-negative_nan = 0/0
+negative_nan = 0 / 0
 positive_nan = negative_nan ^ 1
 
 function sign(number)
@@ -29,12 +31,12 @@ end
 
 -- Random integer from 0 to 2^53 - 1 (inclusive)
 local function _randint()
-	return math.random(0, 2^27 - 1) * 2^26 + math.random(0, 2^26 - 1)
+	return math.random(0, 2 ^ 27 - 1) * 2 ^ 26 + math.random(0, 2 ^ 26 - 1)
 end
 
 -- Random float from 0 to 1 (exclusive)
 local function _randfloat()
-	return _randint() / (2^53)
+	return _randint() / (2 ^ 53)
 end
 
 --+ Increased randomness float random without overflows
@@ -45,10 +47,13 @@ function random(...)
 	local n = select("#", ...)
 	if n == 0 then
 		return _randfloat()
-	end if n == 1 then
+	end
+	if n == 1 then
 		local max = ...
 		return _randfloat() * max
-	end do assert(n == 2)
+	end
+	do
+		assert(n == 2)
 		local min, max = ...
 		return min + (max - min) * _randfloat()
 	end
@@ -62,10 +67,13 @@ function randint(...)
 	local n = select("#", ...)
 	if n == 0 then
 		return _randint()
-	end if n == 1 then
+	end
+	if n == 1 then
 		local max = ...
 		return math.floor(_randfloat() * max + 0.5)
-	end do assert(n == 2)
+	end
+	do
+		assert(n == 2)
 		local min, max = ...
 		return min + math.floor(_randfloat() * (max - min) + 0.5)
 	end
@@ -165,12 +173,12 @@ function fround(number)
 		number = -number
 	end
 	local _, exp = math.frexp(number)
-	exp = exp - 1 -- we want 2^exponent >= number > 2^(exponent-1)
+	exp = exp - 1                       -- we want 2^exponent >= number > 2^(exponent-1)
 	local powexp = 2 ^ math.max(-126, math.min(exp, 127))
 	local leading = exp <= -127 and 0 or 1 -- subnormal number?
 	local mantissa = math.floor((number / powexp - leading) * 0x800000 + 0.5)
 	if
-		mantissa > 0x800000 -- doesn't fit in mantissa
+		mantissa > 0x800000                -- doesn't fit in mantissa
 		or (exp >= 127 and mantissa == 0x800000) -- fits if the exponent can be increased
 	then
 		return sign * inf

@@ -1,5 +1,6 @@
 -- Localize globals
-local assert, error, math, minetest, setmetatable, tonumber, type = assert, error, math, minetest, setmetatable, tonumber, type
+local assert, error, math, minetest, setmetatable, tonumber, type = assert, error, math, minetest, setmetatable, tonumber,
+	type
 local floor = math.floor
 
 -- Set environment
@@ -160,7 +161,7 @@ named_colors = {
 
 colorspec = {}
 
-local metatable = {__index = colorspec}
+local metatable = { __index = colorspec }
 colorspec.metatable = metatable
 
 function colorspec.new(table)
@@ -177,7 +178,7 @@ colorspec.from_table = colorspec.new
 local c_comp = { "r", "g", "g", "b", "b", "r" }
 local x_comp = { "g", "r", "b", "g", "r", "b" }
 function colorspec.from_hsv(
-	-- 0 (inclusive) to 1 (exclusive)
+-- 0 (inclusive) to 1 (exclusive)
 	hue,
 	-- 0 to 1 (both inclusive)
 	saturation,
@@ -187,7 +188,7 @@ function colorspec.from_hsv(
 	hue = hue * 6
 	local chroma = saturation * value
 	local m = value - chroma
-	local color = {r = m, g = m, b = m}
+	local color = { r = m, g = m, b = m }
 	local idx = 1 + floor(hue)
 	color[c_comp[idx]] = color[c_comp[idx]] + chroma
 	local x = chroma * (1 - math.abs(hue % 2 - 1))
@@ -232,7 +233,7 @@ function colorspec.from_string(string)
 		return colorspec.from_number_rgba(num * 0x100 + 0xFF)
 	end
 	if len == 4 then
-		return colorspec.from_table{
+		return colorspec.from_table {
 			a = (num % 0x10) * 0x11,
 			b = (floor(num / 0x10) % 0x10) * 0x11,
 			g = (floor(num / (0x100)) % 0x10) * 0x11,
@@ -240,7 +241,7 @@ function colorspec.from_string(string)
 		}
 	end
 	if len == 3 then
-		return colorspec.from_table{
+		return colorspec.from_table {
 			b = (num % 0x10) * 0x11,
 			g = (floor(num / 0x10) % 0x10) * 0x11,
 			r = (floor(num / (0x100)) % 0x10) * 0x11
@@ -251,7 +252,7 @@ end
 colorspec.from_text = colorspec.from_string
 
 function colorspec.from_number_rgba(number)
-	return colorspec.from_table{
+	return colorspec.from_table {
 		a = number % 0x100,
 		b = floor(number / 0x100) % 0x100,
 		g = floor(number / 0x10000) % 0x100,
@@ -260,7 +261,7 @@ function colorspec.from_number_rgba(number)
 end
 
 function colorspec.from_number_rgb(number)
-	return colorspec.from_table{
+	return colorspec.from_table {
 		a = 0xFF,
 		b = number % 0x100,
 		g = floor(number / 0x100) % 0x100,
@@ -269,7 +270,7 @@ function colorspec.from_number_rgb(number)
 end
 
 function colorspec.from_number(number)
-	return colorspec.from_table{
+	return colorspec.from_table {
 		b = number % 0x100,
 		g = floor(number / 0x100) % 0x100,
 		r = floor(number / 0x10000) % 0x100,
@@ -302,6 +303,7 @@ function colorspec:to_string()
 	end
 	return ("#%02X%02X%02X%02X"):format(self.r, self.g, self.b, self.a)
 end
+
 metatable.__tostring = colorspec.to_string
 
 function colorspec:to_number_rgba()

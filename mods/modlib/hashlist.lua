@@ -4,7 +4,7 @@ local setmetatable = setmetatable
 -- Table based list, can handle at most 2^52 pushes
 local list = {}
 -- TODO use __len for Lua version > 5.1
-local metatable = {__index = list}
+local metatable = { __index = list }
 list.metatable = metatable
 
 -- Takes a list

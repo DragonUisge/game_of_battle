@@ -1,11 +1,12 @@
 -- Localize globals
-local assert, error, ipairs, math, minetest, modlib, pairs, setmetatable, table, tonumber, tostring, type = assert, error, ipairs, math, minetest, modlib, pairs, setmetatable, table, tonumber, tostring, type
+local assert, error, ipairs, math, minetest, modlib, pairs, setmetatable, table, tonumber, tostring, type = assert, error,
+	ipairs, math, minetest, modlib, pairs, setmetatable, table, tonumber, tostring, type
 
 -- Set environment
 local _ENV = {}
 setfenv(1, _ENV)
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 function new(def)
 	-- TODO type inference, sanity checking etc.
@@ -32,7 +33,7 @@ function generate_settingtypes(self)
 		if self.values then
 			local values = {}
 			for value in pairs(self.values) do
-				if value:find"," then
+				if value:find "," then
 					values = nil
 					break
 				end
@@ -54,7 +55,7 @@ function generate_settingtypes(self)
 		if self._level > 0 then
 			-- HACK: Minetest automatically adds the modname
 			-- TODO simple names (not modname.field.other_field)
-			settings = {"[" .. ("*"):rep(self._level - 1) .. self.name .. "]"}
+			settings = { "[" .. ("*"):rep(self._level - 1) .. self.name .. "]" }
 		end
 		local function setting(key, value_scheme)
 			key = tostring(key)
@@ -90,13 +91,15 @@ function generate_settingtypes(self)
 	-- TODO enum etc. support
 	if description then
 		if type(description) ~= "table" then
-			description = {description}
+			description = { description }
 		end
 		description = "# " .. table.concat(description, "\n# ") .. "\n"
 	else
 		description = ""
 	end
-	return description .. self.name .. " (" .. self.title  .. ") " .. settingtype .. " " .. (default or "") .. (type_args and (" " .. type_args) or "")
+	return description ..
+	self.name ..
+	" (" .. self.title .. ") " .. settingtype .. " " .. (default or "") .. (type_args and (" " .. type_args) or "")
 end
 
 function generate_markdown(self)
@@ -151,15 +154,15 @@ function generate_markdown(self)
 		line("Default: `" .. tostring(self.default) .. "`")
 	end
 	if self.int then
-		line"Integer"
+		line "Integer"
 	elseif self.list then
-		line"List"
+		line "List"
 	end
 	if self.infinity then
-		line"Infinities allowed"
+		line "Infinities allowed"
 	end
 	if self.nan then
-		line"Not-a-Number (NaN) allowed"
+		line "Not-a-Number (NaN) allowed"
 	end
 	if self.range then
 		if self.range.min then
@@ -213,7 +216,8 @@ function load(self, override, params)
 	local _error = error
 	local function format_error(typ, ...)
 		if typ == "type" then
-			return "mismatched type: expected " .. self.type ..", got " .. type(override) .. (converted and " (converted)" or "")
+			return "mismatched type: expected " ..
+			self.type .. ", got " .. type(override) .. (converted and " (converted)" or "")
 		end
 		if typ == "range" then
 			local conditions = {}
@@ -249,7 +253,8 @@ function load(self, override, params)
 			return "not a list"
 		end
 		if typ == "values" then
-			return "expected one of " .. minetest.write_json(modlib.table.keys(self.values)) .. ", got " .. minetest.write_json(override)
+			return "expected one of " ..
+			minetest.write_json(modlib.table.keys(self.values)) .. ", got " .. minetest.write_json(override)
 		end
 		_error("unknown error type")
 	end
@@ -258,7 +263,7 @@ function load(self, override, params)
 			local formatted = format_error(type, ...)
 			_error("Invalid value: " .. (self.name and (self.name .. ": ") or "") .. formatted)
 		end
-		_error{
+		_error {
 			type = type,
 			self = self,
 			override = override,

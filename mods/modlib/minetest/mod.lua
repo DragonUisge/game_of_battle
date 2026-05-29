@@ -1,9 +1,11 @@
 -- Localize globals
 local Settings, _G, assert, dofile, error, getmetatable, ipairs, loadfile, loadstring, minetest, modlib, pairs, rawget, rawset, setfenv, setmetatable, tonumber, type, table_concat, unpack
-	= Settings, _G, assert, dofile, error, getmetatable, ipairs, loadfile, loadstring, minetest, modlib, pairs, rawget, rawset, setfenv, setmetatable, tonumber, type, table.concat, unpack
+                                                                                                                                                                                            = Settings,
+	_G, assert, dofile, error, getmetatable, ipairs, loadfile, loadstring, minetest, modlib, pairs, rawget, rawset,
+	setfenv, setmetatable, tonumber, type, table.concat, unpack
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                                                                                                                                  = {}
 setfenv(1, _ENV)
 
 local loaded = {}
@@ -17,7 +19,7 @@ function require(filename)
 end
 
 function loadfile_exports(filename)
-	local env = setmetatable({}, {__index = _G})
+	local env = setmetatable({}, { __index = _G })
 	local file = assert(loadfile(filename))
 	setfenv(file, env)
 	file()
@@ -40,7 +42,8 @@ end
 function create_namespace(namespace_name, parent_namespace)
 	namespace_name = namespace_name or minetest.get_current_modname()
 	parent_namespace = parent_namespace or _G
-	local metatable = {__index = parent_namespace == _G and function(_, key) return rawget(_G, key) end or parent_namespace}
+	local metatable = { __index = parent_namespace == _G and function(_, key) return rawget(_G, key) end or
+	parent_namespace }
 	local namespace = {}
 	namespace = setmetatable(namespace, metatable)
 	if parent_namespace == _G then
@@ -81,7 +84,7 @@ local function build_tree(dict)
 			subtree[index] = subtree[index] or {}
 			subtree = subtree[index]
 			if type(subtree) ~= "table" then
-				minetest.log("warning", warn_parent_leaf:format(table_concat({unpack(path, 1, i)}, ".")))
+				minetest.log("warning", warn_parent_leaf:format(table_concat({ unpack(path, 1, i) }, ".")))
 				break
 			end
 		end
@@ -107,18 +110,18 @@ function configuration(modname)
 	local overrides = {}
 	local conf
 	local function add(path)
-		for _, format in ipairs{
-			{extension = "lua", read = function(text)
+		for _, format in ipairs {
+			{ extension = "lua", read = function(text)
 				assert(overrides._C == nil)
-				local additions =  setfenv(assert(loadstring(text)), setmetatable(overrides, {__index = {_C = overrides}}))()
+				local additions = setfenv(assert(loadstring(text)), setmetatable(overrides, { __index = { _C = overrides } }))()
 				setmetatable(overrides, nil)
 				if additions == nil then
 					return overrides
 				end
 				return additions
-			end},
-			{extension = "luon", read = function(text)
-				local value = {setfenv(assert(loadstring("return " .. text)), setmetatable(overrides, {}))()}
+			end },
+			{ extension = "luon", read = function(text)
+				local value = { setfenv(assert(loadstring("return " .. text)), setmetatable(overrides, {}))() }
 				assert(#value == 1)
 				value = value[1]
 				local function check_type(value)
@@ -135,16 +138,16 @@ function configuration(modname)
 				end
 				check_type(value)
 				return value
-			end},
-			{extension = "conf", read = function(text)
+			end },
+			{ extension = "conf", read = function(text)
 				return build_tree(Settings(text):to_table())
-			end, convert_strings = true},
-			{extension = "json", read = minetest.parse_json}
+			end, convert_strings = true },
+			{ extension = "json", read = minetest.parse_json }
 		} do
 			local content = modlib.file.read(path .. "." .. format.extension)
 			if content then
 				overrides = modlib.table.deep_add_all(overrides, format.read(content))
-				conf = schema:load(overrides, {convert_strings = format.convert_strings, error_message = true})
+				conf = schema:load(overrides, { convert_strings = format.convert_strings, error_message = true })
 			end
 		end
 	end
@@ -153,29 +156,30 @@ function configuration(modname)
 	local minetest_conf = settings[schema.name]
 	if minetest_conf then
 		overrides = modlib.table.deep_add_all(overrides, minetest_conf)
-		conf = schema:load(overrides, {convert_strings = true, error_message = true})
+		conf = schema:load(overrides, { convert_strings = true, error_message = true })
 	end
 	modlib.file.ensure_content(get_resource(modname, "settingtypes.txt"), settingtypes)
 	local readme_path = get_resource(modname, "Readme.md")
 	local readme = modlib.file.read(readme_path)
 	if readme then
 		local modified = false
-		readme = readme:gsub("<!%-%-modlib:conf:(%d)%-%->" .. "(.-)" .. "<!%-%-modlib:conf%-%->", function(level, content)
-			schema._md_level = assert(tonumber(level)) + 1
-			-- HACK: Newline between comment and heading (MD implementations don't handle comments properly)
-			local markdown = "\n" .. schema:generate_markdown()
-			if content ~= markdown then
-				modified = true
-				return "<!--modlib:conf:" .. level .. "-->" .. markdown .. "<!--modlib:conf-->"
-			end
-		end, 1)
+		readme = readme:gsub("<!%-%-modlib:conf:(%d)%-%->" .. "(.-)" .. "<!%-%-modlib:conf%-%->",
+			function(level, content)
+				schema._md_level = assert(tonumber(level)) + 1
+				-- HACK: Newline between comment and heading (MD implementations don't handle comments properly)
+				local markdown = "\n" .. schema:generate_markdown()
+				if content ~= markdown then
+					modified = true
+					return "<!--modlib:conf:" .. level .. "-->" .. markdown .. "<!--modlib:conf-->"
+				end
+			end, 1)
 		if modified then
 			-- FIXME mod security messes with this (disallows it if enabled)
 			assert(modlib.file.write(readme_path, readme))
 		end
 	end
 	if conf == nil then
-		return schema:load({}, {error_message = true}), schema
+		return schema:load({}, { error_message = true }), schema
 	end
 	return conf, schema
 end

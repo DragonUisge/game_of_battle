@@ -1,7 +1,7 @@
 -- Generate lookup table for HTML entities out of https://html.spec.whatwg.org/entities.json
 -- Requires https://github.com/brunoos/luasec to fetch the JSON
 local https = require 'ssl.https'
-local res, code = https.request"https://html.spec.whatwg.org/entities.json"
+local res, code = https.request "https://html.spec.whatwg.org/entities.json"
 assert(code == 200)
 local entity_map = {}
 for entity, chars in pairs(assert(modlib.json:read_string(res))) do

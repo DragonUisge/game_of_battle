@@ -18,9 +18,9 @@ local function clamp(x, mn, mx) return max(min(x, mx), mn) end
 
 local function unpack_argb(argb)
 	return floor(argb / 0x1000000),
-			floor(argb / 0x10000) % 0x100,
-			floor(argb / 0x100) % 0x100,
-			argb % 0x100
+		floor(argb / 0x10000) % 0x100,
+		floor(argb / 0x100) % 0x100,
+		argb % 0x100
 end
 
 local function pack_argb(a, r, g, b)
@@ -41,11 +41,11 @@ local function scale_0_255_argb(a, r, g, b)
 end
 
 local tex = {}
-local metatable = {__index = tex}
+local metatable = { __index = tex }
 
 function metatable:__eq(other)
 	if self.w ~= other.w or self.h ~= other.h then return false end
-	for i = 1, #self do	if self[i] ~= other[i] then return false end end
+	for i = 1, #self do if self[i] ~= other[i] then return false end end
 	return true
 end
 
@@ -54,15 +54,15 @@ function tex:new()
 end
 
 function tex.filled(w, h, argb)
-	local self = {w = w, h = h}
-	for i = 1, w*h do
+	local self = { w = w, h = h }
+	for i = 1, w * h do
 		self[i] = argb
 	end
 	return tex.new(self)
 end
 
 function tex:copy()
-	local copy = {w = self.w, h = self.h}
+	local copy = { w = self.w, h = self.h }
 	for i = 1, #self do
 		copy[i] = self[i]
 	end
@@ -189,11 +189,11 @@ end
 local band = bit and bit.band or function(n, m)
 	local res = 0
 	local bit = 1
-	while n * m ~= 0 do -- while both are nonzero
+	while n * m ~= 0 do                   -- while both are nonzero
 		local n_bit, m_bit = n % 2, m % 2 -- extract LSB
 		res = res + (n_bit * m_bit) * bit -- add AND of LSBs
 		n, m = (n - n_bit) / 2, (m - m_bit) / 2 -- remove LSB from n & m
-		bit = bit * 2 -- next bit
+		bit = bit * 2                     -- next bit
 	end
 	return res
 end
@@ -208,9 +208,9 @@ function tex.hardlight_blend(s, t)
 		local _, tr, tg, tb = scale_0_1_argb(unpack_argb(targb))
 		return pack_argb(round_argb(scale_0_255_argb(
 			sa,
-			sr < 0.5 and 2*sr*tr or 1 - 2*(1-sr)*(1-tr),
-			sr < 0.5 and 2*sg*tg or 1 - 2*(1-sg)*(1-tg),
-			sr < 0.5 and 2*sb*tb or 1 - 2*(1-sb)*(1-tb)
+			sr < 0.5 and 2 * sr * tr or 1 - 2 * (1 - sr) * (1 - tr),
+			sr < 0.5 and 2 * sg * tg or 1 - 2 * (1 - sg) * (1 - tg),
+			sr < 0.5 and 2 * sb * tb or 1 - 2 * (1 - sb) * (1 - tb)
 		)))
 	end)
 end
@@ -319,12 +319,12 @@ end
 --> copy of the texture, rotated 90 degrees clockwise
 function tex:rotated_90()
 	local w, h = self.w, self.h
-	local t = {w = h, h = w}
+	local t = { w = h, h = w }
 	local i = 0
 	for y = 1, w do
 		for x = 1, h do
 			i = i + 1
-			t[i] = self[(h-x)*w + y]
+			t[i] = self[(h - x) * w + y]
 		end
 	end
 	t = tex.new(t)
@@ -338,7 +338,7 @@ function tex:resized(w, h)
 	--! This function works with 0-based indices.
 	local sw, sh = self.w, self.h
 	local fx, fy = sw / w, sh / h
-	local t = {w = w, h = h}
+	local t = { w = w, h = h }
 	local i = 0
 	for y = 0, h - 1 do
 		for x = 0, w - 1 do

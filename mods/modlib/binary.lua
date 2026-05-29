@@ -1,11 +1,11 @@
 -- Localize globals
 local assert, math_huge, math_frexp, math_floor
-	= assert, math.huge, math.frexp, math.floor
+                                                = assert, math.huge, math.frexp, math.floor
 
-local positive_nan, negative_nan = modlib.math.positive_nan, modlib.math.negative_nan
+local positive_nan, negative_nan                = modlib.math.positive_nan, modlib.math.negative_nan
 
 -- Set environment
-local _ENV = {}
+local _ENV                                      = {}
 setfenv(1, _ENV)
 
 -- All little endian
@@ -40,7 +40,7 @@ function read_single(read_byte)
 	assert(mantissa < 1)
 	if exponent == 0 then
 		-- subnormal value
-		return sign * 2^-126 * mantissa
+		return sign * 2 ^ -126 * mantissa
 	end
 	return sign * 2 ^ (exponent - 127) * (1 + mantissa)
 end
@@ -74,7 +74,7 @@ function read_double(read_byte)
 	assert(mantissa < 1)
 	if exponent == 0 then
 		-- subnormal value
-		return sign * 2^-1022 * mantissa
+		return sign * 2 ^ -1022 * mantissa
 	end
 	return sign * 2 ^ (exponent - 1023) * (1 + mantissa)
 end
@@ -137,14 +137,14 @@ function write_single(write_byte, number)
 		sign_bit = 0x80
 	end
 
-	if number == math_huge then -- inf: exponent = all 1, mantissa = all 0
+	if number == math_huge then           -- inf: exponent = all 1, mantissa = all 0
 		sign_byte, exponent_byte, mantissa_byte_1, mantissa_byte_2 = sign_bit + 0x7F, 0x80, 0, 0
-	else -- real number
+	else                                  -- real number
 		local mantissa, exponent = math_frexp(number)
 		if exponent <= -126 or number == 0 then -- must write a subnormal number
 			mantissa = mantissa * 2 ^ (exponent + 126)
 			exponent = 0
-		else -- normal numbers are stored as 1.<mantissa>
+		else                     -- normal numbers are stored as 1.<mantissa>
 			mantissa = mantissa * 2 - 1
 			exponent = exponent - 1 + 127 -- mantissa << 1 <=> exponent--
 			assert(exponent < 0xFF)
@@ -189,14 +189,14 @@ function write_double(write_byte, number)
 		sign_bit = 0x80
 	end
 
-	if number == math_huge then -- inf: exponent = all 1, mantissa = all 0
-		sign_byte, exponent_byte, mantissa_bytes = sign_bit + 0x7F, 0xF0, {0, 0, 0, 0, 0, 0}
-	else -- real number
+	if number == math_huge then            -- inf: exponent = all 1, mantissa = all 0
+		sign_byte, exponent_byte, mantissa_bytes = sign_bit + 0x7F, 0xF0, { 0, 0, 0, 0, 0, 0 }
+	else                                   -- real number
 		local mantissa, exponent = math_frexp(number)
 		if exponent <= -1022 or number == 0 then -- must write a subnormal number
 			mantissa = mantissa * 2 ^ (exponent + 1022)
 			exponent = 0
-		else -- normal numbers are stored as 1.<mantissa>
+		else                      -- normal numbers are stored as 1.<mantissa>
 			mantissa = mantissa * 2 - 1
 			exponent = exponent - 1 + 1023 -- mantissa << 1 <=> exponent--
 			assert(exponent < 0x7FF)

@@ -1,5 +1,6 @@
 -- Localize globals
-local assert, math, pairs, rawget, rawset, setmetatable, unpack, vector = assert, math, pairs, rawget, rawset, setmetatable, unpack, vector
+local assert, math, pairs, rawget, rawset, setmetatable, unpack, vector = assert, math, pairs, rawget, rawset,
+	setmetatable, unpack, vector
 
 -- Set environment
 local _ENV = {}
@@ -11,8 +12,11 @@ index_aliases = {
 	x = 1,
 	y = 2,
 	z = 3,
-	w = 4;
-	"x", "y", "z", "w";
+	w = 4,
+	"x",
+	"y",
+	"z",
+	"w",
 }
 
 metatable = {
@@ -44,16 +48,17 @@ function zeros(n)
 	end
 	return new(v)
 end
+
 function from_xyzw(v)
-	return new{v.x, v.y, v.z, v.w}
+	return new { v.x, v.y, v.z, v.w }
 end
 
 function from_minetest(v)
-	return new{v.x, v.y, v.z}
+	return new { v.x, v.y, v.z }
 end
 
 function to_xyzw(v)
-	return {x = v[1], y = v[2], z = v[3], w = v[4]}
+	return { x = v[1], y = v[2], z = v[3], w = v[4] }
 end
 
 --+ not necessarily required, as Minetest respects the metatable
@@ -117,7 +122,7 @@ metatable.__div = divide
 --+ linear interpolation
 --: ratio number from 0 (all the first vector) to 1 (all the second vector)
 function interpolate(v, w, ratio)
-	return add(multiply_scalar(v, 1 - ratio), multiply_scalar(w,  ratio))
+	return add(multiply_scalar(v, 1 - ratio), multiply_scalar(w, ratio))
 end
 
 function norm(v)
@@ -172,7 +177,7 @@ end
 
 function cross3(v, w)
 	assert(#v == 3 and #w == 3)
-	return new{
+	return new {
 		v[2] * w[3] - v[3] * w[2],
 		v[3] * w[1] - v[1] * w[3],
 		v[1] * w[2] - v[2] * w[1]
@@ -204,7 +209,7 @@ function axis_angle3(euler_rotation)
 	euler_rotation = divide_scalar(euler_rotation, 2)
 	local cos = apply(euler_rotation, math.cos)
 	local sin = apply(euler_rotation, math.sin)
-	return normalize_zero{
+	return normalize_zero {
 		sin[1] * sin[2] * cos[3] + cos[1] * cos[2] * sin[3],
 		sin[1] * cos[2] * cos[3] + cos[1] * sin[2] * sin[3],
 		cos[1] * sin[2] * cos[3] - sin[1] * cos[2] * sin[3],

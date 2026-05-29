@@ -5,7 +5,7 @@ local math, next, pairs, setmetatable, string, table, unpack = math, next, pairs
 local _ENV = {}
 setfenv(1, _ENV)
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 -- Setting the metatable is fine as it does not contain single-character keys.
 -- TODO (?) encapsulate in "root" field for better code quality?
@@ -73,8 +73,11 @@ function suggestion(self, remainder)
 						-- calculate intersection
 						if remainder:sub(i, i) == leaf.word[i] then score = score + 1 end
 					end
-					if score == best_score then table.insert(best_leaves, leaf)
-					elseif score > best_score then best_leaves = { leaf } end
+					if score == best_score then
+						table.insert(best_leaves, leaf)
+					elseif score > best_score then
+						best_leaves = { leaf }
+					end
 				end
 				leaves = best_leaves
 			end
@@ -120,7 +123,8 @@ function find_longest(self, query, query_offset)
 	for i = query_offset, query:len() do
 		local char = query:sub(i, i)
 		self = self[char]
-		if not self then break
+		if not self then
+			break
 		elseif self.value then
 			last_leaf = self.value
 			leaf_pos = i

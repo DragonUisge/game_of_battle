@@ -1,5 +1,6 @@
 -- Localize globals
-local assert, math, minetest, modlib, pairs, setmetatable, vector = assert, math, minetest, modlib, pairs, setmetatable, vector
+local assert, math, minetest, modlib, pairs, setmetatable, vector = assert, math, minetest, modlib, pairs, setmetatable,
+	vector
 
 --+ Raycast wrapper with proper flowingliquid intersections
 return function(_pos1, _pos2, objects, liquids)
@@ -75,7 +76,7 @@ return function(_pos1, _pos2, objects, liquids)
 			return pointed_thing
 		end
 		local function intersection_normal(axis, dir)
-			return {x = 0, y = 0, z = 0, [axis] = dir}
+			return { x = 0, y = 0, z = 0, [axis] = dir }
 		end
 		local function plane(axis, dir)
 			local offset = dir * 0.5
@@ -101,7 +102,7 @@ return function(_pos1, _pos2, objects, liquids)
 				return pointed_thing
 			end
 		end
-		for coord, other in pairs{[1] = 3, [3] = 1} do
+		for coord, other in pairs { [1] = 3, [3] = 1 } do
 			if direction[coord] ~= 0 then
 				local dir = direction[coord] > 0 and -1 or 1
 				local intersection_point = plane(coord, dir)
@@ -120,18 +121,19 @@ return function(_pos1, _pos2, objects, liquids)
 				end
 			end
 		end
-		for _, triangle in pairs{
-			{corner_levels[3], corner_levels[2], corner_levels[1]},
-			{corner_levels[4], corner_levels[3], corner_levels[1]}
+		for _, triangle in pairs {
+			{ corner_levels[3], corner_levels[2], corner_levels[1] },
+			{ corner_levels[4], corner_levels[3], corner_levels[1] }
 		} do
 			local pos_on_ray = modlib.vector.ray_triangle_intersection(relative, direction, triangle)
 			if pos_on_ray and pos_on_ray <= length then
-				pointed_thing.intersection_point = (pos1 + modlib.vector.multiply_scalar(direction, pos_on_ray)):to_minetest()
+				pointed_thing.intersection_point = (pos1 + modlib.vector.multiply_scalar(direction, pos_on_ray))
+				:to_minetest()
 				pointed_thing.intersection_normal = modlib.vector.triangle_normal(triangle):to_minetest()
 				return pointed_thing
 			end
 		end
 		return next()
 	end
-	return setmetatable({next = next}, {__call = next})
+	return setmetatable({ next = next }, { __call = next })
 end

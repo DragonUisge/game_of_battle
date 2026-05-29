@@ -8,13 +8,15 @@
 ]]
 
 local coroutine_create, coroutine_resume, coroutine_yield, coroutine_status, unpack, select
-	= coroutine.create, coroutine.resume, coroutine.yield, coroutine.status, unpack, select
+                                                                                            = coroutine.create,
+	coroutine.resume, coroutine.yield, coroutine.status, unpack, select
 
-local identity, not_, add = modlib.func.identity, modlib.func.not_, modlib.func.add
+local identity, not_, add                                                                   = modlib.func.identity,
+	modlib.func.not_, modlib.func.add
 
 --+ For all functions which aggregate over single values, use modlib.table.ivalues - not ipairs - for lists!
 --+ Otherwise they will be applied to the indices.
-local iterator = {}
+local iterator                                                                              = {}
 
 function iterator.wrap(iterator, state, control_var)
 	local function update_control_var(...)
@@ -25,6 +27,7 @@ function iterator.wrap(iterator, state, control_var)
 		return update_control_var(iterator(state, control_var))
 	end
 end
+
 iterator.closure = iterator.wrap
 iterator.make_stateful = iterator.wrap
 
@@ -108,7 +111,7 @@ function iterator.for_generator(caller, ...)
 			return coroutine_yield(...)
 		end, ...)
 	end)
-	local args, n_args = {...}, select("#", ...)
+	local args, n_args = { ... }, select("#", ...)
 	return function()
 		if coroutine_status(co) == "dead" then
 			return
@@ -158,6 +161,7 @@ function iterator.reduce(binary_func, iterator, state, control_var)
 	end
 	return total
 end
+
 iterator.fold = iterator.reduce
 
 -- TODO iterator.find(predicate, iterator, state, control_var)
@@ -274,9 +278,9 @@ function iterator.standard_deviation(...)
 	local sum = 0
 	for value in ... do
 		count = count + 1
-		sum = sum + (value - avg)^2
+		sum = sum + (value - avg) ^ 2
 	end
-	return (sum / count)^.5
+	return (sum / count) ^ .5
 end
 
 -- Comprehensions ("collectors")

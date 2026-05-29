@@ -10,10 +10,10 @@ function vararg.aggregate(binary_func, initial, ...)
 	return total
 end
 
-local metatable = {__index = {}}
+local metatable = { __index = {} }
 
 function vararg.pack(...)
-	return setmetatable({["#"] = select("#", ...); ...}, metatable)
+	return setmetatable({ ["#"] = select("#", ...), ... }, metatable)
 end
 
 local va = metatable.__index
@@ -39,7 +39,7 @@ end
 
 function va:concat(other)
 	local self_len, other_len = self["#"], other["#"]
-	local res = {["#"] = self_len + other_len}
+	local res = { ["#"] = self_len + other_len }
 	for i = 1, self_len do
 		res[i] = self[i]
 	end
@@ -48,6 +48,7 @@ function va:concat(other)
 	end
 	return setmetatable(res, metatable)
 end
+
 metatable.__concat = va.concat
 
 function va:equals(other)
@@ -55,6 +56,7 @@ function va:equals(other)
 	for i = 1, self["#"] do if self[i] ~= other[i] then return false end end
 	return true
 end
+
 metatable.__eq = va.equals
 
 function va:aggregate(binary_func, initial)

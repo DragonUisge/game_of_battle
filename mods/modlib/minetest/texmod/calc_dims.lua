@@ -63,7 +63,7 @@ do
 		-- I don't want to use a naive 2^ceil(log(x)/log(2)) due to possible float precision issues.
 		local m, e = math.frexp(x) -- x = _*2^e, _ in [0.5, 1)
 		if m == 0.5 then e = e - 1 end -- x = 2^(e-1)
-		return math.ldexp(1, e) -- 2^e, premature optimization here we go
+		return math.ldexp(1, e)  -- 2^e, premature optimization here we go
 	end
 	function cd:inventorycube(get_dims)
 		local top_w, top_h = calc_dims(self.top, get_dims)

@@ -1,5 +1,5 @@
 assert(modlib.version >= 103, "character_anim requires at least version rolling-103 of modlib")
-local workaround_model = modlib.mod.require"workaround"
+local workaround_model = modlib.mod.require "workaround"
 
 character_anim = {}
 
@@ -12,7 +12,7 @@ local media_paths = modlib.minetest.media.paths
 local static_model_names = {}
 local animated_model_names = {}
 for name in pairs(media_paths) do
-	if (name:find"character" or name:find"player") and name:match"%.b3d$" then
+	if (name:find "character" or name:find "player") and name:match "%.b3d$" then
 		local fixed, data = pcall(workaround_model, name)
 		if fixed then
 			local static_name = "_character_anim_" .. name
@@ -36,23 +36,25 @@ local function find_node(root, name)
 	end
 end
 
-local models = setmetatable({}, {__index = function(self, filename)
-	if animated_model_names[filename] then
-		return self[animated_model_names[filename]]
+local models = setmetatable({}, {
+	__index = function(self, filename)
+		if animated_model_names[filename] then
+			return self[animated_model_names[filename]]
+		end
+		local _, ext = modlib.file.get_extension(filename)
+		if not ext or ext:lower() ~= "b3d" then
+			-- Only B3D support currently
+			return
+		end
+		local path = assert(media_paths[filename], filename)
+		local stream = io.open(path, "rb")
+		local model = assert(modlib.b3d.read(stream))
+		assert(stream:read(1) == nil, "EOF expected")
+		stream:close()
+		self[filename] = model
+		return model
 	end
-	local _, ext = modlib.file.get_extension(filename)
-	if not ext or ext:lower() ~= "b3d" then
-		-- Only B3D support currently
-		return
-	end
-	local path = assert(media_paths[filename], filename)
-	local stream = io.open(path, "rb")
-	local model = assert(modlib.b3d.read(stream))
-	assert(stream:read(1) == nil, "EOF expected")
-	stream:close()
-	self[filename] = model
-	return model
-end})
+})
 
 function character_anim.is_interacting(player)
 	local control = player:get_player_control()
@@ -131,8 +133,8 @@ minetest.register_on_joinplayer(function(player)
 		function PlayerRef:set_bone_position(bonename, position, rotation)
 			if self:is_player() then
 				character_anim.set_bone_override(self, bonename or "",
-					position or {x = 0, y = 0, z = 0},
-					rotation or {x = 0, y = 0, z = 0})
+					position or { x = 0, y = 0, z = 0 },
+					rotation or { x = 0, y = 0, z = 0 })
 			end
 			return set_bone_position(self, bonename, position, rotation)
 		end
@@ -148,7 +150,7 @@ minetest.register_on_joinplayer(function(player)
 			end
 			local prev_anim = player_animation.animation
 			local new_anim = {
-				nil_default(frame_range, {x = 1, y = 1}),
+				nil_default(frame_range, { x = 1, y = 1 }),
 				nil_default(frame_speed, 15),
 				nil_default(frame_blend, 0),
 				nil_default(frame_loop, true)
@@ -163,6 +165,7 @@ minetest.register_on_joinplayer(function(player)
 				player_animation.animation_time = player_animation.animation_time * prev_anim[2] / new_anim[2]
 			end
 		end
+
 		local set_animation_frame_speed = PlayerRef.set_animation_frame_speed
 		function PlayerRef:set_animation_frame_speed(frame_speed)
 			if not self:is_player() then
@@ -195,8 +198,9 @@ minetest.register_on_joinplayer(function(player)
 		function PlayerRef:set_local_animation(idle, walk, dig, walk_while_dig, frame_speed)
 			if not self:is_player() then return set_local_animation(self) end
 			frame_speed = frame_speed or 30
-			get_playerdata(self).local_animation = {idle, walk, dig, walk_while_dig, frame_speed}
+			get_playerdata(self).local_animation = { idle, walk, dig, walk_while_dig, frame_speed }
 		end
+
 		local get_local_animation = PlayerRef.get_local_animation
 		function PlayerRef:get_local_animation()
 			if not self:is_player() then return get_local_animation(self) end
@@ -213,7 +217,7 @@ minetest.register_on_joinplayer(function(player)
 	-- (note: these two methods are already hooked)
 	player:set_animation(player:get_animation())
 	-- Then disable animation & local animation
-	local no_anim = {x = 0, y = 0}
+	local no_anim = { x = 0, y = 0 }
 	set_animation(player, no_anim, 0, 0, false)
 	set_local_animation(player, no_anim, no_anim, no_anim, no_anim, 1)
 end)
@@ -250,7 +254,7 @@ function handle_player_animations(dtime, player)
 		mesh = props.mesh
 	end
 	if static_model_names[mesh] then
-		player:set_properties{mesh = mesh}
+		player:set_properties { mesh = mesh }
 	elseif animated_model_names[mesh] then
 		mesh = animated_model_names[mesh]
 	end
@@ -287,9 +291,9 @@ function handle_player_animations(dtime, player)
 		end
 		local position, rotation = modlib.vector.to_minetest(props.position), props.rotation
 		-- Invert quaternion to match Minetest's coordinate system
-		rotation = {-rotation[1], -rotation[2], -rotation[3], rotation[4]}
+		rotation = { -rotation[1], -rotation[2], -rotation[3], rotation[4] }
 		local euler_rotation = quaternion.to_euler_rotation(rotation)
-		bones[bone] = {position = position, rotation = rotation, euler_rotation = euler_rotation}
+		bones[bone] = { position = position, rotation = rotation, euler_rotation = euler_rotation }
 	end
 	local Body = (bones.Body or {}).euler_rotation
 	local Head = (bones.Head or {}).euler_rotation
@@ -323,7 +327,7 @@ function handle_player_animations(dtime, player)
 		if attach_parent.get_rotation then
 			parent_rotation = attach_parent:get_rotation()
 		else -- 0.4.x doesn't have get_rotation(), only yaw
-			parent_rotation = {x = 0, y = attach_parent:get_yaw(), z = 0}
+			parent_rotation = { x = 0, y = attach_parent:get_yaw(), z = 0 }
 		end
 		if attach_rotation and parent_rotation then
 			parent_rotation = vector.apply(parent_rotation, math.deg)
@@ -376,10 +380,10 @@ end
 -- We hardcode them here because character_anim installs its hook *after*
 -- player/init.lua has already called set_local_animation on join, so
 -- pdata.local_animation is never populated via the hooked method.
-local ANIM_STAND = {x = 0,   y = 79}
-local ANIM_WALK  = {x = 168, y = 187}
-local ANIM_MINE  = {x = 189, y = 198}
-local ANIM_WMINE = {x = 200, y = 219}
+local ANIM_STAND = { x = 0, y = 79 }
+local ANIM_WALK  = { x = 168, y = 187 }
+local ANIM_MINE  = { x = 189, y = 198 }
+local ANIM_WMINE = { x = 200, y = 219 }
 local ANIM_SPEED = 30
 
 minetest.register_globalstep(function(dtime)

@@ -10,13 +10,13 @@ boss._victory_dragon_obj = nil
 
 -- Boss data per level: name, HP, damage, texture
 local BOSSES = {
-	[1] = {name = "Bram",        hp = 100, dmg = 2,  tex = "boss_bram.png",       drop = "registered:sword_bronze"},
-	[2] = {name = "Hugo",        hp = 150, dmg = 3,  tex = "boss_hugo.png"},
-	[3] = {name = "Joachim",     hp = 200, dmg = 4,  tex = "boss_joachim.png",    drop = "registered:sword_diamond"},
-	[4] = {name = "Julian",      hp = 250, dmg = 5,  tex = "boss_julian.png",     drop = "registered:sword_ancient"},
-	[5] = {name = "Rosanne",     hp = 300, dmg = 6,  tex = "boss_rosanne.png"},
-	[6] = {name = "Jan Willem",  hp = 350, dmg = 7,  tex = "boss_janwillem.png",  drop = "registered:sword_elements"},
-	[7] = {name = "Margriet",    hp = 450, dmg = 8,  tex = "boss_margriet.png",   drop = "registered:sword_dragonpower"},
+	[1] = { name = "Bram", hp = 100, dmg = 2, tex = "boss_bram.png", drop = "registered:sword_bronze" },
+	[2] = { name = "Hugo", hp = 150, dmg = 3, tex = "boss_hugo.png" },
+	[3] = { name = "Joachim", hp = 200, dmg = 4, tex = "boss_joachim.png", drop = "registered:sword_diamond" },
+	[4] = { name = "Julian", hp = 250, dmg = 5, tex = "boss_julian.png", drop = "registered:sword_ancient" },
+	[5] = { name = "Rosanne", hp = 300, dmg = 6, tex = "boss_rosanne.png" },
+	[6] = { name = "Jan Willem", hp = 350, dmg = 7, tex = "boss_janwillem.png", drop = "registered:sword_elements" },
+	[7] = { name = "Margriet", hp = 450, dmg = 8, tex = "boss_margriet.png", drop = "registered:sword_dragonpower" },
 }
 
 -- ============================================================
@@ -74,7 +74,7 @@ local function enemy_boss_dragoncall_stalk(self, dtime, pos, nearest, nearest_di
 	end
 
 	-- Stand animation (menacing idle)
-	self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+	self.object:set_animation({ x = 0, y = 79 }, 15, 0, true)
 
 	-- Transition to dash after timer expires
 	if self._enemy_boss_dragoncall_timer <= 0 then
@@ -101,8 +101,8 @@ local function enemy_boss_dragoncall_stalk(self, dtime, pos, nearest, nearest_di
 		end
 		-- Karate cry for any attack
 		minetest.sound_play("hugo_karate" .. math.random(1, 4),
-			{pos = pos, gain = 1.2, max_hear_distance = 30})
-		self.object:set_animation({x = 168, y = 187}, 60, 0, true)
+			{ pos = pos, gain = 1.2, max_hear_distance = 30 })
+		self.object:set_animation({ x = 168, y = 187 }, 60, 0, true)
 	end
 end
 
@@ -122,20 +122,20 @@ local function enemy_boss_dragoncall_dash(self, dtime, pos, nearest, nearest_dis
 	self._attack_cooldown = self._attack_cooldown - dtime
 	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 		if nearest:is_player() then
-			nearest:set_hp(nearest:get_hp() - self._damage * 2, {type = "punch"})
+			nearest:set_hp(nearest:get_hp() - self._damage * 2, { type = "punch" })
 		else
-			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage * 2}}, vector.new(0,0,0))
+			nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage * 2 } }, vector.new(0, 0, 0))
 		end
 		self._attack_cooldown = 0.4
-		minetest.sound_play("hugo_hit", {pos = pos, gain = 1.0, max_hear_distance = 20})
-		self.object:set_animation({x = 189, y = 198}, 50, 0, false)
+		minetest.sound_play("hugo_hit", { pos = pos, gain = 1.0, max_hear_distance = 20 })
+		self.object:set_animation({ x = 189, y = 198 }, 50, 0, false)
 	end
 
 	if self._enemy_boss_dragoncall_timer <= 0 then
 		self._enemy_boss_dragoncall_phase = "recover"
 		self._enemy_boss_dragoncall_timer = 1.0
 		self.object:set_velocity(vector.new(0, -9.81, 0))
-		self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+		self.object:set_animation({ x = 0, y = 79 }, 15, 0, true)
 	end
 end
 
@@ -153,18 +153,18 @@ end
 -- Hugo spinning kick: dash close → jump → tilt back 30° → full spin → damage on land
 local function enemy_boss_dragoncall_spinkick_approach(self, dtime, pos, nearest, nearest_dist)
 	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
-	local ppos = nearest:get_pos()
-	local dir  = vector.direction(pos, ppos)
+	local ppos                        = nearest:get_pos()
+	local dir                         = vector.direction(pos, ppos)
 	self.object:set_yaw(minetest.dir_to_yaw(dir))
 	self.object:set_velocity(vector.new(dir.x * 6.0, -9.81, dir.z * 6.0))
-	self.object:set_animation({x = 168, y = 187}, 60, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 60, 0, true)
 	if nearest_dist < 2.5 or self._enemy_boss_dragoncall_timer <= 0 then
 		self._enemy_boss_dragoncall_phase = "spinkick_wind"
 		self._enemy_boss_dragoncall_timer = 0.75
 		self._spinkick_yaw = minetest.dir_to_yaw(dir)
 		self.object:set_velocity(vector.new(dir.x * 1.5, 8, dir.z * 1.5))
 		minetest.sound_play("hugo_karate" .. math.random(1, 4),
-			{pos = pos, gain = 1.3, max_hear_distance = 25})
+			{ pos = pos, gain = 1.3, max_hear_distance = 25 })
 	end
 end
 
@@ -173,8 +173,8 @@ local function enemy_boss_dragoncall_spinkick_wind(self, dtime, pos, nearest, ne
 	-- One full rotation over 0.75 s; also tilt back 30°
 	local spin_speed = (math.pi * 2) / 0.75
 	self._spinkick_yaw = self._spinkick_yaw + spin_speed * dtime
-	self.object:set_rotation({x = -math.pi / 6, y = self._spinkick_yaw, z = 0})
-	self.object:set_animation({x = 189, y = 198}, 50, 0, true)
+	self.object:set_rotation({ x = -math.pi / 6, y = self._spinkick_yaw, z = 0 })
+	self.object:set_animation({ x = 189, y = 198 }, 50, 0, true)
 	-- Gentle drift toward player while airborne
 	local ppos = nearest:get_pos()
 	local dir  = vector.direction(pos, ppos)
@@ -183,27 +183,32 @@ local function enemy_boss_dragoncall_spinkick_wind(self, dtime, pos, nearest, ne
 		-- Deal damage only on landing hit
 		if nearest_dist < 3.5 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 3), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 3), { type = "punch" })
 			else
 				nearest:punch(self.object, 1.0,
-					{damage_groups = {fleshy = self._damage * 3}}, dir)
+					{ damage_groups = { fleshy = self._damage * 3 } }, dir)
 			end
 			nearest:add_velocity(vector.multiply(dir, 5))
-			minetest.sound_play("hugo_hit", {pos = pos, gain = 1.3, max_hear_distance = 22})
+			minetest.sound_play("hugo_hit", { pos = pos, gain = 1.3, max_hear_distance = 22 })
 		end
 		-- Impact particles
 		minetest.add_particlespawner({
-			amount = 20, time = 0.2,
+			amount = 20,
+			time = 0.2,
 			minpos = vector.add(pos, vector.new(-0.8, 0, -0.8)),
-			maxpos = vector.add(pos, vector.new( 0.8, 1.5,  0.8)),
-			minvel = vector.new(-4, 1, -4), maxvel = vector.new(4, 4, 4),
-			minacc = vector.new(0, -3, 0), maxacc = vector.new(0, 0, 0),
-			minexptime = 0.2, maxexptime = 0.5,
-			minsize = 1, maxsize = 3,
+			maxpos = vector.add(pos, vector.new(0.8, 1.5, 0.8)),
+			minvel = vector.new(-4, 1, -4),
+			maxvel = vector.new(4, 4, 4),
+			minacc = vector.new(0, -3, 0),
+			maxacc = vector.new(0, 0, 0),
+			minexptime = 0.2,
+			maxexptime = 0.5,
+			minsize = 1,
+			maxsize = 3,
 			texture = "aura_particle.png^[colorize:#FFCC44:180",
 			glow = 8,
 		})
-		self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+		self.object:set_rotation({ x = 0, y = self._spinkick_yaw, z = 0 })
 		self._enemy_boss_dragoncall_phase = "recover"
 		self._enemy_boss_dragoncall_timer = 0.8
 	end
@@ -215,18 +220,23 @@ local function enemy_boss_dragoncall_tornado(self, dtime, pos, nearest, nearest_
 	self._tornado_dmg_tick = self._tornado_dmg_tick - dtime
 	-- 3 full rotations per second
 	self._spinkick_yaw = self._spinkick_yaw + math.pi * 6 * dtime
-	self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+	self.object:set_rotation({ x = 0, y = self._spinkick_yaw, z = 0 })
 	self.object:set_velocity(vector.new(0, -9.81, 0))
-	self.object:set_animation({x = 168, y = 187}, 80, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 80, 0, true)
 	-- Wind particles
 	minetest.add_particlespawner({
-		amount = 5, time = 0.1,
+		amount = 5,
+		time = 0.1,
 		minpos = vector.add(pos, vector.new(-1.2, 0.3, -1.2)),
-		maxpos = vector.add(pos, vector.new( 1.2, 2.0,  1.2)),
-		minvel = vector.new(-5, 0.5, -5), maxvel = vector.new(5, 2.0, 5),
-		minacc = vector.new(0, -1, 0), maxacc = vector.new(0, 0, 0),
-		minexptime = 0.2, maxexptime = 0.5,
-		minsize = 1, maxsize = 2.5,
+		maxpos = vector.add(pos, vector.new(1.2, 2.0, 1.2)),
+		minvel = vector.new(-5, 0.5, -5),
+		maxvel = vector.new(5, 2.0, 5),
+		minacc = vector.new(0, -1, 0),
+		maxacc = vector.new(0, 0, 0),
+		minexptime = 0.2,
+		maxexptime = 0.5,
+		minsize = 1,
+		maxsize = 2.5,
 		texture = "aura_particle.png^[colorize:#CCFFFF:140",
 		glow = 5,
 	})
@@ -235,15 +245,15 @@ local function enemy_boss_dragoncall_tornado(self, dtime, pos, nearest, nearest_
 		self._tornado_dmg_tick = 0.25
 		if nearest_dist < 2.5 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 			else
 				nearest:punch(self.object, 1.0,
-					{damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+					{ damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 		end
 	end
 	if self._enemy_boss_dragoncall_timer <= 0 then
-		self.object:set_rotation({x = 0, y = self._spinkick_yaw, z = 0})
+		self.object:set_rotation({ x = 0, y = self._spinkick_yaw, z = 0 })
 		self._enemy_boss_dragoncall_phase = "recover"
 		self._enemy_boss_dragoncall_timer = 1.0
 	end
@@ -252,18 +262,18 @@ end
 -- Hugo feint: fake rush past the player, hard reverse, backstab
 local function enemy_boss_dragoncall_feint_dash(self, dtime, pos, nearest, nearest_dist)
 	self._enemy_boss_dragoncall_timer = self._enemy_boss_dragoncall_timer - dtime
-	local ppos = nearest:get_pos()
-	local dir  = vector.direction(pos, ppos)
+	local ppos                        = nearest:get_pos()
+	local dir                         = vector.direction(pos, ppos)
 	-- Overshoot: aim slightly past the player
-	self._feint_dir = dir
+	self._feint_dir                   = dir
 	self.object:set_yaw(minetest.dir_to_yaw(dir))
 	self.object:set_velocity(vector.new(dir.x * 9, -9.81, dir.z * 9))
-	self.object:set_animation({x = 168, y = 187}, 70, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 70, 0, true)
 	if self._enemy_boss_dragoncall_timer <= 0 then
 		self._enemy_boss_dragoncall_phase = "feint_backstab"
 		self._enemy_boss_dragoncall_timer = 0.5
 		minetest.sound_play("hugo_karate" .. math.random(1, 4),
-			{pos = pos, gain = 1.1, max_hear_distance = 22})
+			{ pos = pos, gain = 1.1, max_hear_distance = 22 })
 	end
 end
 
@@ -274,17 +284,17 @@ local function enemy_boss_dragoncall_feint_backstab(self, dtime, pos, nearest, n
 	local back = vector.direction(pos, ppos)
 	self.object:set_yaw(minetest.dir_to_yaw(back))
 	self.object:set_velocity(vector.new(back.x * 10, -9.81, back.z * 10))
-	self.object:set_animation({x = 189, y = 198}, 60, 0, true)
+	self.object:set_animation({ x = 189, y = 198 }, 60, 0, true)
 	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 		-- Extra damage for a back strike
 		if nearest:is_player() then
-			nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 2.5), {type = "punch"})
+			nearest:set_hp(math.max(0, nearest:get_hp() - self._damage * 2.5), { type = "punch" })
 		else
 			nearest:punch(self.object, 1.0,
-				{damage_groups = {fleshy = math.floor(self._damage * 2.5)}}, back)
+				{ damage_groups = { fleshy = math.floor(self._damage * 2.5) } }, back)
 		end
 		self._attack_cooldown = 1.0
-		minetest.sound_play("hugo_hit", {pos = pos, gain = 1.1, max_hear_distance = 20})
+		minetest.sound_play("hugo_hit", { pos = pos, gain = 1.1, max_hear_distance = 20 })
 	end
 	if self._enemy_boss_dragoncall_timer <= 0 then
 		self._enemy_boss_dragoncall_phase = "recover"
@@ -304,7 +314,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 
 	-- Glow effect intensifies
 	local glow = math.floor(14 - self._enemy_boss_dragoncall_timer * 4)
-	self.object:set_properties({glow = math.min(glow, 14)})
+	self.object:set_properties({ glow = math.min(glow, 14) })
 
 	-- Channeling particles (swirling dark energy around Hugo)
 	minetest.add_particlespawner({
@@ -328,7 +338,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 	if self._enemy_boss_dragoncall_timer < 1.5 and not self._enemy_boss_dragoncall_turned_black then
 		self._enemy_boss_dragoncall_turned_black = true
 		self.object:set_properties({
-			textures = {"boss_hugo.png^[colorize:#000000:200"},
+			textures = { "boss_hugo.png^[colorize:#000000:200" },
 		})
 		-- Dark flash burst
 		minetest.add_particlespawner({
@@ -362,7 +372,7 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 			if dlua then
 				dlua._master = self.object
 			end
-			minetest.sound_play("dragon_roar1", {pos = spawn_pos, gain = 1.5, max_hear_distance = 50})
+			minetest.sound_play("dragon_roar1", { pos = spawn_pos, gain = 1.5, max_hear_distance = 50 })
 
 			-- Lightning bolt particles from sky
 			minetest.add_particlespawner({
@@ -388,7 +398,6 @@ local function enemy_boss_dragoncall_summon(self, dtime, pos, nearest)
 			nametag = "Hugo [beschermd door de Draak]",
 			nametag_color = "#AA00FF",
 		})
-
 	end
 end
 
@@ -407,14 +416,14 @@ local function enemy_boss_dragoncall_linked(self, dtime, pos, nearest)
 	local ppos = nearest:get_pos()
 	self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
 	self.object:set_velocity(vector.new(0, -9.81, 0))
-	self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+	self.object:set_animation({ x = 0, y = 79 }, 10, 0, true)
 
 	-- Play ambient hugo1-4 clips periodically
 	self._hugo_ambient_timer = self._hugo_ambient_timer - dtime
 	if self._hugo_ambient_timer <= 0 then
-		self._hugo_ambient_timer = 3.5 + math.random() * 3.0  -- next clip in 3.5-6.5 s
+		self._hugo_ambient_timer = 3.5 + math.random() * 3.0 -- next clip in 3.5-6.5 s
 		minetest.sound_play("hugo" .. math.random(1, 4),
-			{pos = pos, gain = 0.1, max_hear_distance = 20})
+			{ pos = pos, gain = 0.1, max_hear_distance = 20 })
 	end
 end
 
@@ -430,17 +439,17 @@ local function bram_normal_step(self, dtime, pos, nearest, nearest_dist)
 	local dir = vector.direction(pos, ppos)
 	self.object:set_yaw(minetest.dir_to_yaw(dir))
 	self.object:set_velocity(vector.new(dir.x * 1.8, -9.81, dir.z * 1.8))
-	self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 
 	self._attack_cooldown = self._attack_cooldown - dtime
 	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 		if nearest:is_player() then
-			nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+			nearest:set_hp(nearest:get_hp() - self._damage, { type = "punch" })
 		else
-			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+			nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 		end
 		self._attack_cooldown = 1.5
-		self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+		self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 	end
 end
 
@@ -449,7 +458,7 @@ local function bram_pullout_step(self, dtime, pos)
 	self._bram_timer = self._bram_timer - dtime
 
 	-- Idle "rummaging" animation
-	self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+	self.object:set_animation({ x = 0, y = 79 }, 10, 0, true)
 
 	if self._bram_timer <= 0 then
 		self._bram_phase = "drumstick"
@@ -476,18 +485,18 @@ local function bram_drumstick_step(self, dtime, pos, nearest, nearest_dist)
 
 	-- Faster charge
 	self.object:set_velocity(vector.new(dir.x * 3.5, -9.81, dir.z * 3.5))
-	self.object:set_animation({x = 168, y = 187}, 55, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 55, 0, true)
 
 	self._attack_cooldown = self._attack_cooldown - dtime
 	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 		local dmg = math.ceil(self._damage * 1.5)
 		if nearest:is_player() then
-			nearest:set_hp(nearest:get_hp() - dmg, {type = "punch"})
+			nearest:set_hp(nearest:get_hp() - dmg, { type = "punch" })
 		else
-			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = dmg}}, vector.new(0,0,0))
+			nearest:punch(self.object, 1.0, { damage_groups = { fleshy = dmg } }, vector.new(0, 0, 0))
 		end
 		self._attack_cooldown = 0.5 -- rapid drumstick cadence
-		self.object:set_animation({x = 189, y = 198}, 65, 0, false)
+		self.object:set_animation({ x = 189, y = 198 }, 65, 0, false)
 	end
 end
 
@@ -500,9 +509,9 @@ local function choco_splash(pos)
 		amount = 20,
 		time = 0.3,
 		minpos = vector.add(pos, vector.new(-0.2, 0, -0.2)),
-		maxpos = vector.add(pos, vector.new( 0.2, 0.1,  0.2)),
+		maxpos = vector.add(pos, vector.new(0.2, 0.1, 0.2)),
 		minvel = vector.new(-3, 1, -3),
-		maxvel = vector.new( 3, 4,  3),
+		maxvel = vector.new(3, 4, 3),
 		minacc = vector.new(0, -10, 0),
 		maxacc = vector.new(0, -10, 0),
 		minexptime = 0.25,
@@ -511,7 +520,7 @@ local function choco_splash(pos)
 		maxsize = 3,
 		texture = "wool_brown.png",
 	})
-	minetest.sound_play("default_water_footstep", {pos = pos, gain = 0.6, max_hear_distance = 14})
+	minetest.sound_play("default_water_footstep", { pos = pos, gain = 0.6, max_hear_distance = 14 })
 end
 
 -- ============================================================
@@ -529,15 +538,15 @@ local function generic_on_step(self, dtime, pos, nearest, nearest_dist)
 	self._attack_cooldown = self._attack_cooldown - dtime
 	if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 		if nearest:is_player() then
-			nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+			nearest:set_hp(nearest:get_hp() - self._damage, { type = "punch" })
 		else
-			nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+			nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 		end
 		self._attack_cooldown = 1.5
-		self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+		self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 		minetest.after(0.5, function()
 			if self.object and self.object:get_pos() then
-				self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+				self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 			end
 		end)
 	end
@@ -555,18 +564,18 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 		local dir = vector.direction(pos, ppos)
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
 		self.object:set_velocity(vector.new(dir.x * 2.0, -9.81, dir.z * 2.0))
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 
 		-- Melee
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 1.5
-			self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 		end
 
 		-- Transition to pour
@@ -576,14 +585,13 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 			self._julian_pour_tick = 0
 			self._attack_cooldown = 0
 		end
-
 	elseif self._julian_phase == "pour" then
 		-- Stand still, face player
 		local ppos = nearest:get_pos()
 		local dir = vector.direction(pos, ppos)
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
 		self.object:set_velocity(vector.new(0, -9.81, 0))
-		self.object:set_animation({x = 189, y = 198}, 20, 0, true)
+		self.object:set_animation({ x = 189, y = 198 }, 20, 0, true)
 
 		-- Right-shoulder position
 		local yaw = minetest.dir_to_yaw(dir)
@@ -601,11 +609,11 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 				amount = 14,
 				time = 0.12,
 				minpos = vector.add(shoulder_pos, vector.new(-0.08, 0, -0.08)),
-				maxpos = vector.add(shoulder_pos, vector.new( 0.08, 0.1,  0.08)),
+				maxpos = vector.add(shoulder_pos, vector.new(0.08, 0.1, 0.08)),
 				minvel = vector.new(dir.x * 3 - 0.4, -0.5, dir.z * 3 - 0.4),
-				maxvel = vector.new(dir.x * 5 + 0.4,  0.5, dir.z * 5 + 0.4),
+				maxvel = vector.new(dir.x * 5 + 0.4, 0.5, dir.z * 5 + 0.4),
 				minacc = vector.new(-0.2, -9, -0.2),
-				maxacc = vector.new( 0.2, -6,  0.2),
+				maxacc = vector.new(0.2, -6, 0.2),
 				minexptime = 0.35,
 				maxexptime = 0.75,
 				minsize = 2.5,
@@ -636,7 +644,7 @@ local function julian_step(self, dtime, pos, nearest, nearest_dist)
 					local to_obj = vector.direction(pos, obj:get_pos())
 					local dot = to_obj.x * dir.x + to_obj.z * dir.z
 					if dot > 0.25 then
-						obj:set_hp(math.max(0, obj:get_hp() - self._damage), {type = "punch"})
+						obj:set_hp(math.max(0, obj:get_hp() - self._damage), { type = "punch" })
 					end
 				end
 			end
@@ -660,7 +668,7 @@ local function raisin_explode(pos, owner)
 	for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 1.5)) do
 		if obj:is_player() then
 			if not owner or obj:get_player_name() ~= owner then
-				obj:set_hp(math.max(0, obj:get_hp() - 8), {type = "punch"})
+				obj:set_hp(math.max(0, obj:get_hp() - 8), { type = "punch" })
 			end
 		else
 			local ent = obj:get_luaentity()
@@ -684,9 +692,9 @@ local function raisin_explode(pos, owner)
 		amount = 30,
 		time = 0.4,
 		minpos = vector.add(pos, vector.new(-0.4, -0.4, -0.4)),
-		maxpos = vector.add(pos, vector.new( 0.4,  0.4,  0.4)),
+		maxpos = vector.add(pos, vector.new(0.4, 0.4, 0.4)),
 		minvel = vector.new(-6, -4, -6),
-		maxvel = vector.new( 6,  5,  6),
+		maxvel = vector.new(6, 5, 6),
 		minacc = vector.new(0, -6, 0),
 		maxacc = vector.new(0, -3, 0),
 		minexptime = 0.15,
@@ -696,17 +704,17 @@ local function raisin_explode(pos, owner)
 		texture = "aura_particle.png^[colorize:#111111:220",
 		glow = 2,
 	})
-	minetest.sound_play("default_explode", {pos = pos, gain = 0.5, max_hear_distance = 20})
+	minetest.sound_play("default_explode", { pos = pos, gain = 0.5, max_hear_distance = 20 })
 end
 
 minetest.register_entity("boss:choco_drop", {
 	initial_properties = {
 		visual = "sprite",
-		visual_size = {x = 0.3, y = 0.3},
-		textures = {"aura_particle.png^[colorize:#3b1200:255"},
+		visual_size = { x = 0.3, y = 0.3 },
+		textures = { "aura_particle.png^[colorize:#3b1200:255" },
 		physical = true,
 		collide_with_objects = false,
-		collisionbox = {-0.1, -0.1, -0.1, 0.1, 0.1, 0.1},
+		collisionbox = { -0.1, -0.1, -0.1, 0.1, 0.1, 0.1 },
 		static_save = false,
 		pointable = false,
 	},
@@ -716,7 +724,7 @@ minetest.register_entity("boss:choco_drop", {
 	_prev_vy = 0,
 
 	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
+		self.object:set_armor_groups({ immortal = 1 })
 	end,
 
 	on_step = function(self, dtime)
@@ -737,15 +745,20 @@ minetest.register_entity("boss:choco_drop", {
 		if self._lifetime > 0.1 then
 			for _, obj in ipairs(minetest.get_objects_inside_radius(pos, 0.3)) do
 				if obj:is_player() then
-					obj:set_hp(math.max(0, obj:get_hp() - 2), {type = "punch"})
+					obj:set_hp(math.max(0, obj:get_hp() - 2), { type = "punch" })
 					minetest.add_particlespawner({
-						amount = 10, time = 0.2,
+						amount = 10,
+						time = 0.2,
 						minpos = vector.add(pos, vector.new(-0.15, 0, -0.15)),
-						maxpos = vector.add(pos, vector.new( 0.15, 0.1,  0.15)),
-						minvel = vector.new(-2, 0.5, -2), maxvel = vector.new(2, 2, 2),
-						minacc = vector.new(0, -9, 0),    maxacc = vector.new(0, -9, 0),
-						minexptime = 0.2, maxexptime = 0.5,
-						minsize = 1, maxsize = 2.5,
+						maxpos = vector.add(pos, vector.new(0.15, 0.1, 0.15)),
+						minvel = vector.new(-2, 0.5, -2),
+						maxvel = vector.new(2, 2, 2),
+						minacc = vector.new(0, -9, 0),
+						maxacc = vector.new(0, -9, 0),
+						minexptime = 0.2,
+						maxexptime = 0.5,
+						minsize = 1,
+						maxsize = 2.5,
 						texture = "aura_particle.png^[colorize:#3b1200:210",
 					})
 					self._splashed = true
@@ -758,16 +771,21 @@ minetest.register_entity("boss:choco_drop", {
 		-- Detect ground landing: was falling, now stopped in Y
 		if self._lifetime > 0.2 and self._prev_vy < -1.5 and math.abs(vel.y) < 0.8 then
 			minetest.add_particlespawner({
-				amount = 16, time = 0.25,
+				amount = 16,
+				time = 0.25,
 				minpos = vector.add(pos, vector.new(-0.2, 0, -0.2)),
-				maxpos = vector.add(pos, vector.new( 0.2, 0.05,  0.2)),
-				minvel = vector.new(-3, 0.5, -3), maxvel = vector.new(3, 2.5, 3),
-				minacc = vector.new(0, -9, 0),    maxacc = vector.new(0, -9, 0),
-				minexptime = 0.2, maxexptime = 0.55,
-				minsize = 1.5, maxsize = 3.5,
+				maxpos = vector.add(pos, vector.new(0.2, 0.05, 0.2)),
+				minvel = vector.new(-3, 0.5, -3),
+				maxvel = vector.new(3, 2.5, 3),
+				minacc = vector.new(0, -9, 0),
+				maxacc = vector.new(0, -9, 0),
+				minexptime = 0.2,
+				maxexptime = 0.55,
+				minsize = 1.5,
+				maxsize = 3.5,
 				texture = "aura_particle.png^[colorize:#3b1200:210",
 			})
-			minetest.sound_play("default_water_footstep", {pos = pos, gain = 0.5, max_hear_distance = 12})
+			minetest.sound_play("default_water_footstep", { pos = pos, gain = 0.5, max_hear_distance = 12 })
 			self._splashed = true
 			self.object:remove()
 			return
@@ -780,7 +798,7 @@ minetest.register_entity("boss:choco_drop", {
 minetest.register_entity("boss:raisin", {
 	initial_properties = {
 		visual = "cube",
-		visual_size = {x = 0.15, y = 0.15, z = 0.15},
+		visual_size = { x = 0.15, y = 0.15, z = 0.15 },
 		textures = {
 			"aura_particle.png^[colorize:#111111:255",
 			"aura_particle.png^[colorize:#111111:255",
@@ -791,7 +809,7 @@ minetest.register_entity("boss:raisin", {
 		},
 		physical = true,
 		collide_with_objects = false,
-		collisionbox = {-0.07, -0.07, -0.07, 0.07, 0.07, 0.07},
+		collisionbox = { -0.07, -0.07, -0.07, 0.07, 0.07, 0.07 },
 		static_save = false,
 	},
 
@@ -803,7 +821,7 @@ minetest.register_entity("boss:raisin", {
 	_lifetime = 0,
 
 	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
+		self.object:set_armor_groups({ immortal = 1 })
 	end,
 
 	on_step = function(self, dtime)
@@ -848,7 +866,7 @@ minetest.register_entity("boss:raisin", {
 
 		if self._prev_vel and self._bounce_cd <= 0 then
 			local pv = self._prev_vel
-			local nv = {x = vel.x, y = vel.y, z = vel.z}
+			local nv = { x = vel.x, y = vel.y, z = vel.z }
 			local hit = false
 
 			if math.abs(pv.x) > 2 and math.abs(vel.x) < 0.5 then
@@ -887,30 +905,30 @@ minetest.register_entity("boss:raisin", {
 -- ============================================================
 
 local ROSANNE_WEAPONS = {
-	{item = "registered:sword_wood",   dmg = 4,  name = "Houten Zwaard"},
-	{item = "registered:sword_steel",  dmg = 7,  name = "Stalen Zwaard"},
-	{item = "registered:sword_bronze", dmg = 9,  name = "Bronzen Zwaard"},
+	{ item = "registered:sword_wood",   dmg = 4, name = "Houten Zwaard" },
+	{ item = "registered:sword_steel",  dmg = 7, name = "Stalen Zwaard" },
+	{ item = "registered:sword_bronze", dmg = 9, name = "Bronzen Zwaard" },
 }
 
 -- Unfinished weapon entity: floats and spins while Rosanne draws
 minetest.register_entity("boss:unfinished_weapon", {
 	initial_properties = {
 		visual = "sprite",
-		textures = {"drawing_item_ent.png"},
-		visual_size = {x = 1.0, y = 1.0},
+		textures = { "drawing_item_ent.png" },
+		visual_size = { x = 1.0, y = 1.0 },
 		physical = false,
-		collisionbox = {0, 0, 0, 0, 0, 0},
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
 		static_save = false,
 		pointable = false,
 		glow = 10,
 	},
-	_spin = 0,
-	_bob  = 0,
-	_particle_timer = 0,
-	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
+	_spin              = 0,
+	_bob               = 0,
+	_particle_timer    = 0,
+	on_activate        = function(self)
+		self.object:set_armor_groups({ immortal = 1 })
 	end,
-	on_step = function(self, dtime)
+	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 		-- Spin
@@ -924,14 +942,18 @@ minetest.register_entity("boss:unfinished_weapon", {
 		if self._particle_timer <= 0 then
 			self._particle_timer = 0.15
 			minetest.add_particlespawner({
-				amount = 3, time = 0.15,
+				amount = 3,
+				time = 0.15,
 				minpos = vector.add(pos, vector.new(-0.4, -0.4, -0.4)),
 				maxpos = vector.add(pos, vector.new(0.4, 0.4, 0.4)),
 				minvel = vector.new(-0.5, 0.5, -0.5),
 				maxvel = vector.new(0.5, 1.5, 0.5),
-				minacc = vector.new(0, -0.5, 0), maxacc = vector.new(0, 0, 0),
-				minexptime = 0.3, maxexptime = 0.7,
-				minsize = 1, maxsize = 2.5,
+				minacc = vector.new(0, -0.5, 0),
+				maxacc = vector.new(0, 0, 0),
+				minexptime = 0.3,
+				maxexptime = 0.7,
+				minsize = 1,
+				maxsize = 2.5,
 				texture = "boss_rosanne_sketch.png",
 				glow = 4,
 			})
@@ -949,22 +971,22 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 		local dir = vector.direction(pos, ppos)
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
 		self.object:set_velocity(vector.new(dir.x * 2.0, -9.81, dir.z * 2.0))
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 1.5
-			self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 		end
 
 		if self._rosanne_timer <= 0 then
-			self._rosanne_phase = "drawing"
-			self._rosanne_timer  = 3.5
+			self._rosanne_phase   = "drawing"
+			self._rosanne_timer   = 3.5
 			self._drawing_spawned = false
 			-- Remove old weapon visual
 			if self._weapon_entity and self._weapon_entity:get_pos() then
@@ -976,11 +998,11 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 				minetest.sound_stop(self._draw_sound)
 			end
 			self._draw_sound = minetest.sound_play("rosanne_draw",
-				{pos = pos, gain = 1.0, max_hear_distance = 20, loop = true})
+				{ pos = pos, gain = 1.0, max_hear_distance = 20, loop = true })
 			-- Random voice clip while drawing
-			local rosanne_clips = {"rosanne_doodle", "rosanne_tch"}
+			local rosanne_clips = { "rosanne_doodle", "rosanne_tch" }
 			minetest.sound_play(rosanne_clips[math.random(1, #rosanne_clips)],
-				{pos = pos, gain = 1.2, max_hear_distance = 25})
+				{ pos = pos, gain = 1.2, max_hear_distance = 25 })
 			-- Jump/float up
 			self.object:set_velocity(vector.new(0, 5, 0))
 			for _, p in ipairs(minetest.get_connected_players()) do
@@ -988,11 +1010,10 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 					"Rosanne pakt haar potlood... ze tekent haar nieuwe wapen!")
 			end
 		end
-
 	elseif self._rosanne_phase == "drawing" then
 		-- Float in place, run mine animation
 		self.object:set_velocity(vector.new(0, 0.2, 0))
-		self.object:set_animation({x = 189, y = 198}, 20, 0, true)
+		self.object:set_animation({ x = 189, y = 198 }, 20, 0, true)
 		local ppos = nearest:get_pos()
 		self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
 
@@ -1003,18 +1024,23 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			local ent = minetest.add_entity(spawn_pos, "boss:unfinished_weapon")
 			self._drawing_entity = ent
 			minetest.add_particlespawner({
-				amount = 20, time = 0.3,
+				amount = 20,
+				time = 0.3,
 				minpos = vector.add(spawn_pos, vector.new(-0.5, -0.5, -0.5)),
 				maxpos = vector.add(spawn_pos, vector.new(0.5, 0.5, 0.5)),
-				minvel = vector.new(-2, 1, -2), maxvel = vector.new(2, 3, 2),
-				minacc = vector.new(0, -1, 0), maxacc = vector.new(0, 0, 0),
-				minexptime = 0.3, maxexptime = 0.8,
-				minsize = 1, maxsize = 3,
+				minvel = vector.new(-2, 1, -2),
+				maxvel = vector.new(2, 3, 2),
+				minacc = vector.new(0, -1, 0),
+				maxacc = vector.new(0, 0, 0),
+				minexptime = 0.3,
+				maxexptime = 0.8,
+				minsize = 1,
+				maxsize = 3,
 				texture = "boss_rosanne_sketch.png",
 				glow = 6,
 			})
 			minetest.sound_play("default_place_node_hard",
-				{pos = pos, gain = 0.5, max_hear_distance = 15})
+				{ pos = pos, gain = 0.5, max_hear_distance = 15 })
 		end
 
 		-- Keep unfinished weapon hovering near her hand
@@ -1042,7 +1068,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			-- Attach weapon visual to right arm
 			local wobj = minetest.add_entity(pos, "boss:drumstick_visual")
 			if wobj then
-				wobj:set_properties({wield_item = wdata.item})
+				wobj:set_properties({ wield_item = wdata.item })
 				wobj:set_attach(self.object, "Arm_Right", vector.new(0, -6, 0), vector.new(90, 0, 0))
 				self._weapon_entity = wobj
 			end
@@ -1056,46 +1082,50 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 
 			-- Completion flash
 			minetest.add_particlespawner({
-				amount = 25, time = 0.3,
+				amount = 25,
+				time = 0.3,
 				minpos = vector.add(pos, vector.new(-0.5, 0.5, -0.5)),
 				maxpos = vector.add(pos, vector.new(0.5, 2.0, 0.5)),
-				minvel = vector.new(-3, 1, -3), maxvel = vector.new(3, 4, 3),
-				minacc = vector.new(0, -2, 0), maxacc = vector.new(0, 0, 0),
-				minexptime = 0.2, maxexptime = 0.6,
-				minsize = 2, maxsize = 4,
+				minvel = vector.new(-3, 1, -3),
+				maxvel = vector.new(3, 4, 3),
+				minacc = vector.new(0, -2, 0),
+				maxacc = vector.new(0, 0, 0),
+				minexptime = 0.2,
+				maxexptime = 0.6,
+				minsize = 2,
+				maxsize = 4,
 				texture = "aura_particle.png^[colorize:#FFAACC:200",
 				glow = 8,
 			})
 			minetest.sound_play("default_place_node_hard",
-				{pos = pos, gain = 0.8, max_hear_distance = 20})
+				{ pos = pos, gain = 0.8, max_hear_distance = 20 })
 
 			self._rosanne_phase = "armed"
-			self._rosanne_timer  = 12.0 + math.random() * 8.0  -- redraw after 12–20 sec
+			self._rosanne_timer = 12.0 + math.random() * 8.0 -- redraw after 12–20 sec
 		end
-
 	elseif self._rosanne_phase == "armed" then
 		-- Fight with drawn weapon
 		local ppos = nearest:get_pos()
 		local dir = vector.direction(pos, ppos)
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
 		self.object:set_velocity(vector.new(dir.x * 2.2, -9.81, dir.z * 2.2))
-		self.object:set_animation({x = 168, y = 187}, 35, 0, true)
+		self.object:set_animation({ x = 168, y = 187 }, 35, 0, true)
 
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 1.2
-			self.object:set_animation({x = 189, y = 198}, 40, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 40, 0, false)
 		end
 
 		-- Redraw timer expired → go draw again
 		if self._rosanne_timer <= 0 then
 			self._rosanne_phase = "normal"
-			self._rosanne_timer  = 0.1
+			self._rosanne_timer = 0.1
 		end
 	end
 end
@@ -1111,54 +1141,53 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 		-- Standard walk + melee
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
 		self.object:set_velocity(vector.new(dir.x * 2.2, -9.81, dir.z * 2.2))
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 1.5
-			self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 		end
 
 		-- Periodic summon every 20 seconds
 		self._margriet_timer = self._margriet_timer - dtime
 		if self._margriet_timer <= 0 then
 			self._margriet_phase = "summon"
-			self._margriet_timer = 3.0  -- channeling duration
+			self._margriet_timer = 3.0 -- channeling duration
 		end
-
 	elseif self._margriet_phase == "summon" then
 		-- Stand still, channel for 3 seconds, then spawn a helper boss
 		self._margriet_timer = self._margriet_timer - dtime
 		self.object:set_velocity(vector.new(0, -9.81, 0))
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
-		self.object:set_animation({x = 0, y = 79}, 10, 0, true)
+		self.object:set_animation({ x = 0, y = 79 }, 10, 0, true)
 
 		-- Swirling orange/red channeling particles
 		minetest.add_particlespawner({
-			amount  = 10,
-			time    = 0.2,
-			minpos  = vector.add(pos, vector.new(-1.8, 0, -1.8)),
-			maxpos  = vector.add(pos, vector.new(1.8, 3.0, 1.8)),
-			minvel  = vector.new(-2, 1, -2),
-			maxvel  = vector.new(2, 3, 2),
-			minacc  = vector.new(0, 0.5, 0),
-			maxacc  = vector.new(0, 1.5, 0),
+			amount     = 10,
+			time       = 0.2,
+			minpos     = vector.add(pos, vector.new(-1.8, 0, -1.8)),
+			maxpos     = vector.add(pos, vector.new(1.8, 3.0, 1.8)),
+			minvel     = vector.new(-2, 1, -2),
+			maxvel     = vector.new(2, 3, 2),
+			minacc     = vector.new(0, 0.5, 0),
+			maxacc     = vector.new(0, 1.5, 0),
 			minexptime = 0.3,
 			maxexptime = 0.7,
-			minsize = 2,
-			maxsize = 5,
-			texture = "aura_particle.png^[colorize:#FF5500:180",
-			glow    = 10,
+			minsize    = 2,
+			maxsize    = 5,
+			texture    = "aura_particle.png^[colorize:#FF5500:180",
+			glow       = 10,
 		})
 
 		if self._margriet_timer <= 0 then
 			-- Summon one random boss from: Joachim(3), Rosanne(5), Jan Willem(6)
-			local pool = {3, 5, 6}
+			local pool = { 3, 5, 6 }
 			local pick = pool[math.random(#pool)]
 			local offset = vector.new(math.random(-3, 3), 0, math.random(-3, 3))
 			local spawn_pos = vector.add(pos, offset)
@@ -1170,20 +1199,20 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 				minetest.chat_send_all("Margriet roept " .. bname .. " op!")
 				-- Summon flash
 				minetest.add_particlespawner({
-					amount  = 30,
-					time    = 0.3,
-					minpos  = vector.add(spawn_pos, vector.new(-0.5, 0.5, -0.5)),
-					maxpos  = vector.add(spawn_pos, vector.new(0.5, 2.0, 0.5)),
-					minvel  = vector.new(-4, 0, -4),
-					maxvel  = vector.new(4, 4, 4),
-					minacc  = vector.new(0, -2, 0),
-					maxacc  = vector.new(0, 0, 0),
+					amount     = 30,
+					time       = 0.3,
+					minpos     = vector.add(spawn_pos, vector.new(-0.5, 0.5, -0.5)),
+					maxpos     = vector.add(spawn_pos, vector.new(0.5, 2.0, 0.5)),
+					minvel     = vector.new(-4, 0, -4),
+					maxvel     = vector.new(4, 4, 4),
+					minacc     = vector.new(0, -2, 0),
+					maxacc     = vector.new(0, 0, 0),
 					minexptime = 0.5,
 					maxexptime = 1.0,
-					minsize = 3,
-					maxsize = 6,
-					texture = "aura_particle.png^[colorize:#FF8800:200",
-					glow    = 12,
+					minsize    = 3,
+					maxsize    = 6,
+					texture    = "aura_particle.png^[colorize:#FF8800:200",
+					glow       = 12,
 				})
 			end
 			self._margriet_phase = "linked"
@@ -1192,7 +1221,6 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 				nametag_color = "#FF8800",
 			})
 		end
-
 	elseif self._margriet_phase == "linked" then
 		-- Invulnerable while summoned boss lives; still walks and attacks
 		if not self._margriet_summon_ref or not self._margriet_summon_ref:get_pos() then
@@ -1200,31 +1228,31 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 			self._margriet_phase      = "normal"
 			self._margriet_timer      = 15.0
 			self._margriet_summon_ref = nil
-			local data = BOSSES[7]
+			local data                = BOSSES[7]
 			self.object:set_properties({
 				nametag       = (data and data.name or "Margriet") ..
-				                " [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] WOEDEND",
+					" [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] WOEDEND",
 				nametag_color = "#FF0000",
 			})
 			minetest.chat_send_all("Margriet is woedend!")
 			minetest.sound_play("margriet" .. math.random(1, 2),
-				{pos = pos, gain = 1.3, max_hear_distance = 35})
+				{ pos = pos, gain = 1.3, max_hear_distance = 35 })
 		else
 			-- Continue attacking while protected
 			self.object:set_yaw(minetest.dir_to_yaw(dir))
 			self.object:set_velocity(vector.new(dir.x * 1.8, -9.81, dir.z * 1.8))
-			self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+			self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 
 			self._attack_cooldown = self._attack_cooldown - dtime
 			if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 				if nearest:is_player() then
-					nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), {type = "punch"})
+					nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
 				else
 					nearest:punch(self.object, 1.0,
-						{damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+						{ damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 				end
 				self._attack_cooldown = 1.5
-				self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+				self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 			end
 		end
 	end
@@ -1237,14 +1265,14 @@ minetest.register_entity("boss:drumstick_visual", {
 	initial_properties = {
 		visual = "wielditem",
 		wield_item = "registered:drumstick",
-		visual_size = {x = 0.5, y = 0.5},
+		visual_size = { x = 0.5, y = 0.5 },
 		physical = false,
-		collisionbox = {0, 0, 0, 0, 0, 0},
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
 		static_save = false,
 		pointable = false,
 	},
 	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
+		self.object:set_armor_groups({ immortal = 1 })
 	end,
 	on_step = function(self, dtime)
 		if not self.object:get_attach() then
@@ -1257,74 +1285,75 @@ minetest.register_entity("boss:drumstick_visual", {
 -- Boss entity
 -- ============================================================
 minetest.register_entity("boss:teacher", {
-	initial_properties = {
+	initial_properties                  = {
 		visual = "mesh",
 		mesh = "character.b3d",
-		textures = {"boss_bram.png"},
+		textures = { "boss_bram.png" },
 		physical = true,
 		collide_with_objects = true,
-		collisionbox = {-0.4, 0.0, -0.4, 0.4, 2.0, 0.4},
-		visual_size = {x = 1.2, y = 1.2, z = 1.2},
+		collisionbox = { -0.4, 0.0, -0.4, 0.4, 2.0, 0.4 },
+		visual_size = { x = 1.2, y = 1.2, z = 1.2 },
 		makes_footstep_sound = true,
 		static_save = false,
 		nametag = "",
 		nametag_color = "#FF3333",
 	},
 
-	_hp = 100,
-	_max_hp = 100,
-	_damage = 2,
-	_attack_cooldown = 0,
-	_level = 1,
+	_hp                                 = 100,
+	_max_hp                             = 100,
+	_damage                             = 2,
+	_attack_cooldown                    = 0,
+	_level                              = 1,
 
 	-- Bram-specific state
-	_bram_phase = "normal",
-	_bram_timer = 0,
-	_drumstick_entity = nil,
+	_bram_phase                         = "normal",
+	_bram_timer                         = 0,
+	_drumstick_entity                   = nil,
 
 	-- Hugo-specific state
-	_enemy_boss_dragoncall_phase = "stalk",
-	_enemy_boss_dragoncall_timer = 3.0,
+	_enemy_boss_dragoncall_phase        = "stalk",
+	_enemy_boss_dragoncall_timer        = 3.0,
 	_enemy_boss_dragoncall_turned_black = false,
-	_summoned_dragon = nil,
-	_hugo_ambient_timer  = 4.0,   -- interval for hugo1-4 ambient clips during linked phase
-	_hugo_speech_timer   = 18.0,  -- interval for hugo_speech during combat phases
-	_spinkick_yaw        = 0,     -- yaw accumulator for spinning attacks
-	_tornado_dmg_tick    = 0.25,  -- damage tick counter for tornado
-	_feint_dir           = nil,   -- feint overshoot direction
+	_summoned_dragon                    = nil,
+	_hugo_ambient_timer                 = 4.0, -- interval for hugo1-4 ambient clips during linked phase
+	_hugo_speech_timer                  = 18.0, -- interval for hugo_speech during combat phases
+	_spinkick_yaw                       = 0, -- yaw accumulator for spinning attacks
+	_tornado_dmg_tick                   = 0.25, -- damage tick counter for tornado
+	_feint_dir                          = nil, -- feint overshoot direction
 
 	-- Julian-specific state
-	_julian_phase = "normal",
-	_julian_timer = 8.0,
-	_julian_pour_tick = 0,
-	_julian_drop_counter = 0,
+	_julian_phase                       = "normal",
+	_julian_timer                       = 8.0,
+	_julian_pour_tick                   = 0,
+	_julian_drop_counter                = 0,
 
 	-- Rosanne-specific state
-	_rosanne_phase   = "normal",
-	_rosanne_timer   = 5.0,
-	_drawn_weapon    = nil,
-	_drawing_entity  = nil,
-	_drawing_spawned = false,
-	_weapon_entity   = nil,
-	_draw_sound      = nil,
+	_rosanne_phase                      = "normal",
+	_rosanne_timer                      = 5.0,
+	_drawn_weapon                       = nil,
+	_drawing_entity                     = nil,
+	_drawing_spawned                    = false,
+	_weapon_entity                      = nil,
+	_draw_sound                         = nil,
 
 	-- Margriet-specific state
-	_margriet_phase      = "normal",
-	_margriet_timer      = 20.0,  -- first summon after 20 s
-	_margriet_summon_ref = nil,
+	_margriet_phase                     = "normal",
+	_margriet_timer                     = 20.0, -- first summon after 20 s
+	_margriet_summon_ref                = nil,
 
-	_frozen = false,
+	_frozen                             = false,
 
-	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
-		self.object:set_armor_groups({fleshy = 100})
+	on_activate                         = function(self, staticdata)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
+		self.object:set_armor_groups({ fleshy = 100 })
 	end,
 
-	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+	on_punch                            = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		if not puncher then return end
 		-- Accept hits from players, stunt double, or boomerang
 		local is_stunt = puncher:get_luaentity() and puncher:get_luaentity().name == "trailer:stunt_double"
-		local is_boomerang = puncher:get_luaentity() and puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
+		local is_boomerang = puncher:get_luaentity() and
+		puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
 		if not puncher:is_player() and not is_stunt and not is_boomerang then return end
 
 		-- Hugo linked phase: invulnerable while Dragon lives
@@ -1352,49 +1381,54 @@ minetest.register_entity("boss:teacher", {
 
 		-- Fire sword: spawn fire particles on boss
 		if puncher:is_player() then
-		local wielded = puncher:get_wielded_item()
-		local itemdef = minetest.registered_items[wielded:get_name()]
-		if itemdef and itemdef._fire_sword then
-			local fpos = self.object:get_pos()
-			if fpos then
-				minetest.add_particlespawner({
-					amount = 25,
-					time = 0.6,
-					minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
-					maxpos = vector.add(fpos, vector.new(0.4, 2.0, 0.4)),
-					minvel = vector.new(-1, 1, -1),
-					maxvel = vector.new(1, 3, 1),
-					minacc = vector.new(0, 1, 0),
-					maxacc = vector.new(0, 2, 0),
-					minexptime = 0.3,
-					maxexptime = 0.8,
-					minsize = 3,
-					maxsize = 5,
-					texture = "draconis_fire_particle.png",
-					glow = 14,
-				})
+			local wielded = puncher:get_wielded_item()
+			local itemdef = minetest.registered_items[wielded:get_name()]
+			if itemdef and itemdef._fire_sword then
+				local fpos = self.object:get_pos()
+				if fpos then
+					minetest.add_particlespawner({
+						amount = 25,
+						time = 0.6,
+						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
+						maxpos = vector.add(fpos, vector.new(0.4, 2.0, 0.4)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3,
+						maxexptime = 0.8,
+						minsize = 3,
+						maxsize = 5,
+						texture = "draconis_fire_particle.png",
+						glow = 14,
+					})
+				end
 			end
-		end
-		-- Elements sword (ice / fire)
-		if itemdef and itemdef._is_elements_sword then
-			local estate = itemdef._elements_state or "ice"
-			local fpos   = self.object:get_pos()
-			if estate == "fire" and fpos then
-				minetest.add_particlespawner({
-					amount = 25, time = 0.6,
-					minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
-					maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
-					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
-					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
-					minexptime = 0.3, maxexptime = 0.8,
-					minsize = 3, maxsize = 5,
-					texture = "draconis_fire_particle.png",
-					glow = 14,
-				})
-			elseif estate == "ice" then
-				registered_apply_freeze(self.object)
+			-- Elements sword (ice / fire)
+			if itemdef and itemdef._is_elements_sword then
+				local estate = itemdef._elements_state or "ice"
+				local fpos   = self.object:get_pos()
+				if estate == "fire" and fpos then
+					minetest.add_particlespawner({
+						amount = 25,
+						time = 0.6,
+						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
+						maxpos = vector.add(fpos, vector.new(0.4, 2.0, 0.4)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3,
+						maxexptime = 0.8,
+						minsize = 3,
+						maxsize = 5,
+						texture = "draconis_fire_particle.png",
+						glow = 14,
+					})
+				elseif estate == "ice" then
+					registered_apply_freeze(self.object)
+				end
 			end
-		end
 		end -- puncher:is_player()
 
 		self._hp = self._hp - dmg
@@ -1407,16 +1441,16 @@ minetest.register_entity("boss:teacher", {
 
 		-- Bram: trigger drumstick rage at 50% HP
 		if self._level == 1 and self._bram_phase == "normal"
-		   and self._hp > 0 and self._hp <= self._max_hp * 0.5 then
+			and self._hp > 0 and self._hp <= self._max_hp * 0.5 then
 			self._bram_phase = "pullout"
 			self._bram_timer = 1.8 -- seconds of ear-rummaging theatre
 		end
 
 		-- Hugo: trigger Dragon summon at 25% HP
 		if self._level == 2 and self._enemy_boss_dragoncall_phase ~= "summon" and self._enemy_boss_dragoncall_phase ~= "linked"
-		   and self._hp > 0 and self._hp <= self._max_hp * 0.25 then
+			and self._hp > 0 and self._hp <= self._max_hp * 0.25 then
 			self._enemy_boss_dragoncall_phase = "summon"
-			self._enemy_boss_dragoncall_timer = 3.0  -- 3 second channeling
+			self._enemy_boss_dragoncall_timer = 3.0 -- 3 second channeling
 		end
 
 		if self._hp <= 0 then
@@ -1441,7 +1475,7 @@ minetest.register_entity("boss:teacher", {
 		return true
 	end,
 
-	on_step = function(self, dtime)
+	on_step                             = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 
@@ -1477,7 +1511,7 @@ minetest.register_entity("boss:teacher", {
 				if self._hugo_speech_timer <= 0 then
 					self._hugo_speech_timer = 15.0 + math.random() * 5.0
 					minetest.sound_play("hugo_speech",
-						{pos = pos, gain = 0.8, max_hear_distance = 25})
+						{ pos = pos, gain = 0.8, max_hear_distance = 25 })
 				end
 			end
 
@@ -1535,11 +1569,11 @@ minetest.register_entity("boss:summoned_dragon", {
 	initial_properties = {
 		visual = "mesh",
 		mesh = "draconis_fire_dragon.b3d",
-		textures = {"blue_dragon.png^draconis_baked_in_shading.png"},
+		textures = { "blue_dragon.png^draconis_baked_in_shading.png" },
 		physical = true,
 		collide_with_objects = false,
-		collisionbox = {-0.5, 0.0, -0.5, 0.5, 2.5, 0.5},
-		visual_size = {x = 6, y = 6, z = 6},
+		collisionbox = { -0.5, 0.0, -0.5, 0.5, 2.5, 0.5 },
+		visual_size = { x = 6, y = 6, z = 6 },
 		makes_footstep_sound = false,
 		static_save = false,
 		nametag = "Kearach",
@@ -1554,9 +1588,9 @@ minetest.register_entity("boss:summoned_dragon", {
 	_attack_cooldown = 0,
 	_roar_timer = 3.0,
 	_breath_timer = 0,
-	_anim_timer = 0,  -- prevent animation restart mid-play
+	_anim_timer = 0, -- prevent animation restart mid-play
 	_current_anim = "fly",
-	_master = nil,  -- Hugo objectref
+	_master = nil, -- Hugo objectref
 	_aura_timer = 0,
 	_smoke_timer = 0,
 	_glow_phase = 0,
@@ -1564,8 +1598,8 @@ minetest.register_entity("boss:summoned_dragon", {
 	_frozen = false,
 
 	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 211, y = 249}, 30, 0, true) -- walk
-		self.object:set_armor_groups({fleshy = 100})
+		self.object:set_animation({ x = 211, y = 249 }, 30, 0, true) -- walk
+		self.object:set_armor_groups({ fleshy = 100 })
 
 		-- Summoning dark energy pillar
 		local pos = self.object:get_pos()
@@ -1619,49 +1653,54 @@ minetest.register_entity("boss:summoned_dragon", {
 
 		-- Fire sword: spawn fire particles on Dragon
 		if puncher:is_player() then
-		local wielded = puncher:get_wielded_item()
-		local itemdef = minetest.registered_items[wielded:get_name()]
-		if itemdef and itemdef._fire_sword then
-			local fpos = self.object:get_pos()
-			if fpos then
-				minetest.add_particlespawner({
-					amount = 30,
-					time = 0.7,
-					minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
-					maxpos = vector.add(fpos, vector.new(1, 3.0, 1)),
-					minvel = vector.new(-1, 1, -1),
-					maxvel = vector.new(1, 4, 1),
-					minacc = vector.new(0, 1, 0),
-					maxacc = vector.new(0, 3, 0),
-					minexptime = 0.3,
-					maxexptime = 0.9,
-					minsize = 3,
-					maxsize = 6,
-					texture = "aura_particle.png^[colorize:#1869db:200",
-					glow = 14,
-				})
+			local wielded = puncher:get_wielded_item()
+			local itemdef = minetest.registered_items[wielded:get_name()]
+			if itemdef and itemdef._fire_sword then
+				local fpos = self.object:get_pos()
+				if fpos then
+					minetest.add_particlespawner({
+						amount = 30,
+						time = 0.7,
+						minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
+						maxpos = vector.add(fpos, vector.new(1, 3.0, 1)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 4, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 3, 0),
+						minexptime = 0.3,
+						maxexptime = 0.9,
+						minsize = 3,
+						maxsize = 6,
+						texture = "aura_particle.png^[colorize:#1869db:200",
+						glow = 14,
+					})
+				end
 			end
-		end
-		-- Elements sword (ice / fire)
-		if itemdef and itemdef._is_elements_sword then
-			local estate = itemdef._elements_state or "ice"
-			local fpos   = self.object:get_pos()
-			if estate == "fire" and fpos then
-				minetest.add_particlespawner({
-					amount = 30, time = 0.7,
-					minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
-					maxpos = vector.add(fpos, vector.new( 1, 3.0,  1)),
-					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 4, 1),
-					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 3, 0),
-					minexptime = 0.3, maxexptime = 0.9,
-					minsize = 3, maxsize = 6,
-					texture = "draconis_fire_particle.png",
-					glow = 14,
-				})
-			elseif estate == "ice" then
-				registered_apply_freeze(self.object)
+			-- Elements sword (ice / fire)
+			if itemdef and itemdef._is_elements_sword then
+				local estate = itemdef._elements_state or "ice"
+				local fpos   = self.object:get_pos()
+				if estate == "fire" and fpos then
+					minetest.add_particlespawner({
+						amount = 30,
+						time = 0.7,
+						minpos = vector.add(fpos, vector.new(-1, 0.5, -1)),
+						maxpos = vector.add(fpos, vector.new(1, 3.0, 1)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 4, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 3, 0),
+						minexptime = 0.3,
+						maxexptime = 0.9,
+						minsize = 3,
+						maxsize = 6,
+						texture = "draconis_fire_particle.png",
+						glow = 14,
+					})
+				elseif estate == "ice" then
+					registered_apply_freeze(self.object)
+				end
 			end
-		end
 		end -- puncher:is_player()
 
 		self._hp = self._hp - dmg
@@ -1674,14 +1713,14 @@ minetest.register_entity("boss:summoned_dragon", {
 		if math.random() < 0.4 then
 			local pos = self.object:get_pos()
 			minetest.sound_play("dragon_roar" .. math.random(1, 2),
-				{pos = pos, gain = 5.0, max_hear_distance = 50})
+				{ pos = pos, gain = 5.0, max_hear_distance = 50 })
 		end
 
 		if self._hp <= 0 then
 			-- Dragon dies — kill Hugo too
 			local pos = self.object:get_pos()
 			if pos then
-				minetest.sound_play("dragon_roar2", {pos = pos, gain = 7.0, max_hear_distance = 60})
+				minetest.sound_play("dragon_roar2", { pos = pos, gain = 7.0, max_hear_distance = 60 })
 			end
 
 			-- Drop diamond sword
@@ -1716,7 +1755,7 @@ minetest.register_entity("boss:summoned_dragon", {
 		-- Pulsating glow effect
 		self._glow_phase = self._glow_phase + dtime * 2.0
 		local glow = math.floor(8 + math.sin(self._glow_phase) * 4)
-		self.object:set_properties({glow = glow})
+		self.object:set_properties({ glow = glow })
 
 		-- Dark aura particles (continuous swirling purple mist)
 		self._aura_timer = self._aura_timer - dtime
@@ -1772,14 +1811,14 @@ minetest.register_entity("boss:summoned_dragon", {
 		self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
 		if self._current_anim ~= "walk" and self._anim_timer <= 0 then
 			self._current_anim = "walk"
-			self.object:set_animation({x = 211, y = 249}, 30, 0, true)
+			self.object:set_animation({ x = 211, y = 249 }, 30, 0, true)
 		end
 
 		-- Random roar
 		self._roar_timer = self._roar_timer - dtime
 		if self._roar_timer <= 0 then
 			minetest.sound_play("dragon_roar" .. math.random(1, 2),
-			{pos = pos, gain = 3.2, max_hear_distance = 50})
+				{ pos = pos, gain = 3.2, max_hear_distance = 50 })
 			self._roar_timer = 4.0 + math.random() * 4.0
 		end
 
@@ -1789,15 +1828,15 @@ minetest.register_entity("boss:summoned_dragon", {
 			-- Fire breath animation (plays ~2 sec, don't interrupt)
 			self._current_anim = "walk_fire"
 			self._anim_timer = 2.0
-			self.object:set_animation({x = 61, y = 119}, 30, 0, false)
+			self.object:set_animation({ x = 61, y = 119 }, 30, 0, false)
 			minetest.sound_play("draconis_fire_breath",
-				{pos = pos, gain = 1.0, max_hear_distance = 30})
+				{ pos = pos, gain = 1.0, max_hear_distance = 30 })
 
 			-- Damage target
 			if nearest:is_player() then
-				nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+				nearest:set_hp(nearest:get_hp() - self._damage, { type = "punch" })
 			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0,0,0))
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 2.5
 
@@ -1820,7 +1859,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				texture = "draconis_fire_particle.png",
 				glow = 14,
 			})
-			
+
 			-- Ground scorch (fire on impact area)
 			minetest.add_particlespawner({
 				amount = 20,
@@ -1863,8 +1902,8 @@ function boss.set_level(obj, level)
 	obj:set_properties({
 		nametag = data.name .. " [" .. data.hp .. "/" .. data.hp .. "]",
 		nametag_color = "#FFFFFF",
-		visual_size = {x = scale, y = scale, z = scale},
-		textures = {data.tex},
+		visual_size = { x = scale, y = scale, z = scale },
+		textures = { data.tex },
 	})
 
 	-- Hugo: initialize kung fu state
@@ -1899,7 +1938,7 @@ end
 --   ablativus    → 10 % damage reduction (takes 10 % less damage)
 -- ============================================================
 
-local GLAD_STATES   = {"nominativus", "accusativus", "dativus", "genitivus", "ablativus"}
+local GLAD_STATES   = { "nominativus", "accusativus", "dativus", "genitivus", "ablativus" }
 local GLAD_COLORS   = {
 	nominativus = "#FFD700",
 	accusativus = "#FF8800",
@@ -1928,9 +1967,9 @@ end
 -- Apply immediate buff for the new state on entry
 local function glad_apply_state(self, state)
 	-- Reset modifiers to base first
-	self._damage       = GLAD_BASE_DMG
-	self._speed        = GLAD_BASE_SPD
-	self._dmg_resist   = 0.0
+	self._damage     = GLAD_BASE_DMG
+	self._speed      = GLAD_BASE_SPD
+	self._dmg_resist = 0.0
 
 	if state == "nominativus" then
 		-- Jump buff handled in on_step; nothing to apply here
@@ -1948,24 +1987,24 @@ end
 
 -- Transition to the next state in the cycle
 local function glad_next_state(self)
-	local idx    = glad_state_index(self._glad_state)
-	local nidx   = (idx % #GLAD_STATES) + 1
-	local new    = GLAD_STATES[nidx]
+	local idx              = glad_state_index(self._glad_state)
+	local nidx             = (idx % #GLAD_STATES) + 1
+	local new              = GLAD_STATES[nidx]
 	self._glad_state       = new
 	self._glad_state_timer = 10.0 + math.random() * 4.0
 	glad_apply_state(self, new)
 
 	-- Play transition sound
 	local snd = "gladiator_" .. new
-	local pos  = self.object:get_pos()
+	local pos = self.object:get_pos()
 	if pos then
-		minetest.sound_play(snd, {pos = pos, gain = 1.0, max_hear_distance = 30})
+		minetest.sound_play(snd, { pos = pos, gain = 1.0, max_hear_distance = 30 })
 	end
 
 	-- Update nametag
 	self.object:set_properties({
 		nametag       = "Joachim [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] " ..
-		                GLAD_LABELS[new],
+			GLAD_LABELS[new],
 		nametag_color = GLAD_COLORS[new],
 	})
 
@@ -1975,9 +2014,9 @@ local function glad_next_state(self)
 			amount     = 20,
 			time       = 0.4,
 			minpos     = vector.add(pos, vector.new(-0.6, 0.3, -0.6)),
-			maxpos     = vector.add(pos, vector.new( 0.6, 2.0,  0.6)),
+			maxpos     = vector.add(pos, vector.new(0.6, 2.0, 0.6)),
 			minvel     = vector.new(-3, 1, -3),
-			maxvel     = vector.new( 3, 4,  3),
+			maxvel     = vector.new(3, 4, 3),
 			minacc     = vector.new(0, -2, 0),
 			maxacc     = vector.new(0, -1, 0),
 			minexptime = 0.2,
@@ -1995,11 +2034,11 @@ minetest.register_entity("boss:gladiator", {
 		visual               = "mesh",
 		mesh                 = "character.b3d",
 		-- NOTE: replace with a dedicated gladiator texture when available
-		textures             = {"boss_joachim.png"},
+		textures             = { "boss_joachim.png" },
 		physical             = true,
 		collide_with_objects = true,
-		collisionbox         = {-0.4, 0.0, -0.4, 0.4, 2.0, 0.4},
-		visual_size          = {x = 1.3, y = 1.3, z = 1.3},
+		collisionbox         = { -0.4, 0.0, -0.4, 0.4, 2.0, 0.4 },
+		visual_size          = { x = 1.3, y = 1.3, z = 1.3 },
 		makes_footstep_sound = true,
 		static_save          = false,
 		nametag              = "Joachim",
@@ -2012,7 +2051,7 @@ minetest.register_entity("boss:gladiator", {
 	_speed             = GLAD_BASE_SPD,
 	_dmg_resist        = 0.0,
 	_attack_cooldown   = 0,
-	_level             = 3,         -- used by drop / wave-clear logic
+	_level             = 3, -- used by drop / wave-clear logic
 
 	-- State machine
 	_glad_state        = "nominativus",
@@ -2022,17 +2061,17 @@ minetest.register_entity("boss:gladiator", {
 	_jump_timer        = 0,
 	_air_time          = 100.0, -- large = on ground (y_vel clamped to -9.81)
 
-	_frozen = false,
+	_frozen            = false,
 
-	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true)
-		self.object:set_armor_groups({fleshy = 100})
+	on_activate        = function(self, staticdata)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
+		self.object:set_armor_groups({ fleshy = 100 })
 
 		-- Set initial state
 		glad_apply_state(self, self._glad_state)
 		self.object:set_properties({
 			nametag       = "Joachim [" .. self._hp .. "/" .. self._max_hp .. "] " ..
-			                GLAD_LABELS[self._glad_state],
+				GLAD_LABELS[self._glad_state],
 			nametag_color = GLAD_COLORS[self._glad_state],
 		})
 
@@ -2040,21 +2079,21 @@ minetest.register_entity("boss:gladiator", {
 		local pos = self.object:get_pos()
 		if pos then
 			minetest.sound_play("gladiator_" .. self._glad_state,
-				{pos = pos, gain = 1.0, max_hear_distance = 30})
+				{ pos = pos, gain = 1.0, max_hear_distance = 30 })
 		end
 	end,
 
-	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+	on_punch           = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
 		if not puncher then return end
 		local is_stunt     = puncher:get_luaentity() and
-		                     puncher:get_luaentity().name == "trailer:stunt_double"
+			puncher:get_luaentity().name == "trailer:stunt_double"
 		local is_boomerang = puncher:get_luaentity() and
-		                     puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
+			puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
 		if not puncher:is_player() and not is_stunt and not is_boomerang then return end
 
 		local dmg = 1
 		if tool_capabilities and tool_capabilities.damage_groups
-		   and tool_capabilities.damage_groups.fleshy then
+			and tool_capabilities.damage_groups.fleshy then
 			dmg = tool_capabilities.damage_groups.fleshy
 		end
 
@@ -2066,13 +2105,18 @@ minetest.register_entity("boss:gladiator", {
 				local fpos = self.object:get_pos()
 				if fpos then
 					minetest.add_particlespawner({
-						amount = 25, time = 0.6,
+						amount = 25,
+						time = 0.6,
 						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
-						maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
-						minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
-						minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
-						minexptime = 0.3, maxexptime = 0.8,
-						minsize = 3, maxsize = 5,
+						maxpos = vector.add(fpos, vector.new(0.4, 2.0, 0.4)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3,
+						maxexptime = 0.8,
+						minsize = 3,
+						maxsize = 5,
 						texture = "draconis_fire_particle.png",
 						glow = 14,
 					})
@@ -2084,13 +2128,18 @@ minetest.register_entity("boss:gladiator", {
 				local fpos   = self.object:get_pos()
 				if estate == "fire" and fpos then
 					minetest.add_particlespawner({
-						amount = 25, time = 0.6,
+						amount = 25,
+						time = 0.6,
 						minpos = vector.add(fpos, vector.new(-0.4, 0.5, -0.4)),
-						maxpos = vector.add(fpos, vector.new( 0.4, 2.0,  0.4)),
-						minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
-						minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
-						minexptime = 0.3, maxexptime = 0.8,
-						minsize = 3, maxsize = 5,
+						maxpos = vector.add(fpos, vector.new(0.4, 2.0, 0.4)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 3, 1),
+						minacc = vector.new(0, 1, 0),
+						maxacc = vector.new(0, 2, 0),
+						minexptime = 0.3,
+						maxexptime = 0.8,
+						minsize = 3,
+						maxsize = 5,
 						texture = "draconis_fire_particle.png",
 						glow = 14,
 					})
@@ -2110,7 +2159,7 @@ minetest.register_entity("boss:gladiator", {
 		-- Update nametag
 		self.object:set_properties({
 			nametag = "Joachim [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] " ..
-			          GLAD_LABELS[self._glad_state],
+				GLAD_LABELS[self._glad_state],
 		})
 
 		if self._hp <= 0 then
@@ -2126,7 +2175,7 @@ minetest.register_entity("boss:gladiator", {
 		return true
 	end,
 
-	on_step = function(self, dtime)
+	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 
@@ -2156,15 +2205,20 @@ minetest.register_entity("boss:gladiator", {
 			self._jump_timer = self._jump_timer - dtime
 			if self._jump_timer <= 0 then
 				self._jump_timer = 3.0 + math.random() * 2.0
-				self._air_time = 0  -- begin jump arc
+				self._air_time = 0 -- begin jump arc
 				minetest.add_particlespawner({
-					amount = 10, time = 0.3,
+					amount = 10,
+					time = 0.3,
 					minpos = vector.add(pos, vector.new(-0.3, 0, -0.3)),
-					maxpos = vector.add(pos, vector.new( 0.3, 0.2,  0.3)),
-					minvel = vector.new(-2, 0, -2), maxvel = vector.new(2, 1, 2),
-					minacc = vector.new(0, -8, 0),  maxacc = vector.new(0, -8, 0),
-					minexptime = 0.2, maxexptime = 0.5,
-					minsize = 1, maxsize = 3,
+					maxpos = vector.add(pos, vector.new(0.3, 0.2, 0.3)),
+					minvel = vector.new(-2, 0, -2),
+					maxvel = vector.new(2, 1, 2),
+					minacc = vector.new(0, -8, 0),
+					maxacc = vector.new(0, -8, 0),
+					minexptime = 0.2,
+					maxexptime = 0.5,
+					minsize = 1,
+					maxsize = 3,
 					texture = "aura_particle.png^[colorize:#FFD700:200",
 					glow = 8,
 				})
@@ -2179,23 +2233,23 @@ minetest.register_entity("boss:gladiator", {
 			self.object:set_velocity(vector.new(dir.x * spd, -9.81, dir.z * spd))
 		end
 
-		self.object:set_animation({x = 168, y = 187}, 30 + spd * 6, 0, true)
+		self.object:set_animation({ x = 168, y = 187 }, 30 + spd * 6, 0, true)
 
 		-- ── Melee attack ─────────────────────────────────────────────
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			local dmg = self._damage
 			if nearest:is_player() then
-				nearest:set_hp(math.max(0, nearest:get_hp() - dmg), {type = "punch"})
+				nearest:set_hp(math.max(0, nearest:get_hp() - dmg), { type = "punch" })
 			else
 				nearest:punch(self.object, 1.0,
-					{damage_groups = {fleshy = dmg}}, vector.new(0, 0, 0))
+					{ damage_groups = { fleshy = dmg } }, vector.new(0, 0, 0))
 			end
 			self._attack_cooldown = 1.2
-			self.object:set_animation({x = 189, y = 198}, 35, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 35, 0, false)
 			minetest.after(0.5, function()
 				if self.object and self.object:get_pos() then
-					self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+					self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 				end
 			end)
 		end
@@ -2232,35 +2286,35 @@ end
 
 minetest.register_entity("boss:companion_dragon", {
 	initial_properties = {
-		visual        = "mesh",
-		mesh          = "draconis_fire_dragon.b3d",
-		textures      = {"slate_dragon.png^slate_eyes.png^draconis_baked_in_shading.png"},
-		physical      = false,
+		visual               = "mesh",
+		mesh                 = "draconis_fire_dragon.b3d",
+		textures             = { "slate_dragon.png^slate_eyes.png^draconis_baked_in_shading.png" },
+		physical             = false,
 		collide_with_objects = false,
-		collisionbox  = {-0.4, 0.0, -0.4, 0.4, 2.0, 0.4},
-		visual_size   = {x = 6, y = 6, z = 6},
+		collisionbox         = { -0.4, 0.0, -0.4, 0.4, 2.0, 0.4 },
+		visual_size          = { x = 6, y = 6, z = 6 },
 		makes_footstep_sound = false,
-		static_save   = false,
-		nametag       = "Caeltaroch",
-		nametag_color = "#1869db",
-		glow          = 10,
-		backface_culling = false,
+		static_save          = false,
+		nametag              = "Caeltaroch",
+		nametag_color        = "#1869db",
+		glow                 = 10,
+		backface_culling     = false,
 	},
 
-	_owner          = nil,   -- player name string
-	_attack_cooldown = 0,
-	_anim_timer     = 0,
-	_current_anim   = "walk",
-	_aura_timer     = 0,
-	_roar_timer     = 5.0,
-	_was_attacking  = false,
+	_owner             = nil, -- player name string
+	_attack_cooldown   = 0,
+	_anim_timer        = 0,
+	_current_anim      = "walk",
+	_aura_timer        = 0,
+	_roar_timer        = 5.0,
+	_was_attacking     = false,
 
-	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 321, y = 359}, 35, 0, true) -- hover
-		self.object:set_armor_groups({immortal = 1}) -- companion can't be killed by enemies
+	on_activate        = function(self, staticdata)
+		self.object:set_animation({ x = 321, y = 359 }, 35, 0, true) -- hover
+		self.object:set_armor_groups({ immortal = 1 })       -- companion can't be killed by enemies
 	end,
 
-	on_step = function(self, dtime)
+	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 
@@ -2277,13 +2331,18 @@ minetest.register_entity("boss:companion_dragon", {
 			boss.companion_dragons[self._owner] = nil
 			-- Farewell smoke burst
 			minetest.add_particlespawner({
-				amount = 20, time = 0.5,
+				amount = 20,
+				time = 0.5,
 				minpos = vector.add(pos, vector.new(-1, 0, -1)),
 				maxpos = vector.add(pos, vector.new(1, 2, 1)),
-				minvel = vector.new(-2, 1, -2), maxvel = vector.new(2, 4, 2),
-				minacc = vector.new(0, -1, 0),  maxacc = vector.new(0, 0, 0),
-				minexptime = 0.4, maxexptime = 1.0,
-				minsize = 3, maxsize = 6,
+				minvel = vector.new(-2, 1, -2),
+				maxvel = vector.new(2, 4, 2),
+				minacc = vector.new(0, -1, 0),
+				maxacc = vector.new(0, 0, 0),
+				minexptime = 0.4,
+				maxexptime = 1.0,
+				minsize = 3,
+				maxsize = 6,
 				texture = "aura_particle.png^[colorize:#b8ffed:160",
 				glow = 8,
 			})
@@ -2296,14 +2355,18 @@ minetest.register_entity("boss:companion_dragon", {
 		if self._aura_timer <= 0 then
 			self._aura_timer = 0.35
 			minetest.add_particlespawner({
-				amount = 4, time = 0.35,
+				amount = 4,
+				time = 0.35,
 				minpos = vector.add(pos, vector.new(-0.8, 0.2, -0.8)),
 				maxpos = vector.add(pos, vector.new(0.8, 1.8, 0.8)),
 				minvel = vector.new(-0.4, 0.3, -0.4),
 				maxvel = vector.new(0.4, 1.0, 0.4),
-				minacc = vector.new(0, 0.3, 0), maxacc = vector.new(0, 0.8, 0),
-				minexptime = 0.5, maxexptime = 1.0,
-				minsize = 1.5, maxsize = 3,
+				minacc = vector.new(0, 0.3, 0),
+				maxacc = vector.new(0, 0.8, 0),
+				minexptime = 0.5,
+				maxexptime = 1.0,
+				minsize = 1.5,
+				maxsize = 3,
 				texture = "aura_particle.png^[colorize:#b8ffed:150",
 				glow = 10,
 			})
@@ -2313,22 +2376,22 @@ minetest.register_entity("boss:companion_dragon", {
 		self._roar_timer = self._roar_timer - dtime
 		if self._roar_timer <= 0 then
 			minetest.sound_play("dragon_roar" .. math.random(1, 2),
-				{pos = pos, gain = 1.5, max_hear_distance = 30})
+				{ pos = pos, gain = 1.5, max_hear_distance = 30 })
 			self._roar_timer = 6.0 + math.random() * 4.0
 		end
 
-		self._attack_cooldown = self._attack_cooldown - dtime
-		self._anim_timer      = self._anim_timer - dtime
+		self._attack_cooldown       = self._attack_cooldown - dtime
+		self._anim_timer            = self._anim_timer - dtime
 
-		local opos  = owner:get_pos()
+		local opos                  = owner:get_pos()
 		local enemy_obj, enemy_dist = find_nearest_enemy(pos, 18)
 
 		if enemy_obj and enemy_obj:get_pos() then
 			self._was_attacking = true
 			-- ── ATTACK MODE ──────────────────────────────────────────
-			local epos = enemy_obj:get_pos()
-			local etarget = vector.add(epos, vector.new(0, 2, 0)) -- 2 blocks above enemy
-			local dir  = vector.direction(pos, etarget)
+			local epos          = enemy_obj:get_pos()
+			local etarget       = vector.add(epos, vector.new(0, 2, 0)) -- 2 blocks above enemy
+			local dir           = vector.direction(pos, etarget)
 			self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, epos)))
 
 			if enemy_dist > 3.5 then
@@ -2336,7 +2399,7 @@ minetest.register_entity("boss:companion_dragon", {
 				self.object:set_velocity(vector.new(dir.x * 5, dir.y * 5, dir.z * 5))
 				if self._current_anim ~= "fly" and self._anim_timer <= 0 then
 					self._current_anim = "fly"
-					self.object:set_animation({x = 401, y = 439}, 35, 0, true)
+					self.object:set_animation({ x = 401, y = 439 }, 35, 0, true)
 				end
 			else
 				-- Hover above enemy: drift toward target height
@@ -2380,25 +2443,29 @@ minetest.register_entity("boss:companion_dragon", {
 				local breath_dir = vector.direction(pos, epos)
 				local mouth = vector.add(pos, vector.new(breath_dir.x * 1.5, 1.5, breath_dir.z * 1.5))
 				minetest.add_particlespawner({
-					amount = 30, time = 0.5,
+					amount = 30,
+					time = 0.5,
 					minpos = mouth,
 					maxpos = vector.add(mouth, vector.new(0.2, 0.2, 0.2)),
 					minvel = vector.multiply(breath_dir, 5),
 					maxvel = vector.add(vector.multiply(breath_dir, 8), vector.new(0, 1.5, 0)),
-					minacc = vector.new(0, 0.5, 0), maxacc = vector.new(0, 2, 0),
-					minexptime = 0.2, maxexptime = 0.6,
-					minsize = 2, maxsize = 6,
+					minacc = vector.new(0, 0.5, 0),
+					maxacc = vector.new(0, 2, 0),
+					minexptime = 0.2,
+					maxexptime = 0.6,
+					minsize = 2,
+					maxsize = 6,
 					texture = "draconis_fire_particle.png",
 					glow = 14,
 				})
 				minetest.sound_play("draconis_fire_breath",
-					{pos = pos, gain = 0.7, max_hear_distance = 20})
+					{ pos = pos, gain = 0.7, max_hear_distance = 20 })
 				self._attack_cooldown = 1.8
 
 				if self._anim_timer <= 0 then
 					self._current_anim = "fly_fire"
 					self._anim_timer   = 1.8
-					self.object:set_animation({x = 441, y = 479}, 35, 0, true)
+					self.object:set_animation({ x = 441, y = 479 }, 35, 0, true)
 				end
 			end
 		else
@@ -2406,7 +2473,7 @@ minetest.register_entity("boss:companion_dragon", {
 			if self._was_attacking then
 				self._was_attacking = false
 				minetest.sound_play("dragon_roar3",
-					{pos = pos, gain = 1.0, max_hear_distance = 30})
+					{ pos = pos, gain = 1.0, max_hear_distance = 30 })
 			end
 			local otarget = vector.add(opos, vector.new(0, 2, 0)) -- 2 blocks above owner
 			local follow_dist = vector.distance(pos, otarget)
@@ -2418,14 +2485,14 @@ minetest.register_entity("boss:companion_dragon", {
 				self.object:set_velocity(vector.new(dir.x * 6, dir.y * 6, dir.z * 6))
 				if self._current_anim ~= "fly" and self._anim_timer <= 0 then
 					self._current_anim = "fly"
-					self.object:set_animation({x = 401, y = 439}, 35, 0, true)
+					self.object:set_animation({ x = 401, y = 439 }, 35, 0, true)
 				end
 			elseif follow_dist > 3 then
 				-- Медленный подлёт
 				self.object:set_velocity(vector.new(dir.x * 2.5, dir.y * 2.5, dir.z * 2.5))
 				if self._current_anim ~= "fly" and self._anim_timer <= 0 then
 					self._current_anim = "fly"
-					self.object:set_animation({x = 401, y = 439}, 30, 0, true)
+					self.object:set_animation({ x = 401, y = 439 }, 30, 0, true)
 				end
 			else
 				-- Зависание на 2 блока выше хозяина
@@ -2433,7 +2500,7 @@ minetest.register_entity("boss:companion_dragon", {
 				self.object:set_velocity(vector.new(0, dy * 3, 0))
 				if self._current_anim ~= "hover" and self._anim_timer <= 0 then
 					self._current_anim = "hover"
-					self.object:set_animation({x = 321, y = 359}, 35, 0, true)
+					self.object:set_animation({ x = 321, y = 359 }, 35, 0, true)
 				end
 			end
 		end
@@ -2449,14 +2516,14 @@ minetest.register_globalstep(function(dtime)
 	_dragon_check_timer = 0
 
 	for _, player in ipairs(minetest.get_connected_players()) do
-		local pname  = player:get_player_name()
+		local pname   = player:get_player_name()
 		local wielded = player:get_wielded_item():get_name()
 		local dragon  = boss.companion_dragons[pname]
 
 		if wielded == "registered:sword_dragonpower" then
 			-- Spawn if not yet present (or the old one disappeared)
 			if (not dragon or not dragon:get_pos())
-					and not (boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos()) then
+				and not (boss._victory_dragon_obj and boss._victory_dragon_obj:get_pos()) then
 				local ppos = player:get_pos()
 				local spawn_pos = vector.add(ppos, vector.new(2, 1, 0))
 				local obj = minetest.add_entity(spawn_pos, "boss:companion_dragon")
@@ -2466,18 +2533,23 @@ minetest.register_globalstep(function(dtime)
 					boss.companion_dragons[pname] = obj
 					-- Summoning burst
 					minetest.add_particlespawner({
-						amount = 30, time = 0.5,
+						amount = 30,
+						time = 0.5,
 						minpos = vector.add(spawn_pos, vector.new(-1, -0.5, -1)),
 						maxpos = vector.add(spawn_pos, vector.new(1, 1.5, 1)),
-						minvel = vector.new(-3, 1, -3), maxvel = vector.new(3, 4, 3),
-						minacc = vector.new(0, -2, 0), maxacc = vector.new(0, 0, 0),
-						minexptime = 0.3, maxexptime = 0.8,
-						minsize = 2, maxsize = 5,
+						minvel = vector.new(-3, 1, -3),
+						maxvel = vector.new(3, 4, 3),
+						minacc = vector.new(0, -2, 0),
+						maxacc = vector.new(0, 0, 0),
+						minexptime = 0.3,
+						maxexptime = 0.8,
+						minsize = 2,
+						maxsize = 5,
 						texture = "aura_particle.png^[colorize:#b8ffed:180",
 						glow = 12,
 					})
 					minetest.sound_play("dragon_roar1",
-						{pos = spawn_pos, gain = 1.0, max_hear_distance = 25})
+						{ pos = spawn_pos, gain = 1.0, max_hear_distance = 25 })
 					minetest.chat_send_player(pname,
 						"De Draak ontwaakt en vecht aan jouw zijde...")
 				end
@@ -2524,13 +2596,13 @@ minetest.register_chatcommand("spawn", {
 	description = "Spawn one or more bosses at your position (server only). Names: " ..
 		table.concat((function()
 			local t = {}
-			for k in pairs(SPAWN_BY_NAME)  do t[#t+1] = k end
-			for k in pairs(SPAWN_CUSTOM)   do t[#t+1] = k end
+			for k in pairs(SPAWN_BY_NAME) do t[#t + 1] = k end
+			for k in pairs(SPAWN_CUSTOM) do t[#t + 1] = k end
 			table.sort(t)
 			return t
 		end)(), ", "),
-	privs = {server = true},
-	func = function(name, param)
+	privs       = { server = true },
+	func        = function(name, param)
 		-- Parse: <boss_name> [count]
 		local pname, count_str = param:match("^%s*(%S+)%s*(%d*)%s*$")
 		if not pname then pname = param:match("^%s*(.-)%s*$") end
@@ -2551,7 +2623,7 @@ minetest.register_chatcommand("spawn", {
 				local spawn_pos = vector.add(pos, vector.new(
 					-math.sin(yaw) * 3 + math.cos(yaw) * offset_x,
 					0,
-					 math.cos(yaw) * 3 + math.sin(yaw) * offset_x
+					math.cos(yaw) * 3 + math.sin(yaw) * offset_x
 				))
 				local obj = minetest.add_entity(spawn_pos, custom_entity)
 				if obj then
@@ -2573,8 +2645,8 @@ minetest.register_chatcommand("spawn", {
 			return false, "Onbekende baas. Gebruik: " ..
 				table.concat((function()
 					local t = {}
-					for k in pairs(SPAWN_BY_NAME) do t[#t+1] = k end
-					for k in pairs(SPAWN_CUSTOM)  do t[#t+1] = k end
+					for k in pairs(SPAWN_BY_NAME) do t[#t + 1] = k end
+					for k in pairs(SPAWN_CUSTOM) do t[#t + 1] = k end
 					table.sort(t)
 					return t
 				end)(), ", ")
@@ -2588,7 +2660,7 @@ minetest.register_chatcommand("spawn", {
 			local spawn_pos = vector.add(pos, vector.new(
 				-math.sin(yaw) * 3 + math.cos(yaw) * offset_x,
 				0,
-				 math.cos(yaw) * 3 + math.sin(yaw) * offset_x
+				math.cos(yaw) * 3 + math.sin(yaw) * offset_x
 			))
 			local obj = minetest.add_entity(spawn_pos, "boss:teacher")
 			if obj then
@@ -2615,10 +2687,10 @@ minetest.register_chatcommand("spawn", {
 -- Right-click to mount; right-click again or arrive = dismount.
 -- ============================================================
 
-local ARENA2_POS   = vector.new(-330, 177, -440)  -- arena center (not used for flight)
-local ARENA2_ENTRY = vector.new(-303, 179, -439)  -- entrance — dragon lands here
+local ARENA2_POS     = vector.new(-330, 177, -440) -- arena center (not used for flight)
+local ARENA2_ENTRY   = vector.new(-303, 179, -439) -- entrance — dragon lands here
 
-local VICTORY_LINES = {
+local VICTORY_LINES  = {
 	"De strijd is gestreden. Beklim mijn rug.",
 	"Uw vijanden liggen geveld. Ik zal u dragen door de lucht.",
 	"Het vuur is geblust. Tijd om te vliegen.",
@@ -2632,19 +2704,19 @@ local function victory_attach(dragon_obj, player)
 	local pname = player:get_player_name()
 	if victory_riders[pname] then return end
 
-	local props = player:get_properties()
-	local eye   = player:get_eye_offset()
+	local props           = player:get_properties()
+	local eye             = player:get_eye_offset()
 	victory_riders[pname] = {
-		collisionbox  = table.copy(props.collisionbox),
-		visual_size   = table.copy(props.visual_size or {x=1, y=1}),
-		eye_first     = eye.offset_first  or vector.new(0, 0, 0),
-		eye_third     = eye.offset_third  or vector.new(0, 0, 0),
+		collisionbox = table.copy(props.collisionbox),
+		visual_size  = table.copy(props.visual_size or { x = 1, y = 1 }),
+		eye_first    = eye.offset_first or vector.new(0, 0, 0),
+		eye_third    = eye.offset_third or vector.new(0, 0, 0),
 	}
 
 	-- Hide player model while riding; zero collisionbox prevents clipping
 	player:set_properties({
-		collisionbox = {0, 0, 0, 0, 0, 0},
-		visual_size  = {x = 0, y = 0},
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
+		visual_size  = { x = 0, y = 0 },
 	})
 	player:set_attach(dragon_obj, "Torso.2", vector.new(0, 0, 0), vector.new(0, 0, 0))
 
@@ -2679,11 +2751,11 @@ minetest.register_entity("boss:victory_dragon", {
 	initial_properties = {
 		visual               = "mesh",
 		mesh                 = "draconis_fire_dragon.b3d",
-		textures             = {"black_dragon.png^draconis_baked_in_shading.png"},
-		physical             = false,   -- manual velocity, no gravity
+		textures             = { "black_dragon.png^draconis_baked_in_shading.png" },
+		physical             = false, -- manual velocity, no gravity
 		collide_with_objects = false,
-		collisionbox         = {-0.8, 0.0, -0.8, 0.8, 3.0, 0.8},
-		visual_size          = {x = 8, y = 8, z = 8},
+		collisionbox         = { -0.8, 0.0, -0.8, 0.8, 3.0, 0.8 },
+		visual_size          = { x = 8, y = 8, z = 8 },
 		makes_footstep_sound = false,
 		static_save          = false,
 		nametag              = "Teinetarnagh",
@@ -2691,20 +2763,20 @@ minetest.register_entity("boss:victory_dragon", {
 		glow                 = 8,
 	},
 
-	rider         = nil,
-	_phase        = "intro",   -- intro / waiting / takeoff / flying / landing / landed
-	_phase_timer  = 2.5,       -- intro duration
-	_anim_timer   = 0,
-	_current_anim = "hover",
-	_flight_height = 0,        -- target y during flight
+	rider              = nil,
+	_phase             = "intro", -- intro / waiting / takeoff / flying / landing / landed
+	_phase_timer       = 2.5, -- intro duration
+	_anim_timer        = 0,
+	_current_anim      = "hover",
+	_flight_height     = 0, -- target y during flight
 
-	on_activate = function(self)
-		self.object:set_armor_groups({immortal = 1})
-		self.object:set_animation({x = 321, y = 359}, 30, 0, true)  -- hover
+	on_activate        = function(self)
+		self.object:set_armor_groups({ immortal = 1 })
+		self.object:set_animation({ x = 321, y = 359 }, 30, 0, true) -- hover
 		self.object:set_velocity(vector.new(0, 0, 0))
 	end,
 
-	on_rightclick = function(self, clicker)
+	on_rightclick      = function(self, clicker)
 		if not clicker or not clicker:is_player() then return end
 		local pname = clicker:get_player_name()
 
@@ -2725,19 +2797,19 @@ minetest.register_entity("boss:victory_dragon", {
 			return
 		end
 
-		self.rider     = clicker
+		self.rider = clicker
 		victory_attach(self.object, clicker)
-		self._phase    = "flying"
-		self._flight_height = (self.object:get_pos() or vector.new(0,0,0)).y + 22
+		self._phase         = "flying"
+		self._flight_height = (self.object:get_pos() or vector.new(0, 0, 0)).y + 22
 		minetest.chat_send_player(pname, "Hou vast!")
 	end,
 
-	on_step = function(self, dtime)
+	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
 
-		self._phase_timer  = (self._phase_timer  or 0) - dtime
-		self._anim_timer   = (self._anim_timer   or 0) - dtime
+		self._phase_timer = (self._phase_timer or 0) - dtime
+		self._anim_timer  = (self._anim_timer or 0) - dtime
 
 		local function set_anim(name, frames, speed)
 			if self._current_anim ~= name and self._anim_timer <= 0 then
@@ -2750,21 +2822,21 @@ minetest.register_entity("boss:victory_dragon", {
 		-- ── INTRO: hover in place, say something ─────────────────────
 		if self._phase == "intro" then
 			self.object:set_velocity(vector.new(0, 0, 0))
-			set_anim("hover", {x = 321, y = 359}, 30)
+			set_anim("hover", { x = 321, y = 359 }, 30)
 			if self._phase_timer <= 0 then
-				self._phase      = "waiting"
+				self._phase       = "waiting"
 				self._phase_timer = 0
 
-				local line = VICTORY_LINES[math.random(#VICTORY_LINES)]
+				local line        = VICTORY_LINES[math.random(#VICTORY_LINES)]
 				for _, p in ipairs(minetest.get_connected_players()) do
 					minetest.chat_send_player(p:get_player_name(), "[Teinetarnagh] " .. line)
 				end
 				minetest.sound_play("dragon_roar2",
-					{pos = pos, gain = 1.2, max_hear_distance = 60})
+					{ pos = pos, gain = 1.2, max_hear_distance = 60 })
 
 				-- Descend to just above ground (~3 nodes)
 				self._phase = "descend_wait"
-				self._phase_timer = 999  -- no timer, descend until close to ground
+				self._phase_timer = 999 -- no timer, descend until close to ground
 			end
 			return
 		end
@@ -2776,15 +2848,15 @@ minetest.register_entity("boss:victory_dragon", {
 			if below.name ~= "air" then
 				self._phase = "waiting"
 				self.object:set_velocity(vector.new(0, 0, 0))
-				self.object:set_animation({x = 481, y = 509}, 25, 0, false)  -- land
+				self.object:set_animation({ x = 481, y = 509 }, 25, 0, false) -- land
 				minetest.after(1.0, function()
 					if self.object and self.object:get_pos() then
-						self.object:set_animation({x = 321, y = 359}, 25, 0, true)  -- hover idle
+						self.object:set_animation({ x = 321, y = 359 }, 25, 0, true) -- hover idle
 					end
 				end)
 			else
 				self.object:set_velocity(vector.new(0, -2.5, 0))
-				set_anim("hover", {x = 321, y = 359}, 25)
+				set_anim("hover", { x = 321, y = 359 }, 25)
 			end
 			return
 		end
@@ -2792,22 +2864,22 @@ minetest.register_entity("boss:victory_dragon", {
 		-- ── WAITING: hover gently, wait for rider ────────────────────
 		if self._phase == "waiting" then
 			self.object:set_velocity(vector.new(0, 0, 0))
-			set_anim("hover", {x = 321, y = 359}, 25)
+			set_anim("hover", { x = 321, y = 359 }, 25)
 			return
 		end
 
 		-- ── LANDED: stay still ───────────────────────────────────────
 		if self._phase == "landed" then
 			self.object:set_velocity(vector.new(0, 0, 0))
-			set_anim("hover", {x = 321, y = 359}, 20)
+			set_anim("hover", { x = 321, y = 359 }, 20)
 			return
 		end
 
 		-- ── RETURN_FLIGHT: carry offender back to arena 1 ────────────
 		if self._phase == "return_flight" then
-			local dest = vector.new(0, 3, 0)
-			local dir  = vector.direction(pos, dest)
-			local hdist = vector.distance(
+			local dest       = vector.new(0, 3, 0)
+			local dir        = vector.direction(pos, dest)
+			local hdist      = vector.distance(
 				vector.new(pos.x, 0, pos.z),
 				vector.new(dest.x, 0, dest.z)
 			)
@@ -2815,8 +2887,8 @@ minetest.register_entity("boss:victory_dragon", {
 			-- Smooth yaw
 			local target_yaw = minetest.dir_to_yaw(dir)
 			local cur_yaw    = self.object:get_yaw() or 0
-			local dyaw = target_yaw - cur_yaw
-			while dyaw >  math.pi do dyaw = dyaw - 2 * math.pi end
+			local dyaw       = target_yaw - cur_yaw
+			while dyaw > math.pi do dyaw = dyaw - 2 * math.pi end
 			while dyaw < -math.pi do dyaw = dyaw + 2 * math.pi end
 			self.object:set_yaw(cur_yaw + dyaw * math.min(dtime * 3, 1))
 
@@ -2827,10 +2899,10 @@ minetest.register_entity("boss:victory_dragon", {
 					victory_detach(self, carried)
 					carried:set_pos(vector.new(dest.x, dest.y + 1, dest.z))
 				end
-                                -- Kill any stale BGM that leaked through after wave completion
-                                if enemy and enemy.stop_bgm and not enemy.wave_active then
-                                        enemy.stop_bgm()
-                                end
+				-- Kill any stale BGM that leaked through after wave completion
+				if enemy and enemy.stop_bgm and not enemy.wave_active then
+					enemy.stop_bgm()
+				end
 				self.object:remove()
 				return
 			end
@@ -2840,20 +2912,25 @@ minetest.register_entity("boss:victory_dragon", {
 			local target_y = (pos.y < cruise_y - 1) and cruise_y or (dest.y + 20)
 			local vel_y = (target_y - pos.y) * 0.15 * 12
 			self.object:set_velocity(vector.new(dir.x * 14, vel_y, dir.z * 14))
-			set_anim("fly", {x = 401, y = 439}, 35)
+			set_anim("fly", { x = 401, y = 439 }, 35)
 
 			-- Gold aura
 			self._aura_timer = (self._aura_timer or 0) - dtime
 			if self._aura_timer <= 0 then
 				self._aura_timer = 0.2
 				minetest.add_particlespawner({
-					amount = 6, time = 0.2,
+					amount = 6,
+					time = 0.2,
 					minpos = vector.add(pos, vector.new(-0.5, 0.5, -0.5)),
 					maxpos = vector.add(pos, vector.new(0.5, 2.0, 0.5)),
-					minvel = vector.new(-1, -1, -1), maxvel = vector.new(1, 0, 1),
-					minacc = vector.new(0, -1, 0),   maxacc = vector.new(0, 0, 0),
-					minexptime = 0.3, maxexptime = 0.7,
-					minsize = 2, maxsize = 5,
+					minvel = vector.new(-1, -1, -1),
+					maxvel = vector.new(1, 0, 1),
+					minacc = vector.new(0, -1, 0),
+					maxacc = vector.new(0, 0, 0),
+					minexptime = 0.3,
+					maxexptime = 0.7,
+					minsize = 2,
+					maxsize = 5,
 					texture = "aura_particle.png^[colorize:#FFD700:200",
 					glow = 12,
 				})
@@ -2871,12 +2948,12 @@ minetest.register_entity("boss:victory_dragon", {
 		end
 
 		-- Face toward destination (entrance, not arena center)
-		local dest = ARENA2_ENTRY
-		local dir  = vector.direction(pos, dest)
+		local dest       = ARENA2_ENTRY
+		local dir        = vector.direction(pos, dest)
 		local target_yaw = minetest.dir_to_yaw(dir)
 		local cur_yaw    = self.object:get_yaw() or 0
-		local dyaw = target_yaw - cur_yaw
-		while dyaw >  math.pi do dyaw = dyaw - 2 * math.pi end
+		local dyaw       = target_yaw - cur_yaw
+		while dyaw > math.pi do dyaw = dyaw - 2 * math.pi end
 		while dyaw < -math.pi do dyaw = dyaw + 2 * math.pi end
 		self.object:set_yaw(cur_yaw + dyaw * math.min(dtime * 3, 1))
 
@@ -2906,20 +2983,25 @@ minetest.register_entity("boss:victory_dragon", {
 			local vx = dir.x * 12
 			local vz = dir.z * 12
 			self.object:set_velocity(vector.new(vx, vel_y, vz))
-			set_anim("fly", {x = 401, y = 439}, 35)
+			set_anim("fly", { x = 401, y = 439 }, 35)
 
 			-- Particles: wind/embers behind Dragon
 			self._aura_timer = (self._aura_timer or 0) - dtime
 			if self._aura_timer <= 0 then
 				self._aura_timer = 0.25
 				minetest.add_particlespawner({
-					amount = 5, time = 0.25,
+					amount = 5,
+					time = 0.25,
 					minpos = vector.add(pos, vector.new(-0.5, 0.5, -0.5)),
 					maxpos = vector.add(pos, vector.new(0.5, 2.0, 0.5)),
-					minvel = vector.new(-1, -0.5, -1), maxvel = vector.new(1, 0.5, 1),
-					minacc = vector.new(0, -0.5, 0),  maxacc = vector.new(0, 0, 0),
-					minexptime = 0.3, maxexptime = 0.8,
-					minsize = 2, maxsize = 4,
+					minvel = vector.new(-1, -0.5, -1),
+					maxvel = vector.new(1, 0.5, 1),
+					minacc = vector.new(0, -0.5, 0),
+					maxacc = vector.new(0, 0, 0),
+					minexptime = 0.3,
+					maxexptime = 0.8,
+					minsize = 2,
+					maxsize = 4,
 					texture = "aura_particle.png^[colorize:#FFD700:160",
 					glow = 8,
 				})
@@ -2935,12 +3017,12 @@ minetest.register_entity("boss:victory_dragon", {
 			if math.abs(dy) < 1.5 then
 				-- Arrived
 				self.object:set_velocity(vector.new(0, 0, 0))
-				self.object:set_animation({x = 481, y = 509}, 25, 0, false)  -- land
+				self.object:set_animation({ x = 481, y = 509 }, 25, 0, false) -- land
 				self._phase = "landed"
 
 				-- Roar and dismount rider
 				minetest.sound_play("dragon_roar3",
-					{pos = pos, gain = 1.0, max_hear_distance = 40})
+					{ pos = pos, gain = 1.0, max_hear_distance = 40 })
 				for _, p in ipairs(minetest.get_connected_players()) do
 					minetest.chat_send_player(p:get_player_name(),
 						"[Teinetarnagh] Wij zijn er. Ga.")
@@ -2951,25 +3033,25 @@ minetest.register_entity("boss:victory_dragon", {
 
 				minetest.after(1.5, function()
 					if self.object and self.object:get_pos() then
-						self.object:set_animation({x = 321, y = 359}, 25, 0, true)
+						self.object:set_animation({ x = 321, y = 359 }, 25, 0, true)
 					end
 				end)
 			else
-				set_anim("hover", {x = 321, y = 359}, 25)
+				set_anim("hover", { x = 321, y = 359 }, 25)
 				self.object:set_velocity(vector.new(0, dy * 3, 0))
 			end
 			return
 		end
 	end,
 
-	on_punch = function(self, puncher)
+	on_punch           = function(self, puncher)
 		if puncher and puncher:is_player() then
 			minetest.sound_play("dragon_roar1",
-				{pos = self.object:get_pos(), gain = 0.8, max_hear_distance = 30})
+				{ pos = self.object:get_pos(), gain = 0.8, max_hear_distance = 30 })
 		end
 	end,
 
-	on_deactivate = function(self)
+	on_deactivate      = function(self)
 		-- Clear singleton so a new dragon can be spawned later
 		if boss._victory_dragon_obj == self.object then
 			boss._victory_dragon_obj = nil
@@ -3044,12 +3126,12 @@ function boss.spawn_victory_dragon(near_pos)
 		end
 
 		minetest.sound_play("dragon_roar2",
-			{pos = spawn_pos, gain = 1.0, max_hear_distance = 80})
+			{ pos = spawn_pos, gain = 1.0, max_hear_distance = 80 })
 	end)
 end
 
 minetest.register_chatcommand("spawn_victory_dragon", {
-	privs = {server = true},
+	privs = { server = true },
 	description = "Spawn de Overwinnings-Draak voor test (spawnt naast jou)",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
@@ -3060,10 +3142,10 @@ minetest.register_chatcommand("spawn_victory_dragon", {
 })
 
 minetest.register_chatcommand("floor", {
-	privs  = {server = true},
-	params = "[<spelernaam>]",
+	privs       = { server = true },
+	params      = "[<spelernaam>]",
 	description = "Teleporteer speler 2 blokken omlaag en bouw een stenen kooi. Zonder naam: jijzelf zakt door de vloer.",
-	func = function(caller, param)
+	func        = function(caller, param)
 		local target_name = param ~= "" and param or nil
 
 		if not target_name then
@@ -3080,15 +3162,15 @@ minetest.register_chatcommand("floor", {
 		local fz = math.floor(pos.z + 0.5)
 
 		-- Place floor block
-		minetest.set_node({x = fx, y = fy,     z = fz}, {name = "default:stone"})
+		minetest.set_node({ x = fx, y = fy, z = fz }, { name = "default:stone" })
 
 		-- Place walls (3-block-high ring around 3×3 area, leaving only inside open)
-		local stone = {name = "default:stone"}
+		local stone = { name = "default:stone" }
 		for dx = -1, 1 do
 			for dz = -1, 1 do
 				if dx == -1 or dx == 1 or dz == -1 or dz == 1 then
 					for dy = 1, 3 do
-						minetest.set_node({x = fx + dx, y = fy + dy, z = fz + dz}, stone)
+						minetest.set_node({ x = fx + dx, y = fy + dy, z = fz + dz }, stone)
 					end
 				end
 			end
@@ -3097,7 +3179,7 @@ minetest.register_chatcommand("floor", {
 		-- Roof
 		for dx = -1, 1 do
 			for dz = -1, 1 do
-				minetest.set_node({x = fx + dx, y = fy + 4, z = fz + dz}, stone)
+				minetest.set_node({ x = fx + dx, y = fy + 4, z = fz + dz }, stone)
 			end
 		end
 

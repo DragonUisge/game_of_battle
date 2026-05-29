@@ -2,8 +2,8 @@
 -- 5 real seconds = 5 game minutes → 1 real second = 1 game minute
 -- Full day (1440 min) = 1440 real seconds = 24 real minutes
 
-local TICK = 5            -- update interval in real seconds
-local MINS_PER_TICK = 5   -- game minutes per tick
+local TICK = 5          -- update interval in real seconds
+local MINS_PER_TICK = 5 -- game minutes per tick
 
 -- Global time API for other mods
 game_time = {}
@@ -13,6 +13,7 @@ local game_hour = 8
 local game_minute = 0
 
 function game_time.get_hour() return game_hour end
+
 function game_time.get_minute() return game_minute end
 
 -- Per-player HUD ids
@@ -26,7 +27,7 @@ end
 -- Set engine timeofday (0.0–1.0) to match our clock
 local function sync_engine_time()
 	local total_minutes = game_hour * 60 + game_minute
-	minetest.settings:set("time_speed", 0)  -- disable built-in cycle
+	minetest.settings:set("time_speed", 0) -- disable built-in cycle
 	minetest.set_timeofday(total_minutes / 1440)
 end
 
@@ -57,10 +58,10 @@ local function create_hud(player)
 	-- Background bar
 	local bg_id = player:hud_add({
 		hud_elem_type = "image",
-		position = {x = 1, y = 0},
-		offset = {x = -100, y = 24},
-		alignment = {x = 0, y = 0},
-		scale = {x = 1.4, y = 1.4},
+		position = { x = 1, y = 0 },
+		offset = { x = -100, y = 24 },
+		alignment = { x = 0, y = 0 },
+		scale = { x = 1.4, y = 1.4 },
 		text = "time_hud_bg.png",
 		z_index = 0,
 	})
@@ -68,17 +69,17 @@ local function create_hud(player)
 	-- Clock text
 	local text_id = player:hud_add({
 		hud_elem_type = "text",
-		position = {x = 1, y = 0},
-		offset = {x = -100, y = 24},
-		alignment = {x = 0, y = 0},
-		number = 0x5599FF,   -- blue
+		position = { x = 1, y = 0 },
+		offset = { x = -100, y = 24 },
+		alignment = { x = 0, y = 0 },
+		number = 0x5599FF, -- blue
 		text = format_time(),
 		z_index = 1,
-		style = 1,  -- bold
-		size = {x = 2},
+		style = 1, -- bold
+		size = { x = 2 },
 	})
 
-	hud_ids[pname] = {bg = bg_id, text = text_id}
+	hud_ids[pname] = { bg = bg_id, text = text_id }
 end
 
 -- Advance the clock
@@ -127,8 +128,8 @@ end)
 minetest.register_chatcommand("timestamp", {
 	params      = "<HH:MM>",
 	description = "Set the game clock (e.g. /timestamp 14:30)",
-	privs       = {server = true},
-	func = function(name, param)
+	privs       = { server = true },
+	func        = function(name, param)
 		local h, m = param:match("^(%d+):(%d+)$")
 		if not h then
 			-- accept bare hour ("9" → 09:00)

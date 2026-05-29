@@ -1,20 +1,23 @@
 -- Localize globals
 local assert, error, math, modlib, next, ipairs, pairs, setmetatable, string_char, table
-	= assert, error, math, modlib, next, ipairs, pairs, setmetatable, string.char, table
+                                                                                         = assert, error, math, modlib,
+	next, ipairs, pairs, setmetatable, string.char, table
 
-local mat4 = modlib.matrix4
+local mat4                                                                               = modlib.matrix4
 
-local read_int, read_single = modlib.binary.read_int, modlib.binary.read_single
+local read_int, read_single                                                              = modlib.binary.read_int,
+	modlib.binary.read_single
 
-local write_int, write_uint, write_single = modlib.binary.write_int, modlib.binary.write_uint, modlib.binary.write_single
+local write_int, write_uint, write_single                                                = modlib.binary.write_int,
+	modlib.binary.write_uint, modlib.binary.write_single
 
-local fround = modlib.math.fround
+local fround                                                                             = modlib.math.fround
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                               = {}
 setfenv(1, _ENV)
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 --+ Reads a single BB3D chunk from a stream
 --+ Doing `assert(stream:read(1) == nil)` afterwards is recommended
@@ -86,7 +89,7 @@ function read(stream)
 		local x = float()
 		local y = float()
 		local z = float()
-		return {x, y, z, w}
+		return { x, y, z, w }
 	end
 
 	local function content()
@@ -164,17 +167,17 @@ function read(stream)
 				local i = id()
 				local j = id()
 				local k = id()
-				table.insert(tris.vertex_ids, {i, j, k})
+				table.insert(tris.vertex_ids, { i, j, k })
 			end
 			return tris
 		end,
 		MESH = function()
 			local mesh = {}
 			mesh.brush_id = optional_id()
-			mesh.vertices = chunk{VRTS = true}
+			mesh.vertices = chunk { VRTS = true }
 			mesh.triangle_sets = {}
 			repeat
-				local tris = chunk{TRIS = true}
+				local tris = chunk { TRIS = true }
 				table.insert(mesh.triangle_sets, tris)
 			until not content()
 			return mesh
@@ -282,7 +285,7 @@ function read(stream)
 			}
 			assert(self.version.major <= 2, "unsupported version: " .. self.version.major)
 			while content() do
-				local field, type = chunk{TEXS = true, BRUS = true, NODE = true}
+				local field, type = chunk { TEXS = true, BRUS = true, NODE = true }
 				if type == "TEXS" then
 					modlib.table.append(self.textures, field)
 				elseif type == "BRUS" then
@@ -313,7 +316,7 @@ function read(stream)
 		return res, type
 	end
 
-	local self = chunk{BB3D = true}
+	local self = chunk { BB3D = true }
 	return setmetatable(self, metatable)
 end
 
@@ -346,7 +349,7 @@ local function write_rope(self)
 
 	local function string(val)
 		write(val)
-		write"\0"
+		write "\0"
 	end
 
 	local function float(val)
@@ -541,7 +544,7 @@ end
 --! Highly experimental; expect bugs!
 do
 	-- glTF constants
-	local array_buffer = 34962 -- "Buffer containing vertex attributes, such as vertices, texcoords or colors."
+	local array_buffer = 34962      -- "Buffer containing vertex attributes, such as vertices, texcoords or colors."
 	local element_array_buffer = 34963 -- "Buffer used for element indices."
 	local component_type = {
 		signed_byte = 5120,
@@ -558,17 +561,17 @@ do
 	-- the front of a glTF asset faces +Z."
 
 	local function translation_to_gltf(vec)
-		return {-vec[1], vec[2], vec[3]} -- invert the X-axis
+		return { -vec[1], vec[2], vec[3] } -- invert the X-axis
 	end
 
 	local function quaternion_to_gltf(quat)
 		-- TODO (!) is this correct?
-		return {-quat[1], quat[2], quat[3], quat[4]} -- invert the X-axis
+		return { -quat[1], quat[2], quat[3], quat[4] } -- invert the X-axis
 	end
 
 	-- Convert a color from table format to glTF RGBA list format
 	local function color_to_gltf(col)
-		return {col.r, col.g, col.b, col.a}
+		return { col.r, col.g, col.b, col.a }
 	end
 
 	-- Basic helpers for writing to the buffer, all parameterized in terms of `write_byte`
@@ -609,13 +612,13 @@ do
 		local buffer_rope = {} -- buffer content (table of strings)
 		local buffer_views = {} -- glTF buffer views
 		local accessors = {} -- glTF accessors
-		local offset = 0 -- current byte offset
+		local offset = 0  -- current byte offset
 		local function add_accessor(
-			type, -- name of the composite type (e.g. SCALAR, VEC3, VEC4, MAT4, ...)
-			comp_type, -- name of the component type (e.g. float, unsigned_int, ...)
-			index, -- true / false / nil: whether this is an index (true) or vertex data (false) or neither (nil)
-			func -- `function(write_byte) ... return count, min, max end` to be called to write to the buffer view;
-			     -- the count of elements written must be returned; min and max may be returned
+			type,         -- name of the composite type (e.g. SCALAR, VEC3, VEC4, MAT4, ...)
+			comp_type,    -- name of the component type (e.g. float, unsigned_int, ...)
+			index,        -- true / false / nil: whether this is an index (true) or vertex data (false) or neither (nil)
+			func          -- `function(write_byte) ... return count, min, max end` to be called to write to the buffer view;
+		-- the count of elements written must be returned; min and max may be returned
 		)
 			-- Always add padding to obtain a multiple of 4
 			-- TODO (?) don't add padding if it isn't required
@@ -635,11 +638,11 @@ do
 				byteLength = bytes_written,
 				target = ((index == true) and element_array_buffer) -- index data
 					or ((index == false) and array_buffer) -- vertex data
-					or nil, -- no target hint
+					or nil,                             -- no target hint
 			})
 			table.insert(accessors, {
 				bufferView = #buffer_views - 1, -- 0-based
-				byteOffset = 0, -- view has correct offset
+				byteOffset = 0,     -- view has correct offset
 				componentType = assert(component_type[comp_type]),
 				type = type,
 				count = count,
@@ -654,7 +657,7 @@ do
 		local textures = {} -- glTF textures
 		local function add_texture(name)
 			-- TODO (?) add an appropriate sampler
-			table.insert(textures, {name = name})
+			table.insert(textures, { name = name })
 			return #textures - 1 -- 0-based texture index
 		end
 		for _, tex in ipairs(self.textures) do
@@ -711,7 +714,7 @@ do
 			local vertices = mesh.vertices
 			attributes.POSITION = add_accessor("VEC3", "float", false, function(write_byte)
 				local inf = math.huge
-				local min_pos, max_pos = {inf, inf, inf}, {-inf, -inf, -inf}
+				local min_pos, max_pos = { inf, inf, inf }, { -inf, -inf, -inf }
 				for _, vertex in ipairs(mesh.vertices) do
 					local pos = translation_to_gltf(vertex.pos)
 					write_vector(write_byte, pos)
@@ -747,12 +750,13 @@ do
 				assert(vertices.tex_coord_set_size == 2)
 				for tex_coord_set = 1, vertices.tex_coord_sets do
 					local tcs_id = tex_coord_set - 1 -- 0-based
-					attributes[("TEXCOORD_%d"):format(tcs_id)] = add_accessor("VEC2", "float", false, function(write_byte)
-						for _, vertex in ipairs(mesh.vertices) do
-							write_floats(write_byte, vertex.tex_coords[tex_coord_set], 2)
-						end
-						return #mesh.vertices
-					end)
+					attributes[("TEXCOORD_%d"):format(tcs_id)] = add_accessor("VEC2", "float", false,
+						function(write_byte)
+							for _, vertex in ipairs(mesh.vertices) do
+								write_floats(write_byte, vertex.tex_coords[tex_coord_set], 2)
+							end
+							return #mesh.vertices
+						end)
 				end
 			end
 
@@ -785,30 +789,32 @@ do
 						-- Vertex isn't influenced by any bones => Add a dummy neutral bone to influence this vertex
 						-- See https://github.com/KhronosGroup/glTF/issues/2269
 						-- and https://github.com/KhronosGroup/glTF-Blender-IO/pull/1552/
-						joint_ids[vertex_id] = {add_neutral_bone()}
-						normalized_weights[vertex_id] = {1}
+						joint_ids[vertex_id] = { add_neutral_bone() }
+						normalized_weights[vertex_id] = { 1 }
 						max_count = math.max(max_count, 1) -- it is (theoretically) possible that all vertices are static
 					end
 				end
-				assert(max_count > 0) -- TODO (?) warning for max_count > 4
+				assert(max_count > 0)         -- TODO (?) warning for max_count > 4
 				for set_start = 1, max_count, 4 do -- Iterate sets of 4 bones
 					local set_id = math.floor(set_start / 4) -- 0-based => floor rather than ceil
 					-- Write the joint IDs
-					attributes[("JOINTS_%d"):format(set_id)] = add_accessor("VEC4", "unsigned_short", false, function(write_byte)
-						for vertex_id in ipairs(mesh.vertices) do
-							for i = set_start, set_start + 3 do
-								local vrt_joint_ids, vrt_norm_weights = assert(joint_ids[vertex_id]), assert(normalized_weights[vertex_id])
-								assert(#vrt_joint_ids == #vrt_norm_weights)
-								local id = vrt_joint_ids[i] or 0
-								local weight = vrt_norm_weights[i] or 0
-								if weight == 0 then
-									id = 0 -- required by the glTF spec
+					attributes[("JOINTS_%d"):format(set_id)] = add_accessor("VEC4", "unsigned_short", false,
+						function(write_byte)
+							for vertex_id in ipairs(mesh.vertices) do
+								for i = set_start, set_start + 3 do
+									local vrt_joint_ids, vrt_norm_weights = assert(joint_ids[vertex_id]),
+										assert(normalized_weights[vertex_id])
+									assert(#vrt_joint_ids == #vrt_norm_weights)
+									local id = vrt_joint_ids[i] or 0
+									local weight = vrt_norm_weights[i] or 0
+									if weight == 0 then
+										id = 0 -- required by the glTF spec
+									end
+									write_uint(write_byte, id, 2)
 								end
-								write_uint(write_byte, id, 2)
 							end
-						end
-						return #mesh.vertices
-					end)
+							return #mesh.vertices
+						end)
 					-- Write the corresponding weights
 					attributes[("WEIGHTS_%d"):format(set_id)] = add_accessor("VEC4", "float", false, function(write_byte)
 						for vertex_id in ipairs(mesh.vertices) do
@@ -850,7 +856,7 @@ do
 				}
 			end
 
-			table.insert(meshes, {primitives = primitives})
+			table.insert(meshes, { primitives = primitives })
 			return #meshes - 1 -- 0-based
 		end
 
@@ -860,10 +866,10 @@ do
 		local samplers = {}
 		local channels = {}
 		local function add_node(
-			node, -- b3d node to add
-			bind_mat, -- bind matrix of the parent bone (may be `nil` if none)
-			fps, -- fps of the parent bone (may be `nil` if none)
-			anim -- shared animation of the parent mesh
+			node,             -- b3d node to add
+			bind_mat,         -- bind matrix of the parent bone (may be `nil` if none)
+			fps,              -- fps of the parent bone (may be `nil` if none)
+			anim              -- shared animation of the parent mesh
 		)
 			table.insert(nodes, false) -- HACK first insert a placeholder to get a fixed ID
 			local node_id = #nodes - 1 -- 0-indexed <=> before `table.insert`!
@@ -875,16 +881,16 @@ do
 			if node.keys then
 				-- Convert from a list of keyframes of three overrides to three lists of channels
 				local targets = {
-					translation = {output_type = "VEC3", b3d_field = "position", write_value = write_translation},
-					scale = {output_type = "VEC3", b3d_field = "scale", write_value = write_vector},
-					rotation = {output_type = "VEC4", b3d_field = "rotation", write_value = write_quaternion}
+					translation = { output_type = "VEC3", b3d_field = "position", write_value = write_translation },
+					scale = { output_type = "VEC3", b3d_field = "scale", write_value = write_vector },
+					rotation = { output_type = "VEC4", b3d_field = "rotation", write_value = write_quaternion }
 				}
 				for _, keyframe in ipairs(node.keys) do
 					local frame = keyframe.frame
 					for _, target in pairs(targets) do
 						local value = keyframe[target.b3d_field]
 						if value then
-							table.insert(target, {frame = frame, value = value})
+							table.insert(target, { frame = frame, value = value })
 						end
 					end
 				end
@@ -898,7 +904,7 @@ do
 								write_float(write_byte, sec)
 								min, max = math.min(min, sec), math.max(max, sec)
 							end
-							return #keyframes, {min}, {max} -- min and max are mandatory
+							return #keyframes, { min }, { max } -- min and max are mandatory
 						end)
 
 						-- Write output (overrides)
@@ -984,7 +990,7 @@ do
 						-- We need to flip the hierarchy: The neutral bone must be a parent of the mesh root;
 						-- if it were a sibling, there would be no common skeleton root (accepted by Blender but not by glTF validator);
 						-- if it were a child, transformations of the mesh root would affect it and it wouldn't be a neutral bone anymore.
-						children = {node_id},
+						children = { node_id },
 						-- translation, scale, rotation all default to identity
 					})
 					neutral_joint_id = #anim.joints -- 0-based
@@ -1017,7 +1023,7 @@ do
 				end
 			end
 			-- Now replace the placeholder
-			nodes[node_id + 1 --[[0-based to 1-based]]] = {
+			nodes[ node_id + 1 --[[0-based to 1-based]] ] = {
 				name = node.name,
 				mesh = mesh,
 				skin = skin_id,
@@ -1032,7 +1038,7 @@ do
 
 		local scene, scenes
 		if self.node then
-			scene, scenes = 0, {{nodes = {add_node(self.node)}}}
+			scene, scenes = 0, { { nodes = { add_node(self.node) } } }
 		end
 
 		local buffer_string = table.concat(buffer_rope)
@@ -1104,14 +1110,16 @@ function get_animated_bone_properties(self, keyframe, interpolate)
 		end
 		local ratio = (keyframe - a.frame) / (b.frame - a.frame)
 		return {
-			position = (a.position and b.position and modlib.vector.interpolate(a.position, b.position, ratio)) or a.position or b.position,
-			rotation = (a.rotation and b.rotation and modlib.quaternion.slerp(a.rotation, b.rotation, ratio)) or a.rotation or b.rotation,
+			position = (a.position and b.position and modlib.vector.interpolate(a.position, b.position, ratio)) or
+			a.position or b.position,
+			rotation = (a.rotation and b.rotation and modlib.quaternion.slerp(a.rotation, b.rotation, ratio)) or
+			a.rotation or b.rotation,
 			scale = (a.scale and b.scale and modlib.vector.interpolate(a.scale, b.scale, ratio)) or a.scale or b.scale,
 		}
 	end
 	local bone_properties = {}
 	local function get_props(node, parent_bone_name)
-		local properties = {parent_bone_name = parent_bone_name}
+		local properties = { parent_bone_name = parent_bone_name }
 
 		if keyframe > 0 and node.keys and next(node.keys) ~= nil then
 			modlib.table.add_all(properties, get_frame_values(node.keys))

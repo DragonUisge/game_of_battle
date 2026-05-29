@@ -1,5 +1,5 @@
 local modules = {}
-for _, file in pairs{
+for _, file in pairs {
 	"schema",
 	"file",
 	"func",
@@ -42,7 +42,7 @@ local parent_dir
 if not minetest then
 	-- TOFIX
 	local init_path = arg and arg[0]
-	parent_dir = init_path and init_path:match"^.[/\\]" or ""
+	parent_dir = init_path and init_path:match "^.[/\\]" or ""
 end
 
 local dir_delim = rawget(_G, "DIR_DELIM") -- Minetest
@@ -58,7 +58,7 @@ local function get_resource(modname, resource, ...)
 		resource = modname
 		modname = minetest.get_current_modname()
 	end
-	return concat_path{minetest.get_modpath(modname), resource, ...}
+	return concat_path { minetest.get_modpath(modname), resource, ... }
 end
 
 local function load_module(self, module_name_or_alias)
@@ -101,26 +101,28 @@ modlib._RG = setmetatable({}, {
 })
 
 -- Globals merged with modlib
-modlib.G = setmetatable({}, {__index = function(self, module_name)
-	local module = load_module(self, module_name)
-	if module == nil then
-		return _G[module_name]
+modlib.G = setmetatable({}, {
+	__index = function(self, module_name)
+		local module = load_module(self, module_name)
+		if module == nil then
+			return _G[module_name]
+		end
+		if _G[module_name] then
+			setmetatable(module, { __index = _G[module_name] })
+		end
+		return module
 	end
-	if _G[module_name] then
-		setmetatable(module, {__index = _G[module_name]})
-	end
-	return module
-end})
+})
 
 -- "Imports" modlib by changing the environment of the calling function
 --! This alters environments at the expense of performance. Use with caution.
 --! Prefer localizing modlib library functions or API tables if possible.
 function modlib.set_environment()
-	setfenv(2, setmetatable({}, {__index = modlib.G}))
+	setfenv(2, setmetatable({}, { __index = modlib.G }))
 end
 
 -- Force load file module to pass dir_delim & to set concat_path
-modlib.file = assert(loadfile(get_resource"file.lua"))(dir_delim)
+modlib.file = assert(loadfile(get_resource "file.lua"))(dir_delim)
 modlib.file.concat_path = concat_path
 
 if minetest then
@@ -135,7 +137,7 @@ if minetest then
 	if ie then
 		-- Force load persistence namespace to pass insecure require
 		-- TODO currently no need to set _G.require, lsqlite3 loads no dependencies that way
-		modlib.persistence = assert(loadfile(get_resource"persistence.lua"))(ie.require)
+		modlib.persistence = assert(loadfile(get_resource "persistence.lua"))(ie.require)
 	end
 end
 

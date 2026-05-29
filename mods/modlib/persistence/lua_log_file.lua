@@ -1,9 +1,10 @@
 -- Localize globals
 local assert, error, io, loadfile, math, minetest, modlib, pairs, setfenv, setmetatable, type
-	= assert, error, io, loadfile, math, minetest, modlib, pairs, setfenv, setmetatable, type
+                                                                                              = assert, error, io,
+	loadfile, math, minetest, modlib, pairs, setfenv, setmetatable, type
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                                    = {}
 setfenv(1, _ENV)
 
 -- Default value
@@ -14,7 +15,7 @@ reference_strings = true
 -- See https://stackoverflow.com/questions/27426704/lua-5-1-workaround-for-gc-metamethod-for-tables)
 -- Therefore, :close() must be called on log files to remove them from the `files` table
 local files = {}
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 _ENV.metatable = metatable
 
 function new(file_path, root, reference_strings)
@@ -32,17 +33,17 @@ end
 local function set_references(self, table)
 	-- Weak table keys to allow the collection of dead reference tables
 	-- TODO garbage collect strings in the references table
-	self.references = setmetatable(table, {__mode = "k"})
+	self.references = setmetatable(table, { __mode = "k" })
 end
 
 function load(self)
 	-- Bytecode is blocked by the engine
 	local read = assert(loadfile(self.file_path))
 	-- math.huge is serialized to inf
-	local env = {inf = math.huge}
+	local env = { inf = math.huge }
 	setfenv(read, env)
 	read()
-	env.R = env.R or {{}}
+	env.R = env.R or { {} }
 	local reference_count = #env.R
 	for ref in pairs(env.R) do
 		if ref > reference_count then
@@ -73,7 +74,7 @@ end
 
 function log(self, statement)
 	self.file:write(statement)
-	self.file:write"\n"
+	self.file:write "\n"
 end
 
 function flush(self)
@@ -114,10 +115,10 @@ local function _dump(self, value, is_key)
 	end
 	local reference = self.references[value]
 	if reference then
-		return "R[" .. reference .."]"
+		return "R[" .. reference .. "]"
 	end
 	reference = self.reference_count + 1
-	local key = "R[" .. reference .."]"
+	local key = "R[" .. reference .. "]"
 	local function create_reference()
 		self.reference_count = reference
 		self.references[value] = reference
@@ -129,7 +130,7 @@ local function _dump(self, value, is_key)
 			return value, true
 		end
 		local formatted = ("%q"):format(value)
-		if (not reference_strings) or formatted:len() <= key:len()  then
+		if (not reference_strings) or formatted:len() <= key:len() then
 			-- Short string
 			return formatted
 		end
@@ -153,7 +154,7 @@ end
 
 function set(self, table, key, value)
 	if not self.references[table] then
-		error"orphan table"
+		error "orphan table"
 	end
 	if table[key] == value then
 		-- No change
@@ -172,7 +173,7 @@ end
 function _write(self)
 	set_references(self, {})
 	self.reference_count = 0
-	self:log"R={}"
+	self:log "R={}"
 	_dump(self, self.root)
 end
 

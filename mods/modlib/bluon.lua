@@ -1,15 +1,16 @@
 -- Localize globals
 local assert, error, ipairs, math_floor, math_abs, math_huge, modlib, next, pairs, setmetatable, string, table_insert, type, unpack
-	= assert, error, ipairs, math.floor, math.abs, math.huge, modlib, next, pairs, setmetatable, string, table.insert, type, unpack
+                                                                                                                                    = assert,
+	error, ipairs, math.floor, math.abs, math.huge, modlib, next, pairs, setmetatable, string, table.insert, type, unpack
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                                                                          = {}
 setfenv(1, _ENV)
 
 local fround = modlib.math.fround
 local write_single, write_double = modlib.binary.write_single, modlib.binary.write_double
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 function new(self)
 	return setmetatable(self or {}, metatable)
@@ -31,23 +32,23 @@ function aux_write(object)
 	error("unsupported type: " .. type(object))
 end
 
-local uint_widths = {1, 2, 4, 8}
+local uint_widths = { 1, 2, 4, 8 }
 local uint_types = #uint_widths
 local type_ranges = {}
 local current = 0
-for _, type in ipairs{
-	{"boolean", 2};
+for _, type in ipairs {
+	{ "boolean",         2 },
 	-- 0, -nan, +inf, -inf: sign of nan can be ignored
-	{"number_constant", 4};
-	{"number_negative", uint_types};
-	{"number_positive", uint_types};
-	{"number_f32", 1};
-	{"number", 1};
-	{"string_constant", 1};
-	{"string", uint_types};
+	{ "number_constant", 4 },
+	{ "number_negative", uint_types },
+	{ "number_positive", uint_types },
+	{ "number_f32",      1 },
+	{ "number",          1 },
+	{ "string_constant", 1 },
+	{ "string",          uint_types },
 	-- (M0, M8, M16, M32, M64) x (L0, L8, L16, L32, L64)
-	{"table", (uint_types + 1) ^ 2};
-	{"reference", uint_types}
+	{ "table",           (uint_types + 1) ^ 2 },
+	{ "reference",       uint_types }
 } do
 	local typename, length = unpack(type)
 	current = current + length
@@ -78,7 +79,7 @@ local function uint_type(uint)
 	return 4
 end
 
-local valid_types = modlib.table.set{"nil", "boolean", "number", "string"}
+local valid_types = modlib.table.set { "nil", "boolean", "number", "string" }
 function is_valid(self, value)
 	local _type = type(value)
 	if valid_types[_type] then
@@ -201,8 +202,9 @@ function write(self, value, stream)
 				stream:write(constant_nan)
 				return
 			end
-			if value % 1 == 0 and math_abs(value) < 2^64 then
-				uint_with_type(value > 0 and type_ranges.number_constant or type_ranges.number_negative, value > 0 and value or -value)
+			if value % 1 == 0 and math_abs(value) < 2 ^ 64 then
+				uint_with_type(value > 0 and type_ranges.number_constant or type_ranges.number_negative,
+					value > 0 and value or -value)
 				return
 			end
 			float(value)
@@ -261,7 +263,7 @@ function write(self, value, stream)
 end
 
 local constants_flipped = modlib.table.flip(constants)
-constants_flipped[constant_nan] = 0/0
+constants_flipped[constant_nan] = 0 / 0
 
 -- See https://www.lua.org/manual/5.1/manual.html#2.2
 function read(self, stream)

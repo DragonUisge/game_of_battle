@@ -15,7 +15,7 @@ minetest.register_globalstep(function()
 					absolute = true
 				},
 				rotation = {
-					vec = {x = ldeg, y = 0, z = 0},
+					vec = { x = ldeg, y = 0, z = 0 },
 					interpolation = 0.09,
 				}
 			})

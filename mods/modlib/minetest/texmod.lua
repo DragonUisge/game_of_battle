@@ -5,16 +5,16 @@ local function component(component_name, ...)
 	return assert(loadfile(modlib.mod.get_resource(modlib.modname, "minetest", "texmod", component_name .. ".lua")))(...)
 end
 
-local texmod, metatable = component"dsl"
+local texmod, metatable = component "dsl"
 local methods = metatable.__index
-methods.write = component"write"
+methods.write = component "write"
 texmod.read = component("read", texmod)
-methods.calc_dims = component"calc_dims"
-methods.gen_tex = component"gen_tex"
+methods.calc_dims = component "calc_dims"
+methods.gen_tex = component "gen_tex"
 
 function metatable:__tostring()
 	local rope = {}
-	self:write(function(str) rope[#rope+1] = str end)
+	self:write(function(str) rope[#rope + 1] = str end)
 	return table.concat(rope)
 end
 

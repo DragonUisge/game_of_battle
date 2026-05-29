@@ -1,7 +1,7 @@
 local _ENV = {}
 
 local components = {}
-for _, value in pairs{
+for _, value in pairs {
 	"mod",
 	"luon",
 	"raycast",
@@ -16,7 +16,7 @@ end
 
 -- These dirty files have to write to the modlib.minetest environment
 local dirty_files = {}
-for filename, comps in pairs{
+for filename, comps in pairs {
 	-- get_gametime is missing from here as it is forceloaded in init.lua
 	misc = {
 		"max_wear",
@@ -73,18 +73,20 @@ end
 
 local modpath, concat_path = minetest.get_modpath(modlib.modname), modlib.file.concat_path
 
-setmetatable(_ENV, {__index = function(_ENV, name)
-	local filename = components[name]
-	if filename then
-		local loader = assert(loadfile(concat_path{modpath, "minetest", filename .. ".lua"}))
-		if dirty_files[filename] then
-			loader(_ENV)
-			return rawget(_ENV, name)
+setmetatable(_ENV, {
+	__index = function(_ENV, name)
+		local filename = components[name]
+		if filename then
+			local loader = assert(loadfile(concat_path { modpath, "minetest", filename .. ".lua" }))
+			if dirty_files[filename] then
+				loader(_ENV)
+				return rawget(_ENV, name)
+			end
+			local module = loader()
+			_ENV[name] = module
+			return module
 		end
-		local module = loader()
-		_ENV[name] = module
-		return module
 	end
-end})
+})
 
 return _ENV

@@ -47,8 +47,10 @@ return function(name)
 	wiggle_rotations(character.node)
 
 	local rope = {}
-	character:write({write = function(_, str)
-		table.insert(rope, str)
-	end})
+	character:write({
+		write = function(_, str)
+			table.insert(rope, str)
+		end
+	})
 	return table.concat(rope)
 end

@@ -1,10 +1,11 @@
 -- Localize globals
 local VoxelArea, ItemStack, assert, error, io, ipairs, math, minetest, modlib, next, pairs, setmetatable, string, table, type, vector
-	= VoxelArea, ItemStack, assert, error, io, ipairs, math, minetest, modlib, next, pairs, setmetatable, string, table, type, vector
+= VoxelArea, ItemStack, assert, error, io, ipairs, math, minetest, modlib, next, pairs, setmetatable, string, table, type,
+	vector
 
 
 local schematic = {}
-local metatable = {__index = schematic}
+local metatable = { __index = schematic }
 
 function schematic.setmetatable(self)
 	return setmetatable(self, metatable)
@@ -15,9 +16,10 @@ function schematic.create(params, pos_min, pos_max)
 	local size = vector.add(vector.subtract(pos_max, pos_min), 1)
 	local voxelmanip = minetest.get_voxel_manip(pos_min, pos_max)
 	local emin, emax = voxelmanip:read_from_map(pos_min, pos_max)
-	local voxelarea = VoxelArea:new{ MinEdge = emin, MaxEdge = emax }
+	local voxelarea = VoxelArea:new { MinEdge = emin, MaxEdge = emax }
 	local nodes, light_values, param2s = {}, params.light_values and {}, {}
-	local vm_nodes, vm_light_values, vm_param2s = voxelmanip:get_data(), light_values and voxelmanip:get_light_data(), voxelmanip:get_param2_data()
+	local vm_nodes, vm_light_values, vm_param2s = voxelmanip:get_data(), light_values and voxelmanip:get_light_data(),
+		voxelmanip:get_param2_data()
 	local node_names, node_ids = {}, {}
 	local i = 0
 	for index in voxelarea:iterp(pos_min, pos_max) do
@@ -63,12 +65,13 @@ function schematic:write_to_voxelmanip(voxelmanip, pos_min)
 	local size = self.size
 	local pos_max = vector.subtract(vector.add(pos_min, size), 1) -- `pos_max` is inclusive
 	local emin, emax = voxelmanip:read_from_map(pos_min, pos_max)
-	local voxelarea = VoxelArea:new{ MinEdge = emin, MaxEdge = emax }
+	local voxelarea = VoxelArea:new { MinEdge = emin, MaxEdge = emax }
 	local nodes, light_values, param2s, metas = self.nodes, self.light_values, self.param2s, self.metas
-	local vm_nodes, vm_lights, vm_param2s = voxelmanip:get_data(), light_values and voxelmanip:get_light_data(), voxelmanip:get_param2_data()
+	local vm_nodes, vm_lights, vm_param2s = voxelmanip:get_data(), light_values and voxelmanip:get_light_data(),
+		voxelmanip:get_param2_data()
 	for _, pos in ipairs(minetest.find_nodes_with_meta(pos_min, pos_max)) do
 		-- Clear all metadata. Due to an engine bug, nodes will actually have empty metadata.
-		minetest.get_meta(pos):from_table{}
+		minetest.get_meta(pos):from_table {}
 	end
 	local content_ids = {}
 	for index, name in ipairs(self.node_names) do
@@ -136,7 +139,7 @@ end
 function schematic:write_bluon(path)
 	local file = io.open(path, "wb")
 	-- Header, short for "ModLib Bluon Schematic"
-	file:write"MLBS"
+	file:write "MLBS"
 	write_bluon(self, file)
 	file:close()
 end
@@ -176,8 +179,8 @@ end
 function schematic:write_zlib_bluon(path, compression)
 	local file = io.open(path, "wb")
 	-- Header, short for "ModLib Zlib-compressed-bluon Schematic"
-	file:write"MLZS"
-	local rope = modlib.table.rope{}
+	file:write "MLZS"
+	local rope = modlib.table.rope {}
 	write_bluon(self, rope)
 	local text = rope:to_text()
 	file:write(minetest.compress(text, "deflate", compression or 9))
@@ -187,7 +190,7 @@ end
 function schematic.read_zlib_bluon(path)
 	local file = io.open(path, "rb")
 	assert(file:read(4) == "MLZS", "not a modlib zlib compressed bluon schematic")
-	return schematic.setmetatable(read_bluon(modlib.text.inputstream(minetest.decompress(file:read"*a", "deflate"))))
+	return schematic.setmetatable(read_bluon(modlib.text.inputstream(minetest.decompress(file:read "*a", "deflate"))))
 end
 
 return schematic

@@ -2,7 +2,7 @@ local tex = modlib.tex
 
 local paths = modlib.minetest.media.paths
 local function read_png(fname)
-	if fname == "blank.png" then return tex.new{w=1,h=1,0} end
+	if fname == "blank.png" then return tex.new { w = 1, h = 1, 0 } end
 	return tex.read_png(assert(paths[fname]))
 end
 
@@ -84,7 +84,7 @@ end
 function gt:lowpart()
 	local t = self.base:gen_tex()
 	local over = self.over:gen_tex()
-	local lowpart_h = math.ceil(self.percent/100 * over.h) -- TODO (?) ceil or floor
+	local lowpart_h = math.ceil(self.percent / 100 * over.h) -- TODO (?) ceil or floor
 	if lowpart_h > 0 then
 		t, over = resized_to_larger(t, over)
 		local y = over.h - lowpart_h + 1
@@ -146,7 +146,7 @@ local frame = function(t, frame, framecount)
 end
 
 local crack = function(self, o)
-	local crack = read_png"crack_anylength.png"
+	local crack = read_png "crack_anylength.png"
 	frame(crack, self.frame, math.floor(crack.h / crack.w))
 	local t = self.base:gen_tex()
 	local tile_w, tile_h = math.floor(t.w / self.tilecount), math.floor(t.h / self.framecount)

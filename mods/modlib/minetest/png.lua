@@ -1,6 +1,7 @@
 local signature = "\137\80\78\71\13\10\26\10"
 
-local assert, char, ipairs, insert, concat, abs, floor = assert, string.char, ipairs, table.insert, table.concat, math.abs, math.floor
+local assert, char, ipairs, insert, concat, abs, floor = assert, string.char, ipairs, table.insert, table.concat,
+	math.abs, math.floor
 
 -- TODO move to modlib.bit eventually
 local function bit_xor(a, b)
@@ -24,7 +25,7 @@ if bit then
 	function bit_xor(a, b)
 		local res = bxor(a, b)
 		if res < 0 then -- convert signed to unsigned
-			return res + 2^32
+			return res + 2 ^ 32
 		end
 		return res
 	end
@@ -73,11 +74,11 @@ local color_types = {
 }
 local set = modlib.table.set
 local allowed_bit_depths = {
-	[0] = set{1, 2, 4, 8, 16},
-	[2] = set{8, 16},
-	[3] = set{1, 2, 4, 8},
-	[4] = set{8, 16},
-	[6] = set{8, 16}
+	[0] = set { 1, 2, 4, 8, 16 },
+	[2] = set { 8, 16 },
+	[3] = set { 1, 2, 4, 8 },
+	[4] = set { 8, 16 },
+	[6] = set { 8, 16 }
 }
 local samples = {
 	grayscale = 1,
@@ -110,7 +111,7 @@ local adam7_passes = {
 	end
 	local function uint()
 		local val = _uint()
-		assert(val < 2^31, "uint out of range")
+		assert(val < 2 ^ 31, "uint out of range")
 		return val
 	end
 	local function check_crc()
@@ -174,7 +175,7 @@ local adam7_passes = {
 				assert(idat_allowed, "PLTE after IDAT chunks")
 				palette = {}
 				local entries = chunk_length / 3
-				assert(entries % 1 == 0 and entries >= 1 and entries <= 2^bit_depth, "invalid PLTE chunk length")
+				assert(entries % 1 == 0 and entries >= 1 and entries <= 2 ^ bit_depth, "invalid PLTE chunk length")
 				for i = 1, entries do
 					palette[i] = 0x10000 * byte() + 0x100 * byte() + byte() -- RGB
 				end
@@ -209,7 +210,7 @@ local adam7_passes = {
 				iend = true
 			else
 				-- Check whether the fifth bit of the first byte is set (upper vs. lowercase ASCII)
-				local ancillary = floor(chunk_type:byte(1) % (2^6)) >= 2^5
+				local ancillary = floor(chunk_type:byte(1) % (2 ^ 6)) >= 2 ^ 5
 				if not ancillary then
 					error(("unsupported critical chunk: %q"):format(chunk_type))
 				end
@@ -296,8 +297,8 @@ local adam7_passes = {
 				return byte
 			end
 			assert(bit_depth == 1 or bit_depth == 2 or bit_depth == 4)
-			local low = 2^(-bit % 8)
-			return floor(byte / low) % (2^bit_depth)
+			local low = 2 ^ (-bit % 8)
+			return floor(byte / low) % (2 ^ bit_depth)
 		end
 		for x = x_min, width - 1, x_step do
 			local data_index = y * width + x + 1
@@ -309,18 +310,18 @@ local adam7_passes = {
 				data[data_index] = a * 0x1000000 + rgb
 			elseif color_type.color == "grayscale" then
 				local Y = sample()
-				local a = 2^bit_depth - 1
+				local a = 2 ^ bit_depth - 1
 				if color_type.alpha then
 					a = sample()
 				elseif alpha == Y then
 					a = 0 -- Convert grayscale to transparency
 				end
-				data[data_index] = a * (2^bit_depth) + Y
+				data[data_index] = a * (2 ^ bit_depth) + Y
 			else
 				assert(color_type.color == "truecolor")
 				local r, g, b = sample(), sample(), sample()
 				local rgb16 = r * 0x100000000 + g * 0x10000 + b
-				local a = 2^bit_depth - 1
+				local a = 2 ^ bit_depth - 1
 				if color_type.alpha then
 					a = sample()
 				elseif alpha == rgb16 then
@@ -349,7 +350,7 @@ local adam7_passes = {
 			local x_min, y_min = adam7_passes.x_min[pass], adam7_passes.y_min[pass]
 			if x_min < width and y_min < height then -- Non-empty pass
 				local x_step, y_step = adam7_passes.x_step[pass], adam7_passes.y_step[pass]
-				previous_scanline = nil -- Filtering doesn't use scanlines of previous passes
+				previous_scanline = nil     -- Filtering doesn't use scanlines of previous passes
 				for y = y_min, height - 1, y_step do
 					read_scanline(x_min, x_step, y)
 				end
@@ -374,17 +375,18 @@ local function rescale_depth(sample, source_depth, target_depth)
 	if source_depth == target_depth then
 		return sample
 	end
-	return floor((sample * (2^target_depth - 1) / (2^source_depth - 1)) + 0.5)
+	return floor((sample * (2 ^ target_depth - 1) / (2 ^ source_depth - 1)) + 0.5)
 end
 -- In-place lossy (if bit depth = 16) conversion to ARGB8
 (...).convert_png_to_argb8 = function(png)
-	local color, transparency, depth = png.color_type.color, png.color_type.alpha or png.color_type.transparency, png.color_type.depth
+	local color, transparency, depth = png.color_type.color, png.color_type.alpha or png.color_type.transparency,
+		png.color_type.depth
 	if color == "palette" or (color == "truecolor" and depth == 8) then
 		return
 	end
 	for index, value in pairs(png.data) do
 		if color == "grayscale" then
-			local a, Y = rescale_depth(floor(value / (2^depth)), depth, 8), rescale_depth(value % (2^depth), depth, 8)
+			local a, Y = rescale_depth(floor(value / (2 ^ depth)), depth, 8), rescale_depth(value % (2 ^ depth), depth, 8)
 			png.data[index] = a * 0x1000000 + Y * 0x10000 + Y * 0x100 + Y -- R = G = B = Y
 		else
 			assert(color == "truecolor" and depth == 16)
@@ -416,7 +418,7 @@ local function encode_png(width, height, data, compression, raw_write)
 		end
 	end
 	local function uint(value)
-		assert(value < 2^31)
+		assert(value < 2 ^ 31)
 		_uint(value)
 	end
 	local chunk_content
@@ -444,7 +446,7 @@ local function encode_png(width, height, data, compression, raw_write)
 	end
 	-- Signature
 	write(signature)
-	chunk"IHDR"
+	chunk "IHDR"
 	uint(width)
 	uint(height)
 	-- Always use bit depth 8
@@ -458,7 +460,7 @@ local function encode_png(width, height, data, compression, raw_write)
 	-- No interlace
 	byte(0)
 	end_chunk()
-	chunk"IDAT"
+	chunk "IDAT"
 	local data_rope = {}
 	for y = 0, height - 1 do
 		local base_index = y * width
@@ -470,7 +472,7 @@ local function encode_png(width, height, data, compression, raw_write)
 	end
 	write(minetest.compress(type(data) == "string" and data or concat(data_rope), "deflate", compression))
 	end_chunk()
-	chunk"IEND"
+	chunk "IEND"
 	end_chunk()
 end
 

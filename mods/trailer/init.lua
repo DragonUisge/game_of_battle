@@ -5,9 +5,9 @@
 
 trailer = {}
 trailer.active = false
-trailer.camera = nil        -- camera entity objectref
-trailer.stunt = nil         -- stunt double objectref
-trailer.player_pos = nil    -- saved player position
+trailer.camera = nil     -- camera entity objectref
+trailer.stunt = nil      -- stunt double objectref
+trailer.player_pos = nil -- saved player position
 
 -- Arena interior bounds (camera must stay inside the schematic)
 local ARENA_MIN = vector.new(0, 1.5, 0)
@@ -43,14 +43,14 @@ local function find_open_pos(pos)
 	if not pos_is_blocked(pos) then return pos end
 	-- Try nearby positions in a spiral
 	for _, offset in ipairs({
-		{1,0}, {-1,0}, {0,1}, {0,-1},
-		{1,1}, {-1,1}, {1,-1}, {-1,-1},
-		{2,0}, {-2,0}, {0,2}, {0,-2},
+		{ 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 },
+		{ 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 },
+		{ 2, 0 }, { -2, 0 }, { 0, 2 }, { 0, -2 },
 	}) do
 		local test = vector.new(pos.x + offset[1], pos.y, pos.z + offset[2])
 		if not pos_is_blocked(test) then return test end
 	end
-	return pos  -- give up, return original
+	return pos -- give up, return original
 end
 
 -- Adjust velocity to avoid walking into walls.
@@ -64,10 +64,10 @@ local function avoid_walls(pos, vel, dtime)
 
 	-- Probe at 0.6 and 1.2 nodes ahead (feet + head)
 	local blocked = false
-	for _, dist in ipairs({0.6, 1.2}) do
+	for _, dist in ipairs({ 0.6, 1.2 }) do
 		local ahead = vector.add(pos, vector.multiply(hdir, dist))
 		if is_solid(vector.new(ahead.x, pos.y + 0.3, ahead.z)) or
-		   is_solid(vector.new(ahead.x, pos.y + 1.2, ahead.z)) then
+			is_solid(vector.new(ahead.x, pos.y + 1.2, ahead.z)) then
 			blocked = true
 			break
 		end
@@ -76,9 +76,9 @@ local function avoid_walls(pos, vel, dtime)
 	if blocked then
 		-- Try sliding: zero out the axis pointing into the wall
 		local bx = is_solid(vector.new(pos.x + hdir.x * 0.8, pos.y + 0.5, pos.z)) or
-		           is_solid(vector.new(pos.x + hdir.x * 0.8, pos.y + 1.2, pos.z))
+			is_solid(vector.new(pos.x + hdir.x * 0.8, pos.y + 1.2, pos.z))
 		local bz = is_solid(vector.new(pos.x, pos.y + 0.5, pos.z + hdir.z * 0.8)) or
-		           is_solid(vector.new(pos.x, pos.y + 1.2, pos.z + hdir.z * 0.8))
+			is_solid(vector.new(pos.x, pos.y + 1.2, pos.z + hdir.z * 0.8))
 		if bx then vel.x = 0 end
 		if bz then vel.z = 0 end
 		-- Both blocked → full stop
@@ -115,7 +115,7 @@ end
 -- ============================================================
 -- Globalstep: during trailer, clamp ALL battle entities out of walls
 -- ============================================================
-local _last_good_pos = {}  -- entity ID → last known good position
+local _last_good_pos = {} -- entity ID → last known good position
 
 minetest.register_globalstep(function(dtime)
 	if not trailer.active then
@@ -172,26 +172,26 @@ end)
 minetest.register_entity("trailer:camera", {
 	initial_properties = {
 		visual = "sprite",
-		textures = {"blank.png"},
+		textures = { "blank.png" },
 		physical = false,
 		collide_with_objects = false,
-		collisionbox = {0, 0, 0, 0, 0, 0},
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
 		pointable = false,
 		static_save = false,
-		visual_size = {x = 0, y = 0},
+		visual_size = { x = 0, y = 0 },
 	},
 
 	_orbit_angle = 0,
 	_orbit_radius = 2,
 	_orbit_height = 1.8,
-	_orbit_speed = 0.25,      -- radians per second
+	_orbit_speed = 0.25, -- radians per second
 	_orbit_center = nil,
-	_smooth_center = nil,     -- smoothed tracking center
-	_mode = "orbit",          -- orbit, sweep, dramatic
+	_smooth_center = nil, -- smoothed tracking center
+	_mode = "orbit",   -- orbit, sweep, dramatic
 	_mode_timer = 0,
 	_shake_timer = 0,
 	_shake_intensity = 0,
-	_target = nil,            -- entity to focus on
+	_target = nil, -- entity to focus on
 
 	on_activate = function(self, staticdata)
 		self._orbit_center = self.object:get_pos()
@@ -241,7 +241,7 @@ minetest.register_entity("trailer:camera", {
 		-- Switch camera modes periodically
 		self._mode_timer = self._mode_timer - dtime
 		if self._mode_timer <= 0 then
-			local modes = {"orbit", "sweep", "dramatic", "low_angle", "tracking"}
+			local modes = { "orbit", "sweep", "dramatic", "low_angle", "tracking" }
 			self._mode = modes[math.random(#modes)]
 			self._mode_timer = 6.0 + math.random() * 6.0
 
@@ -273,7 +273,6 @@ minetest.register_entity("trailer:camera", {
 				center.y + self._orbit_height + math.sin(self._orbit_angle * 0.5) * 0.3,
 				center.z + math.sin(self._orbit_angle) * radius
 			)
-
 		elseif self._mode == "sweep" then
 			-- Low sweeping pass
 			self._orbit_angle = self._orbit_angle + self._orbit_speed * 1.2 * dtime
@@ -282,7 +281,6 @@ minetest.register_entity("trailer:camera", {
 				center.y + 1.5,
 				center.z + math.sin(self._orbit_angle) * 1.5
 			)
-
 		elseif self._mode == "dramatic" then
 			-- Close-up from slightly above, slow drift
 			self._orbit_angle = self._orbit_angle + self._orbit_speed * 0.15 * dtime
@@ -291,7 +289,6 @@ minetest.register_entity("trailer:camera", {
 				center.y + 1.5,
 				center.z + math.sin(self._orbit_angle) * 1.2
 			)
-
 		elseif self._mode == "low_angle" then
 			-- Epic low angle looking up at the fight
 			self._orbit_angle = self._orbit_angle + self._orbit_speed * 0.3 * dtime
@@ -300,7 +297,6 @@ minetest.register_entity("trailer:camera", {
 				center.y + 0.6,
 				center.z + math.sin(self._orbit_angle) * 1.5
 			)
-
 		elseif self._mode == "tracking" then
 			-- Follow stunt double from behind
 			if focus_pos then
@@ -369,11 +365,11 @@ minetest.register_entity("trailer:stunt_double", {
 	initial_properties = {
 		visual = "mesh",
 		mesh = "character.b3d",
-		textures = {"character.png"},
+		textures = { "character.png" },
 		physical = true,
 		collide_with_objects = false,
-		collisionbox = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
-		visual_size = {x = 1, y = 1, z = 1},
+		collisionbox = { -0.3, 0.0, -0.3, 0.3, 1.7, 0.3 },
+		visual_size = { x = 1, y = 1, z = 1 },
 		makes_footstep_sound = true,
 		static_save = false,
 		nametag = "",
@@ -383,18 +379,18 @@ minetest.register_entity("trailer:stunt_double", {
 	_phase_timer = 0,
 	_attack_cooldown = 0,
 	_combo_count = 0,
-	_hp = 9999,            -- effectively immortal for trailer
-	_target = nil,         -- current enemy target
+	_hp = 9999, -- effectively immortal for trailer
+	_target = nil, -- current enemy target
 	_target_timer = 0,
 	_leap_start_y = 0,
 	_was_hit = false,
 	_parry_timer = 0,
 	_idle_timer = 0,
-	_sword_name = "registered:sword_fire",  -- equipped weapon visually
+	_sword_name = "registered:sword_fire", -- equipped weapon visually
 
 	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 0, y = 79}, 15, 0, true) -- idle
-		self.object:set_armor_groups({fleshy = 100})
+		self.object:set_animation({ x = 0, y = 79 }, 15, 0, true) -- idle
+		self.object:set_armor_groups({ fleshy = 100 })
 		-- Equip fire sword in hand
 		self.object:set_wielded_item(ItemStack(self._sword_name))
 	end,
@@ -429,7 +425,7 @@ minetest.register_entity("trailer:stunt_double", {
 		-- During showcase/finale, don't fight — just hold position
 		if self._phase == "showcase_idle" then
 			self.object:set_velocity(vector.new(0, -9.81, 0))
-			self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+			self.object:set_animation({ x = 0, y = 79 }, 15, 0, true)
 			return
 		elseif self._phase == "finale_jump" then
 			-- Gravity only, no AI
@@ -445,7 +441,7 @@ minetest.register_entity("trailer:stunt_double", {
 				local blua = enemy.boss_alive:get_luaentity()
 				-- Hugo in "linked" phase = invulnerable. Target dragon instead.
 				if blua and blua._hugo_phase == "linked"
-				   and blua._summoned_dragon and blua._summoned_dragon:get_pos() then
+					and blua._summoned_dragon and blua._summoned_dragon:get_pos() then
 					self._target = blua._summoned_dragon
 				else
 					self._target = enemy.boss_alive
@@ -469,7 +465,7 @@ minetest.register_entity("trailer:stunt_double", {
 			self._idle_timer = self._idle_timer + dtime
 			safe_set_velocity(self.object, pos, vector.new(0, -9.81, 0), dtime)
 			if self._idle_timer > 1.0 then
-				self.object:set_animation({x = 0, y = 79}, 15, 0, true)
+				self.object:set_animation({ x = 0, y = 79 }, 15, 0, true)
 			end
 			return
 		end
@@ -483,7 +479,7 @@ minetest.register_entity("trailer:stunt_double", {
 		-- Dragon is large: consider ourselves closer than center-to-center
 		local tlua = self._target:get_luaentity()
 		if tlua and tlua.name == "boss:summoned_dragon" then
-			tdist = tdist - 1.5  -- compensate for dragon visual size
+			tdist = tdist - 1.5 -- compensate for dragon visual size
 			if tdist < 0 then tdist = 0 end
 		end
 
@@ -495,10 +491,10 @@ minetest.register_entity("trailer:stunt_double", {
 				if tdist < 5.0 then
 					local away = vector.multiply(tdir, -2.5)
 					safe_set_velocity(self.object, pos, vector.new(away.x, -9.81, away.z), dtime)
-					self.object:set_animation({x = 168, y = 187}, 20, 0, true) -- walk back
+					self.object:set_animation({ x = 168, y = 187 }, 20, 0, true) -- walk back
 				else
 					safe_set_velocity(self.object, pos, vector.new(0, -9.81, 0), dtime)
-					self.object:set_animation({x = 0, y = 79}, 15, 0, true) -- idle watch
+					self.object:set_animation({ x = 0, y = 79 }, 15, 0, true) -- idle watch
 				end
 				self._phase = "approach"
 				self._attack_cooldown = 1.0
@@ -537,7 +533,7 @@ local function stunt_hit_target(self, target, dmg)
 	if lua and lua.on_punch then
 		-- Create a fake tool capability for damage
 		local tool_caps = {
-			damage_groups = {fleshy = dmg},
+			damage_groups = { fleshy = dmg },
 		}
 		-- Simulate being hit by fire sword
 		local item = ItemStack("registered:sword_fire")
@@ -552,7 +548,7 @@ end
 function stunt_approach(self, dtime, pos, tpos, tdir, tdist)
 	local speed = 3.5
 	safe_set_velocity(self.object, pos, vector.new(tdir.x * speed, -9.81, tdir.z * speed), dtime)
-	self.object:set_animation({x = 168, y = 187}, 30, 0, true) -- walk
+	self.object:set_animation({ x = 168, y = 187 }, 30, 0, true) -- walk
 
 	if tdist < 3.0 and self._attack_cooldown <= 0 then
 		-- Choose attack pattern
@@ -571,7 +567,7 @@ function stunt_approach(self, dtime, pos, tpos, tdir, tdist)
 		else
 			-- Quick single hit then retreat
 			stunt_hit_target(self, self._target, 8)
-			self.object:set_animation({x = 189, y = 198}, 40, 0, false) -- mine/attack
+			self.object:set_animation({ x = 189, y = 198 }, 40, 0, false) -- mine/attack
 			self._phase = "retreat"
 			self._phase_timer = 1.0
 			self._attack_cooldown = 0.5
@@ -596,7 +592,7 @@ function stunt_combo(self, dtime, pos, tpos, tdir, tdist)
 
 	if self._phase_timer <= 0 and self._combo_count < 3 then
 		self._combo_count = self._combo_count + 1
-		self.object:set_animation({x = 189, y = 198}, 50, 0, false) -- attack
+		self.object:set_animation({ x = 189, y = 198 }, 50, 0, false) -- attack
 
 		if tdist < 3.5 then
 			local dmg = 5 + self._combo_count * 3 -- 8, 11, 14 escalating
@@ -610,7 +606,7 @@ function stunt_combo(self, dtime, pos, tpos, tdir, tdist)
 			trailer.camera_shake(0.2)
 			self._phase = "approach"
 			self._attack_cooldown = 0.8
-			self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+			self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
 		end
 	end
 end
@@ -618,7 +614,7 @@ end
 -- Spin: spinning attack hitting all nearby enemies
 function stunt_spin(self, dtime, pos, tpos, tdir, tdist)
 	-- Rotate fast (visual: walk_mine animation for aggressive look)
-	self.object:set_animation({x = 200, y = 219}, 60, 0, true)
+	self.object:set_animation({ x = 200, y = 219 }, 60, 0, true)
 
 	-- Rotate the yaw rapidly
 	local yaw = (self.object:get_yaw() or 0) + dtime * 12
@@ -635,7 +631,7 @@ function stunt_spin(self, dtime, pos, tpos, tdir, tdist)
 			if obj ~= self.object then
 				local lua = obj:get_luaentity()
 				if lua and (lua.name == "enemy:student" or lua.name == "boss:teacher"
-					or lua.name == "boss:summoned_dragon") then
+						or lua.name == "boss:summoned_dragon") then
 					stunt_hit_target(self, obj, 6)
 				end
 			end
@@ -655,7 +651,7 @@ function stunt_leap(self, dtime, pos, tpos, tdir, tdist)
 		-- Rising phase — jump toward target
 		local speed = 7
 		safe_set_velocity(self.object, pos, vector.new(tdir.x * speed, 6, tdir.z * speed), dtime)
-		self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+		self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 	elseif self._phase_timer > 0 then
 		-- Falling/slam phase
 		safe_set_velocity(self.object, pos, vector.new(tdir.x * 2, -12, tdir.z * 2), dtime)
@@ -670,7 +666,7 @@ function stunt_leap(self, dtime, pos, tpos, tdir, tdist)
 			if obj ~= self.object then
 				local lua = obj:get_luaentity()
 				if lua and (lua.name == "enemy:student" or lua.name == "boss:teacher"
-					or lua.name == "boss:summoned_dragon") then
+						or lua.name == "boss:summoned_dragon") then
 					stunt_hit_target(self, obj, 12)
 				end
 			end
@@ -685,13 +681,13 @@ end
 function stunt_parry(self, dtime, pos, tpos, tdir, tdist)
 	-- Stand still, guard stance
 	safe_set_velocity(self.object, pos, vector.new(0, -9.81, 0), dtime)
-	self.object:set_animation({x = 0, y = 79}, 5, 0, true) -- slow idle = guard pose
+	self.object:set_animation({ x = 0, y = 79 }, 5, 0, true) -- slow idle = guard pose
 
 	if self._phase_timer <= 0 then
 		-- Counter-attack! Quick strike back
 		if tdist < 4.0 then
 			stunt_hit_target(self, self._target, 15) -- big counter damage
-			self.object:set_animation({x = 189, y = 198}, 60, 0, false)
+			self.object:set_animation({ x = 189, y = 198 }, 60, 0, false)
 			trailer.camera_shake(0.15)
 		end
 		self._phase = "approach"
@@ -704,7 +700,7 @@ function stunt_retreat(self, dtime, pos, tpos, tdir, tdist)
 	-- Jump backward
 	local away = vector.multiply(tdir, -4)
 	safe_set_velocity(self.object, pos, vector.new(away.x, 2, away.z), dtime)
-	self.object:set_animation({x = 168, y = 187}, 40, 0, true)
+	self.object:set_animation({ x = 168, y = 187 }, 40, 0, true)
 
 	if self._phase_timer <= 0 then
 		-- Re-engage: possibly with a leap
@@ -724,17 +720,17 @@ end
 -- ============================================================
 -- Boss data for the showcase (mirrors boss mod's BOSSES table)
 local TRAILER_BOSSES = {
-	[1] = {name = "Bram",        tex = "boss_bram.png"},
-	[2] = {name = "Hugo",        tex = "boss_hugo.png"},
-	[3] = {name = "Joachim",     tex = "boss_joachim.png"},
-	[4] = {name = "Julian",      tex = "boss_julian.png"},
-	[5] = {name = "Rosanne",     tex = "boss_rosanne.png"},
-	[6] = {name = "Jan Willem",  tex = "boss_janwillem.png"},
-	[7] = {name = "Margriet",    tex = "boss_margriet.png"},
+	[1] = { name = "Bram", tex = "boss_bram.png" },
+	[2] = { name = "Hugo", tex = "boss_hugo.png" },
+	[3] = { name = "Joachim", tex = "boss_joachim.png" },
+	[4] = { name = "Julian", tex = "boss_julian.png" },
+	[5] = { name = "Rosanne", tex = "boss_rosanne.png" },
+	[6] = { name = "Jan Willem", tex = "boss_janwillem.png" },
+	[7] = { name = "Margriet", tex = "boss_margriet.png" },
 }
 
-trailer._showcase_timers = {}  -- minetest.after handles for cleanup
-trailer._phase = "fight"       -- fight, showcase, finale
+trailer._showcase_timers = {} -- minetest.after handles for cleanup
+trailer._phase = "fight"      -- fight, showcase, finale
 
 function trailer.start(player, level)
 	if trailer.active then
@@ -751,7 +747,7 @@ function trailer.start(player, level)
 
 	-- Make player invisible + disable controls
 	player:set_properties({
-		visual_size = {x = 0, y = 0, z = 0},
+		visual_size = { x = 0, y = 0, z = 0 },
 		makes_footstep_sound = false,
 		pointable = false,
 	})
@@ -813,15 +809,15 @@ function trailer._start_showcase(player)
 	enemy.alive_students = {}
 
 	-- Position stunt and spawn a display boss facing each other
-	local stunt_pos = vector.new(5, 2, 5)
-	local boss_pos  = vector.new(9, 2, 5)
+	local stunt_pos      = vector.new(5, 2, 5)
+	local boss_pos       = vector.new(9, 2, 5)
 
 	if trailer.stunt and trailer.stunt:get_pos() then
 		trailer.stunt:set_pos(stunt_pos)
 		trailer.stunt:set_velocity(vector.new(0, -9.81, 0))
 		local dir = vector.direction(stunt_pos, boss_pos)
 		trailer.stunt:set_yaw(minetest.dir_to_yaw(dir))
-		trailer.stunt:set_animation({x = 0, y = 79}, 15, 0, true) -- idle
+		trailer.stunt:set_animation({ x = 0, y = 79 }, 15, 0, true) -- idle
 		local lua = trailer.stunt:get_luaentity()
 		if lua then
 			lua._phase = "showcase_idle"
@@ -837,7 +833,7 @@ function trailer._start_showcase(player)
 		display_boss:set_velocity(vector.new(0, -9.81, 0))
 		local dir = vector.direction(boss_pos, stunt_pos)
 		display_boss:set_yaw(minetest.dir_to_yaw(dir))
-		display_boss:set_animation({x = 0, y = 79}, 15, 0, true)
+		display_boss:set_animation({ x = 0, y = 79 }, 15, 0, true)
 		-- Set as boss_alive so its on_step finds the stunt double
 		-- but give it huge cooldown so it never attacks
 		enemy.boss_alive = display_boss
@@ -853,7 +849,7 @@ function trailer._start_showcase(player)
 		local clua = trailer.camera:get_luaentity()
 		if clua then
 			clua._mode = "dramatic"
-			clua._orbit_center = vector.new(7, 2, 5)  -- midpoint
+			clua._orbit_center = vector.new(7, 2, 5) -- midpoint
 			clua._orbit_speed = 0.15
 		end
 	end
@@ -873,8 +869,8 @@ function trailer._start_showcase(player)
 			trailer._showcase_boss:set_properties({
 				nametag = data.name,
 				nametag_color = "#FFFFFF",
-				visual_size = {x = scale, y = scale, z = scale},
-				textures = {data.tex},
+				visual_size = { x = scale, y = scale, z = scale },
+				textures = { data.tex },
 			})
 
 			-- Keep boss in place and facing stunt
@@ -882,7 +878,7 @@ function trailer._start_showcase(player)
 			trailer._showcase_boss:set_velocity(vector.new(0, -9.81, 0))
 			local dir = vector.direction(boss_pos, stunt_pos)
 			trailer._showcase_boss:set_yaw(minetest.dir_to_yaw(dir))
-			trailer._showcase_boss:set_animation({x = 0, y = 79}, 15, 0, true)
+			trailer._showcase_boss:set_animation({ x = 0, y = 79 }, 15, 0, true)
 
 			-- Keep it frozen
 			local blua = trailer._showcase_boss:get_luaentity()
@@ -913,7 +909,7 @@ function trailer._start_finale(player)
 			lua._phase = "finale_jump"
 		end
 		trailer.stunt:set_velocity(vector.new(0, 8, 0))
-		trailer.stunt:set_animation({x = 189, y = 198}, 30, 0, false) -- attack pose mid-air
+		trailer.stunt:set_animation({ x = 189, y = 198 }, 30, 0, false) -- attack pose mid-air
 	end
 
 	-- Auto-stop after 1.5 seconds
@@ -948,7 +944,7 @@ function trailer.stop(player)
 
 	-- Restore player visibility
 	player:set_properties({
-		visual_size = {x = 1, y = 1, z = 1},
+		visual_size = { x = 1, y = 1, z = 1 },
 		makes_footstep_sound = true,
 		pointable = true,
 	})

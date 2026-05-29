@@ -1,7 +1,8 @@
 local assert, error, math_huge, modlib, minetest, setmetatable, type, table_insert, table_sort, pairs, ipairs
-	= assert, error, math.huge, modlib, minetest, setmetatable, type, table.insert, table.sort, pairs, ipairs
+                                                                                                              = assert,
+	error, math.huge, modlib, minetest, setmetatable, type, table.insert, table.sort, pairs, ipairs
 
-local sqlite3 = ...
+local sqlite3                                                                                                 = ...
 
 --[[
 	Currently uses reference counting to immediately delete tables which aren't reachable from the root table anymore, which has two issues:
@@ -14,7 +15,7 @@ local sqlite3 = ...
 ]]
 
 local ptab = {} -- SQLite3-backed implementation for a persistent Lua table ("ptab")
-local metatable = {__index = ptab}
+local metatable = { __index = ptab }
 ptab.metatable = metatable
 
 -- Note: keys may not be marked as weak references: wouldn't close the database: see persistence/lua_log_file.lua
@@ -29,7 +30,7 @@ local types = {
 
 local function increment_highest_table_id(self)
 	self.highest_table_id = self.highest_table_id + 1
-	if self.highest_table_id > 2^50 then
+	if self.highest_table_id > 2 ^ 50 then
 		-- IDs are approaching double precision limit (52 bits mantissa), defragment them
 		self:defragment_ids()
 	end
@@ -156,18 +157,18 @@ CREATE TABLE IF NOT EXISTS table_entries (
 	PRIMARY KEY (table_id, key_type, key)
 )]])
 	self._prepared = {
-		insert = prepare"INSERT OR REPLACE INTO table_entries(table_id, key_type, key, value_type, value) VALUES (?, ?, ?, ?, ?)",
-		delete = prepare"DELETE FROM table_entries WHERE table_id = ? AND key_type = ? AND key = ?",
-		delete_table = prepare"DELETE FROM table_entries WHERE table_id = ?",
+		insert = prepare "INSERT OR REPLACE INTO table_entries(table_id, key_type, key, value_type, value) VALUES (?, ?, ?, ?, ?)",
+		delete = prepare "DELETE FROM table_entries WHERE table_id = ? AND key_type = ? AND key = ?",
+		delete_table = prepare "DELETE FROM table_entries WHERE table_id = ?",
 		update = {
-			id = prepare"UPDATE table_entries SET table_id = ? WHERE table_id = ?",
+			id = prepare "UPDATE table_entries SET table_id = ? WHERE table_id = ?",
 			keys = prepare("UPDATE table_entries SET key = ? WHERE key_type = " .. types.table .. " AND key = ?"),
 			values = prepare("UPDATE table_entries SET value = ? WHERE value_type = " .. types.table .. " AND value = ?")
 		}
 	}
 	-- Default value
 	self.highest_table_id = 0
-	for id in self.database:urows"SELECT MAX(table_id) FROM table_entries" do
+	for id in self.database:urows "SELECT MAX(table_id) FROM table_entries" do
 		-- Gets a single value
 		self.highest_table_id = id
 	end
@@ -183,7 +184,7 @@ CREATE TABLE IF NOT EXISTS table_entries (
 		end
 		if type_ == types.number then
 			if content == "nan" then
-				return 0/0
+				return 0 / 0
 			end
 			if content == "inf" then
 				return math_huge
@@ -208,7 +209,7 @@ CREATE TABLE IF NOT EXISTS table_entries (
 		error("unsupported type: " .. type_)
 	end
 	-- Order by key_content to retrieve list parts in the correct order, making it easier for Lua
-	for table_id, key_type, key, value_type, value in self.database:urows"SELECT * FROM table_entries ORDER BY table_id, key_type, key" do
+	for table_id, key_type, key, value_type, value in self.database:urows "SELECT * FROM table_entries ORDER BY table_id, key_type, key" do
 		local table = tables[table_id] or {}
 		counts[table] = counts[table] or 1
 		table[get_value(key_type, key)] = get_value(value_type, value)

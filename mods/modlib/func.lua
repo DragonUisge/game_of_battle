@@ -1,9 +1,9 @@
 -- Localize globals
 local modlib, unpack, select, setmetatable
-	= modlib, unpack, select, setmetatable
+                                           = modlib, unpack, select, setmetatable
 
 -- Set environment
-local _ENV = {}
+local _ENV                                 = {}
 setfenv(1, _ENV)
 
 function no_op() end
@@ -19,7 +19,7 @@ end
 
 function curry_tail(func, ...)
 	local args = { ... }
-	return function(...) return func(unpack(modlib.table.concat({...}, args))) end
+	return function(...) return func(unpack(modlib.table.concat({ ... }, args))) end
 end
 
 function curry_full(func, ...)
@@ -68,7 +68,7 @@ end
 
 --+ Calls func using the provided arguments, deepcopies all arguments
 function call_by_value(func, ...)
-	return func(unpack(modlib.table.deepcopy{...}, 1, select("#", ...)))
+	return func(unpack(modlib.table.deepcopy { ... }, 1, select("#", ...)))
 end
 
 -- Functional wrappers for Lua's builtin metatable operators (arithmetic, concatenation, length, comparison, indexing, call)
@@ -114,12 +114,15 @@ function call(object, ...) object(...) end
 -- Functional wrappers for logical operators, suffixed with _ for syntactical convenience
 
 function not_(a) return not a end
+
 _ENV["not"] = not_
 
 function and_(a, b) return a and b end
+
 _ENV["and"] = and_
 
 function or_(a, b) return a or b end
+
 _ENV["or"] = or_
 
 -- Export environment

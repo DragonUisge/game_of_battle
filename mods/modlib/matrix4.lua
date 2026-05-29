@@ -1,7 +1,7 @@
 -- Simple 4x4 matrix for 3d transformations (translation, rotation, scale);
 -- provides exactly the methods needed to calculate inverse bind matrices (for b3d -> glTF conversion)
 local mat4 = {}
-local metatable = {__index = mat4}
+local metatable = { __index = mat4 }
 
 function mat4.new(rows)
 	assert(#rows == 4)
@@ -12,11 +12,11 @@ function mat4.new(rows)
 end
 
 function mat4.identity()
-	return mat4.new{
-		{1, 0, 0, 0},
-		{0, 1, 0, 0},
-		{0, 0, 1, 0},
-		{0, 0, 0, 1},
+	return mat4.new {
+		{ 1, 0, 0, 0 },
+		{ 0, 1, 0, 0 },
+		{ 0, 0, 1, 0 },
+		{ 0, 0, 0, 1 },
 	}
 end
 
@@ -25,11 +25,11 @@ end
 function mat4.translation(vec)
 	assert(#vec == 3)
 	local x, y, z = unpack(vec)
-	return mat4.new{
-		{1, 0, 0, x},
-		{0, 1, 0, y},
-		{0, 0, 1, z},
-		{0, 0, 0, 1},
+	return mat4.new {
+		{ 1, 0, 0, x },
+		{ 0, 1, 0, y },
+		{ 0, 0, 1, z },
+		{ 0, 0, 0, 1 },
 	}
 end
 
@@ -37,22 +37,22 @@ end
 function mat4.rotation(unit_quat)
 	assert(#unit_quat == 4)
 	local x, y, z, w = unpack(unit_quat) -- TODO (?) assert unit quaternion
-	return mat4.new{
-		{1 - 2*(y^2 + z^2), 2*(x*y - z*w),     2*(x*z + y*w),      0},
-		{2*(x*y + z*w),     1 - 2*(x^2 + z^2), 2*(y*z - x*w),      0},
-		{2*(x*z - y*w),     2*(y*z + x*w),     1 - 2*(x^2 + y^2),  0},
-		{0,                 0,                 0,                  1},
+	return mat4.new {
+		{ 1 - 2 * (y ^ 2 + z ^ 2), 2 * (x * y - z * w), 2 * (x * z + y * w), 0 },
+		{ 2 * (x * y + z * w), 1 - 2 * (x ^ 2 + z ^ 2), 2 * (y * z - x * w), 0 },
+		{ 2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x ^ 2 + y ^ 2), 0 },
+		{ 0,                 0,                 0,                 1 },
 	}
 end
 
 function mat4.scale(vec)
 	assert(#vec == 3)
 	local x, y, z = unpack(vec)
-	return mat4.new{
-		{x, 0, 0, 0},
-		{0, y, 0, 0},
-		{0, 0, z, 0},
-		{0, 0, 0, 1},
+	return mat4.new {
+		{ x, 0, 0, 0 },
+		{ 0, y, 0, 0 },
+		{ 0, 0, z, 0 },
+		{ 0, 0, 0, 1 },
 	}
 end
 
@@ -110,10 +110,10 @@ do
 		end
 	end
 
-	local epsilon = 1e-6 -- small threshold; values below this are considered zero
+	local epsilon = 1e-6      -- small threshold; values below this are considered zero
 	function mat4:inverse()
 		local inv = mat4.identity() -- inverse matrix: all elimination operations will also be applied to this
-		local copy = {} -- copy of `self` the Gaussian elimination is being executed on
+		local copy = {}       -- copy of `self` the Gaussian elimination is being executed on
 		for i = 1, 4 do
 			copy[i] = {}
 			for j = 1, 4 do
@@ -169,7 +169,7 @@ do
 				add_with_factor(factor, col_idx, row_idx)
 				assert(math.abs(copy[row_idx][col_idx]) < epsilon) -- should be eliminated now
 			end
-			scale_row(1/pivot_value, col_idx) -- normalize row
+			scale_row(1 / pivot_value, col_idx)        -- normalize row
 		end
 
 		-- Done: `copy` should now be the identity matrix <=> `inv` is the inverse.

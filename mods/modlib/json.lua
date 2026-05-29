@@ -1,7 +1,8 @@
 local modlib, setmetatable, pairs, assert, error, table_insert, table_concat, tonumber, tostring, math_huge, string, type, next
-	= modlib, setmetatable, pairs, assert, error, table.insert, table.concat, tonumber, tostring, math.huge, string, type, next
+                                                                                                                                = modlib,
+	setmetatable, pairs, assert, error, table.insert, table.concat, tonumber, tostring, math.huge, string, type, next
 
-local _ENV = {}
+local _ENV                                                                                                                      = {}
 setfenv(1, _ENV)
 
 -- See https://tools.ietf.org/id/draft-ietf-json-rfc4627bis-09.html#unichars and https://json.org
@@ -11,19 +12,19 @@ setfenv(1, _ENV)
 do
 	local metatable = {}
 	-- eq is not among the metamethods, len won't work on 5.1
-	for _, metamethod in pairs{"add", "sub", "mul", "div", "mod", "pow", "unm", "concat", "len", "lt", "le", "index", "newindex", "call"} do
+	for _, metamethod in pairs { "add", "sub", "mul", "div", "mod", "pow", "unm", "concat", "len", "lt", "le", "index", "newindex", "call" } do
 		metatable["__" .. metamethod] = function() return error("attempt to " .. metamethod .. " a null value") end
 	end
 	null = setmetatable({}, metatable)
 end
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 _ENV.metatable = metatable
 function new(self)
 	return setmetatable(self, metatable)
 end
 
-local whitespace = modlib.table.set{"\t", "\r", "\n", " "}
+local whitespace = modlib.table.set { "\t", "\r", "\n", " " }
 local decoding_escapes = {
 	['"'] = '"',
 	["\\"] = "\\",
@@ -42,7 +43,7 @@ do -- as a RegEx: (0|(1-9)(0-9)*)[.(0-9)+[(e|E)[+|-](0-9)+]]; does not need to h
 	-- TODO proper DFA utilities
 	local function set_transitions(state, transitions)
 		for chars, next_state in pairs(transitions) do
-			for char in chars:gmatch"." do
+			for char in chars:gmatch "." do
 				state[char] = next_state
 			end
 		end
@@ -50,36 +51,36 @@ do -- as a RegEx: (0|(1-9)(0-9)*)[.(0-9)+[(e|E)[+|-](0-9)+]]; does not need to h
 	local onenine = "123456789"
 	local digit = "0" .. onenine
 	local e = "eE"
-	local exponent = {final = true}
+	local exponent = { final = true }
 	set_transitions(exponent, {
 		[digit] = exponent
 	})
-	local pre_exponent = {expected = "exponent"}
+	local pre_exponent = { expected = "exponent" }
 	set_transitions(pre_exponent, {
 		[digit] = exponent
 	})
-	local exponent_sign = {expected = "exponent"}
+	local exponent_sign = { expected = "exponent" }
 	set_transitions(exponent_sign, {
 		[digit] = exponent,
 		["+"] = exponent,
 		["-"] = exponent
 	})
-	local fraction_final = {final = true}
+	local fraction_final = { final = true }
 	set_transitions(fraction_final, {
 		[digit] = fraction_final,
 		[e] = exponent_sign
 	})
-	local fraction = {expected = "fraction"}
+	local fraction = { expected = "fraction" }
 	set_transitions(fraction, {
 		[digit] = fraction_final
 	})
-	local integer = {final = true}
+	local integer = { final = true }
 	set_transitions(integer, {
 		[digit] = integer,
 		[e] = exponent_sign,
 		["."] = fraction
 	})
-	local zero = {final = true}
+	local zero = { final = true }
 	set_transitions(zero, {
 		["."] = fraction
 	})
@@ -136,7 +137,7 @@ function read(self, read_)
 			if not next_state then
 				if not state.final then
 					if state == number_dfa then
-						syntax_error"expected a number"
+						syntax_error "expected a number"
 					end
 					syntax_error("invalid number: expected " .. state.expected)
 				end
@@ -166,7 +167,8 @@ function read(self, read_)
 				if char == "u" then
 					local codepoint = 0
 					for i = 3, 0, -1 do
-						codepoint = syntax_assert(hex_digit_values[read()], "expected a hex digit") * (16 ^ i) + codepoint
+						codepoint = syntax_assert(hex_digit_values[read()], "expected a hex digit") * (16 ^ i) +
+						codepoint
 					end
 					if high_surrogate and codepoint >= 0xDC00 and codepoint <= 0xDFFF then
 						-- TODO strict mode: throw an error for single surrogates
@@ -263,8 +265,9 @@ function read(self, read_)
 		if char >= "0" and char <= "9" then
 			return number()
 		end
-		syntax_error"value expected"
+		syntax_error "value expected"
 	end
+
 	function element()
 		read()
 		skip_whitespace()
@@ -272,6 +275,7 @@ function read(self, read_)
 		skip_whitespace()
 		return val
 	end
+
 	-- TODO consider asserting EOF as read() == nil, perhaps controlled by a parameter
 	return element()
 end
@@ -289,33 +293,35 @@ local function escape(str)
 end
 function write(self, value, write)
 	local null = self.null
-	local written_strings = self.cache_escaped_strings and setmetatable({}, {__index = function(self, str)
-		local escaped_str = escape(str)
-		self[str] = escaped_str
-		return escaped_str
-	end})
+	local written_strings = self.cache_escaped_strings and setmetatable({}, {
+		__index = function(self, str)
+			local escaped_str = escape(str)
+			self[str] = escaped_str
+			return escaped_str
+		end
+	})
 	local function string(str)
-		write'"'
+		write '"'
 		write(written_strings and written_strings[str] or escape(str))
-		return write'"'
+		return write '"'
 	end
 	local dump
 	local function write_kv(key, value)
 		assert(type(key) == "string", "not a dictionary")
 		string(key)
-		write":"
+		write ":"
 		dump(value)
 	end
 	function dump(value)
 		if value == null then
 			-- TODO improve null check (checking for equality doesn't allow using nan as null, for instance)
-			return write"null"
+			return write "null"
 		end
 		if value == true then
-			return write"true"
+			return write "true"
 		end
 		if value == false then
-			return write"false"
+			return write "false"
 		end
 		local type_ = type(value)
 		if type_ == "number" then
@@ -332,29 +338,30 @@ function write(self, value, write)
 			local len = #table
 			if len == 0 then
 				local first, value = next(table)
-				write"{"
+				write "{"
 				if first ~= nil then
 					write_kv(first, value)
 				end
 				for key, value in next, table, first do
-					write","
+					write ","
 					write_kv(key, value)
 				end
-				write"}"
+				write "}"
 			else
 				assert(modlib.table.count(table) == len, "mixed list & hash part")
-				write"["
+				write "["
 				for i = 1, len - 1 do
 					dump(table[i])
-					write","
+					write ","
 				end
 				dump(table[len])
-				write"]"
+				write "]"
 			end
 			return
 		end
 		error("unsupported type: " .. type_)
 	end
+
 	dump(value)
 end
 

@@ -5,13 +5,13 @@ local math_floor, setmetatable, table_insert = math.floor, setmetatable, table.i
 local _ENV = {}
 setfenv(1, _ENV)
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 function less_than(a, b) return a < b end
 
 --> empty min heap
 function new(less_than)
-	return setmetatable({less_than = less_than}, metatable)
+	return setmetatable({ less_than = less_than }, metatable)
 end
 
 function push(self, value)

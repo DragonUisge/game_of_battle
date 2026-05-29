@@ -25,11 +25,11 @@ end
 
 function multiply(self, other)
 	local X, Y, Z, W = unpack(self)
-	return normalize{
-		(other[4] * X) + (other[1] * W) + (other[2] * Z) - (other[3] * Y);
-		(other[4] * Y) + (other[2] * W) + (other[3] * X) - (other[1] * Z);
-		(other[4] * Z) + (other[3] * W) + (other[1] * Y) - (other[2] * X);
-		(other[4] * W) - (other[1] * X) - (other[2] * Y) - (other[3] * Z);
+	return normalize {
+		(other[4] * X) + (other[1] * W) + (other[2] * Z) - (other[3] * Y),
+		(other[4] * Y) + (other[2] * W) + (other[3] * X) - (other[1] * Z),
+		(other[4] * Z) + (other[3] * W) + (other[1] * Y) - (other[2] * X),
+		(other[4] * W) - (other[1] * X) - (other[2] * Y) - (other[3] * Z),
 	}
 end
 
@@ -98,7 +98,7 @@ end
 
 --> axis, angle
 function to_axis_angle(self)
-	local axis = modlib.vector.new{self[1], self[2], self[3]}
+	local axis = modlib.vector.new { self[1], self[2], self[3] }
 	local len = axis:length()
 	-- HACK invert axis for correct rotation in Minetest
 	return len == 0 and axis or axis:divide_scalar(-len), 2 * math.atan2(len, self[4])
@@ -113,9 +113,9 @@ function to_euler_rotation_rad(self)
 
 	local sinp = 2 * (self[4] * self[2] - self[3] * self[1])
 	if sinp <= -1 then
-		rotation.y = -math.pi/2
+		rotation.y = -math.pi / 2
 	elseif sinp >= 1 then
-		rotation.y = math.pi/2
+		rotation.y = math.pi / 2
 	else
 		rotation.y = math.asin(sinp)
 	end
@@ -143,14 +143,14 @@ function to_euler_rotation_irrlicht(self)
 		rot = {
 			z = -2 * math.atan2(x, w),
 			x = 0,
-			y = math.pi/2
+			y = math.pi / 2
 		}
 	elseif math.abs(test + 1) <= 1e-6 then
 		rot = {
-				z = 2 * math.atan2(x, w),
-				x = 0,
-				y = math.pi/-2
-			}
+			z = 2 * math.atan2(x, w),
+			x = 0,
+			y = math.pi / -2
+		}
 	else
 		rot = {
 			z = math.atan2(2 * (x * y + z * w), x ^ 2 - y ^ 2 - z ^ 2 + w ^ 2),

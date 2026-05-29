@@ -17,7 +17,7 @@ function get_liquid_corner_levels(pos)
 	for x = -1, 1 do
 		neighbors[x] = {}
 		for z = -1, 1 do
-			local neighbor_pos = {x = pos.x + x, y = pos.y, z = pos.z + z}
+			local neighbor_pos = { x = pos.x + x, y = pos.y, z = pos.z + z }
 			local neighbor_node = minetest.get_node(neighbor_pos)
 			local level
 			if neighbor_node.name == source then
@@ -66,10 +66,10 @@ function get_liquid_corner_levels(pos)
 		return levels / neighbor_count
 	end
 	local corner_levels = {
-		{0, nil, 0},
-		{1, nil, 0},
-		{1, nil, 1},
-		{0, nil, 1}
+		{ 0, nil, 0 },
+		{ 1, nil, 0 },
+		{ 1, nil, 1 },
+		{ 0, nil, 1 }
 	}
 	for index, corner_level in pairs(corner_levels) do
 		corner_level[2] = get_corner_level(corner_level[1], corner_level[3])
@@ -78,7 +78,7 @@ function get_liquid_corner_levels(pos)
 	return corner_levels
 end
 
-flowing_downwards = modlib.vector.new{0, -1, 0}
+flowing_downwards = modlib.vector.new { 0, -1, 0 }
 --+ Calculates the flow direction of a flowingliquid node
 --> `modlib.minetest.flowing_downwards = modlib.vector.new{0, -1, 0}` if only flowing downwards
 --> surface direction as `modlib.vector` else
@@ -91,7 +91,7 @@ function get_liquid_flow_direction(pos)
 			max_level = level
 		end
 	end
-	local dir = modlib.vector.new{0, 0, 0}
+	local dir = modlib.vector.new { 0, 0, 0 }
 	local count = 0
 	for max_level_index, corner_level in pairs(corner_levels) do
 		if corner_level[2] == max_level then
@@ -113,7 +113,7 @@ function get_liquid_flow_direction(pos)
 	if count ~= 0 then
 		dir = modlib.vector.divide_scalar(dir, count)
 	end
-	if dir == modlib.vector.new{0, 0, 0} then
+	if dir == modlib.vector.new { 0, 0, 0 } then
 		if minetest.get_node(pos).param2 % 32 > 7 then
 			return flowing_downwards
 		end

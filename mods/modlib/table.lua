@@ -1,11 +1,13 @@
 -- Localize globals
 local assert, ipairs, math, next, pairs, rawget, rawset, getmetatable, setmetatable, select, string, table, type
-	= assert, ipairs, math, next, pairs, rawget, rawset, getmetatable, setmetatable, select, string, table, type
+                                                                                                                 = assert,
+	ipairs, math, next, pairs, rawget, rawset, getmetatable, setmetatable, select, string, table, type
 
-local lt = modlib.func.lt
+local lt                                                                                                         = modlib
+.func.lt
 
 -- Set environment
-local _ENV = {}
+local _ENV                                                                                                       = {}
 setfenv(1, _ENV)
 
 -- Empty table
@@ -81,27 +83,31 @@ function shuffle(table)
 	return table
 end
 
-local rope_metatable = {__index = {
-	write = function(self, text)
-		table.insert(self, text)
-	end,
-	to_text = function(self)
-		return table.concat(self)
-	end
-}}
+local rope_metatable = {
+	__index = {
+		write = function(self, text)
+			table.insert(self, text)
+		end,
+		to_text = function(self)
+			return table.concat(self)
+		end
+	}
+}
 --> rope with simple metatable (:write(text) and :to_text())
 function rope(table)
 	return setmetatable(table or {}, rope_metatable)
 end
 
-local rope_len_metatable = {__index = {
-	write = function(self, text)
-		self.len = self.len + text:len()
-	end
-}}
+local rope_len_metatable = {
+	__index = {
+		write = function(self, text)
+			self.len = self.len + text:len()
+		end
+	}
+}
 --> rope for determining length of text supporting `:write(text)` and `.len` to get the length of written text
 function rope_len(len)
-	return setmetatable({len = len or 0}, rope_len_metatable)
+	return setmetatable({ len = len or 0 }, rope_len_metatable)
 end
 
 function is_circular(table)
@@ -330,7 +336,7 @@ function same(a, b)
 end
 
 function shallowcopy(
-	table -- table to copy
+	table           -- table to copy
 	, strip_metatables -- whether to strip metatables; falsy by default; metatables are not copied
 )
 	if type(table) ~= "table" then
@@ -348,7 +354,7 @@ function shallowcopy(
 end
 
 function deepcopy_tree(
-	table -- table; may not contain circular references; cross references will be copied multiple times
+	table           -- table; may not contain circular references; cross references will be copied multiple times
 	, strip_metatables -- whether to strip metatables; falsy by default; metatables are not copied
 )
 	if type(table) ~= "table" then
@@ -364,10 +370,11 @@ function deepcopy_tree(
 	end
 	return copy
 end
+
 deepcopy_noncircular = deepcopy_tree
 
 function deepcopy(
-	table -- table to copy; reference equality will be preserved
+	table           -- table to copy; reference equality will be preserved
 	, strip_metatables -- whether to strip metatables; falsy by default; metatables are not copied
 )
 	local copies = {}
@@ -416,7 +423,7 @@ function count_equals(table, count)
 		k = next(table, k)
 		if k == nil then return false end -- less than n keys
 	end
-	return next(table, k) == nil -- no (n + 1)th entry
+	return next(table, k) == nil    -- no (n + 1)th entry
 end
 
 function is_empty(table)
@@ -782,8 +789,8 @@ function binary_search_comparator(comparator)
 end
 
 function binary_search(
-	list -- sorted list
-	, value -- value to be be searched for
+	list     -- sorted list
+	, value  -- value to be be searched for
 	, less_than -- function(a, b) return a < b end
 )
 	less_than = less_than or lt
@@ -795,7 +802,7 @@ function binary_search(
 			max = mid - 1
 		elseif less_than(element, value) then
 			min = mid + 1
-		else -- neither smaller nor larger => must be equal
+		else  -- neither smaller nor larger => must be equal
 			return mid -- index if found
 		end
 	end
@@ -841,10 +848,10 @@ end
 
 -- JS-ish array splice
 function splice(
-	list, -- to modify
-	start, -- index (inclusive) for where to start modifying the array (defaults to after the last element)
+	list,      -- to modify
+	start,     -- index (inclusive) for where to start modifying the array (defaults to after the last element)
 	delete_count, -- how many elements to remove (defaults to `0`)
-	... -- elements to insert after `start`
+	...        -- elements to insert after `start`
 )
 	start, delete_count = start or (#list + 1), delete_count or 0
 	if start < 0 then

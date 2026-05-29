@@ -5,7 +5,7 @@ local assert, math, modlib, setmetatable, table, unpack = assert, math, modlib, 
 local _ENV = {}
 setfenv(1, _ENV)
 
-local metatable = {__index = _ENV}
+local metatable = { __index = _ENV }
 
 distance = modlib.vector.distance
 

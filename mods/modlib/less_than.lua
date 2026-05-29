@@ -12,16 +12,19 @@ function default.greater_or_equal(a, b) return a >= b end; default.geq = default
 function less_or_equal(less_than)
 	return function(a, b) return not less_than(b, a) end
 end
+
 leq = less_or_equal
 
 function greater_or_equal(less_than)
 	return function(a, b) return not less_than(a, b) end
 end
+
 geq = greater_or_equal
 
 function greater_than(less_than)
 	return function(a, b) return less_than(b, a) end
 end
+
 gt = greater_than
 
 function equal(less_than)
@@ -32,9 +35,13 @@ end
 
 function relation(less_than)
 	return function(a, b)
-		if less_than(a, b) then return "<"
-		elseif less_than(b, a) then return ">"
-		else return "=" end
+		if less_than(a, b) then
+			return "<"
+		elseif less_than(b, a) then
+			return ">"
+		else
+			return "="
+		end
 	end
 end
 
