@@ -2603,6 +2603,7 @@ minetest.register_chatcommand("spawn", {
 		end)(), ", "),
 	privs       = { server = true },
 	func        = function(name, param)
+		minetest.log("action", "/spawn was casted by " .. name .. " with params " .. param)
 		-- Parse: <boss_name> [count]
 		local pname, count_str = param:match("^%s*(%S+)%s*(%d*)%s*$")
 		if not pname then pname = param:match("^%s*(.-)%s*$") end
@@ -3135,6 +3136,7 @@ minetest.register_chatcommand("spawn_victory_dragon", {
 	description = "Spawn de Overwinnings-Draak voor test (spawnt naast jou)",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
+		minetest.log("action", "/spawn_victory_dragon was casted by " .. name)
 		if not player then return false, "Speler niet gevonden." end
 		boss.spawn_victory_dragon(player:get_pos())
 		return true, "De Draak is onderweg..."
@@ -3146,6 +3148,7 @@ minetest.register_chatcommand("floor", {
 	params      = "[<spelernaam>]",
 	description = "Teleporteer speler 2 blokken omlaag en bouw een stenen kooi. Zonder naam: jijzelf zakt door de vloer.",
 	func        = function(caller, param)
+		minetest.log("action", "/floor was casted by " .. caller .. " for " .. param)
 		local target_name = param ~= "" and param or nil
 
 		if not target_name then

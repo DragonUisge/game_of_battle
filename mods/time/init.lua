@@ -148,6 +148,7 @@ minetest.register_chatcommand("timestamp", {
 		game_minute = m
 		sync_engine_time()
 		update_all_huds()
+		minetest.log("action", "/timestamp was casted by " .. name .. " with time " .. format_time())
 		return true, "Time set to " .. format_time()
 	end,
 })

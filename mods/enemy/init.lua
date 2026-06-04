@@ -360,6 +360,7 @@ minetest.register_entity("enemy:student", {
 -- Spawn a wave of students for a given level
 function enemy.spawn_wave(level)
 	if level > 7 then return end
+	minetest.log("action", "Level spawned: " .. level)
 
 	enemy.current_level = level
 	enemy.wave_active = true
@@ -400,7 +401,7 @@ function enemy.spawn_wave(level)
 	-- Announce wave (skip players in arena 2 or riding dragon)
 	local msg = "=== Golf " .. level .. " begint! ==="
 	if level == 7 then
-		msg = "=== LAATSTE GOLF! Margriet verschijnt! ==="
+		msg = "=== Laatste golf! Margriet verschijnt! ==="
 	end
 	for _, player in ipairs(minetest.get_connected_players()) do
 		if not is_exempt(player) then
@@ -441,6 +442,7 @@ function enemy.check_wave_clear()
 			local coins = meta:get_int("coins") + reward
 			meta:set_int("coins", coins)
 			if not is_exempt(player) then
+				minetest.log("action", "Wave " .. level .. " is dead!")
 				minetest.chat_send_player(player:get_player_name(),
 					"Golf " .. level .. " verslagen! +" .. reward .. " munten (totaal: " .. coins .. ")")
 			end
@@ -451,12 +453,14 @@ function enemy.check_wave_clear()
 			for _, player in ipairs(minetest.get_connected_players()) do
 				if not is_exempt(player) then
 					minetest.chat_send_player(player:get_player_name(),
-						"*** GEFELICITEERD! Je hebt alle golven verslagen! ***")
+						"*** Je hebt alle golven verslagen! ***")
+					minetest.log("action", "All waves are dead!")
 				end
 			end
 			-- Spawn the victory dragon
 			if boss and boss.spawn_victory_dragon then
 				boss.spawn_victory_dragon()
+				minetest.log("action", "Teinetarnagh spawned!")
 			end
 		end
 	end
@@ -474,7 +478,7 @@ function enemy.reset_all()
 	end
 	enemy.alive_students = {}
 
-	-- Remove boss (and its summoned dragon)
+	-- Remove boss (and its summoned Dragon)
 	if enemy.boss_alive and enemy.boss_alive:get_pos() then
 		local blua = enemy.boss_alive:get_luaentity()
 		if blua and blua._summoned_dragon and blua._summoned_dragon:get_pos() then
@@ -498,6 +502,7 @@ end
 minetest.register_on_dieplayer(function(player)
 	local dying_name = player:get_player_name()
 	local total_players = #minetest.get_connected_players()
+	minetest.log("action", dying_name .. " died!")
 
 	if total_players > 1 then
 		-- Multiplayer: penalise only the dead player, others continue
@@ -529,6 +534,7 @@ minetest.register_chatcommand("restart", {
 	description = "Herstart het spel (reset golven en tijd) — alleen voor admins",
 	privs = {server = true},
 	func = function(name)
+		minetest.log("action", "/restart was casted by " .. name)
 		enemy.reset_all()
 		for _, p in ipairs(minetest.get_connected_players()) do
 			local meta = p:get_meta()

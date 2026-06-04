@@ -234,36 +234,4 @@ minetest.register_on_mods_loaded(function()
 	end)
 end)
 
--- ── /set_teacher_pos <vak> ────────────────────────────────────────────────────
-minetest.register_chatcommand("set_teacher_pos", {
-	params      = "<vak>",
-	description =
-	"Herplaats leraar op jouw positie (server). Vakken: Frans/Wiskunde/Nederlands/Natuurkunde/Biologie/Engels",
-	privs       = { server = true },
-	func        = function(name, param)
-		local player = minetest.get_player_by_name(name)
-		if not player then return false, "Speler niet gevonden." end
-		local subject = param:match("^%s*(.-)%s*$")
-		for _, def in ipairs(CLASSROOM_DEFS) do
-			if def.subject:lower() == subject:lower() then
-				local p = player:get_pos()
-				def.pos = vector.new(
-					math.floor(p.x + 0.5),
-					math.floor(p.y + 0.5),
-					math.floor(p.z + 0.5))
-				if npc._teacher_refs[def.subject] then
-					local old = npc._teacher_refs[def.subject]
-					if old and old:get_pos() then old:remove() end
-					npc._teacher_refs[def.subject] = nil
-				end
-				if not enemy or not enemy.wave_active then
-					spawn_teacher(def)
-				end
-				return true, def.teacher .. " (" .. def.subject .. ") → "
-					.. minetest.pos_to_string(def.pos)
-			end
-		end
-		return false, "Onbekend vak '" .. subject
-			.. "'. Kies: Frans, Wiskunde, Nederlands, Natuurkunde, Biologie, Tekenen"
-	end,
-})
+

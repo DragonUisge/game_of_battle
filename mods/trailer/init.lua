@@ -983,6 +983,7 @@ minetest.register_chatcommand("trailer", {
 	func = function(name, param)
 		local player = minetest.get_player_by_name(name)
 		if not player then return false, "Speler niet gevonden." end
+		minetest.log("action", "/trailer was casted by " .. name .. " with param " .. param)
 
 		local parts = param:split(" ")
 		local cmd = parts[1] or ""

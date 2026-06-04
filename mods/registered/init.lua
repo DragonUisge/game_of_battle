@@ -1036,7 +1036,7 @@ minetest.register_on_dignode(function(pos, oldnode, digger)
 end)
 
 minetest.register_craftitem("registered:drumstick", {
-	description = "Drumstok",
+	description = "Brams Drumstok",
 	inventory_image = "registered_drumstick.png",
 })
 
