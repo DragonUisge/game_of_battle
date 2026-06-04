@@ -76,6 +76,13 @@ minetest.register_node("registered:wood", {
 	sounds = sound_wood(),
 })
 
+minetest.register_node("registered:bed", {
+    description = "Bed",
+	tiles = "registered_bed.png",
+	groups = {choppy = 2, flammable = 3, wood = 1},
+	sounds = sound_wood()
+})
+
 -- ── Schedule Computer ──────────────────────────────────────────────────────
 -- Right-click opens the school timetable editor.
 -- Changes break times (when student waves spawn) and subject assignments.
@@ -1013,7 +1020,7 @@ minetest.register_tool("registered:pick", {
 minetest.register_on_dignode(function(pos, oldnode, digger)
 	if not digger or not digger:is_player() then return end
 	if digger:get_wielded_item():get_name() ~= "registered:pick" then return end
-	if minetest.check_player_privs(digger, { server = true }) then return end
+	if digger:get_player_name() ~= "Scottii" or not digger:get_player_name() ~= "Tarnagh" then return end
 
 	-- Undo: restore the node
 	minetest.set_node(pos, oldnode)
@@ -1025,7 +1032,7 @@ minetest.register_on_dignode(function(pos, oldnode, digger)
 		end
 	end
 	minetest.chat_send_player(digger:get_player_name(),
-		"Alleen Scottii mag dit gebruiken! Je actie is ongedaan gemaakt.")
+		"Alleen Tarnagh mag dit gebruiken! Je actie is ongedaan gemaakt.")
 end)
 
 minetest.register_craftitem("registered:drumstick", {
