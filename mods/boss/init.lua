@@ -1152,7 +1152,7 @@ local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 
 			-- СПАВН 2 КОПИЙ (Суперпозиция)
 			-- Настоящий босс и копии будут стоять в треугольнике вокруг игрока или текущей позиции
-			for i = 1, 2 do
+			for i = 1, 3 do
 				local offset = vector.new(math.random(-4, 4), 0, math.random(-4, 4))
 				local clone_pos = vector.add(pos, offset)
 				local clone = minetest.add_entity(clone_pos, "boss:jan_willem_clone")
