@@ -899,6 +899,214 @@ minetest.register_entity("boss:raisin", {
 	end,
 })
 
+-- ============================================================
+-- Jan Willem (level 6): ROF (взлет), телепорт и ускорение
+-- ============================================================
+
+-- ============================================================
+-- Декоративный объект Jan Willem: Школьная Доска с эффектом мела
+-- ============================================================
+minetest.register_entity("boss:jan_willem_board", {
+	initial_properties = {
+		visual = "sprite",
+		textures = { "jan_willem_board.png" },
+		visual_size = { x = 1.3, y = 1.3 },
+		physical = false,
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
+		static_save = false,
+		pointable = false,
+		glow = 10,
+	},
+	_spin              = 0,
+	_bob               = 0,
+	_particle_timer    = 0,
+
+	on_activate        = function(self)
+		self.object:set_armor_groups({ immortal = 1 })
+	end,
+
+	on_step            = function(self, dtime)
+		local pos = self.object:get_pos()
+		if not pos then return end
+
+		-- 1. Крутим доску (Spin)
+		self._spin = self._spin + dtime * 5.0
+		self.object:set_yaw(self._spin)
+
+		-- 2. Покачиваем вверх-вниз (Bobbing)
+		self._bob = self._bob + dtime * 3.0
+		self.object:set_velocity(vector.new(0, math.sin(self._bob) * 0.6, 0))
+
+		-- 3. Спавним МЕЛ в виде частиц вокруг доски!
+		self._particle_timer = self._particle_timer - dtime
+		if self._particle_timer <= 0 then
+			self._particle_timer = 0.15 -- Частота появления крошек мела
+			minetest.add_particlespawner({
+				amount = 4,
+				time = 0.15,
+				minpos = vector.add(pos, vector.new(-0.5, -0.5, -0.5)),
+				maxpos = vector.add(pos, vector.new(0.5, 0.5, 0.5)),
+				minvel = vector.new(-0.5, 0.3, -0.5),
+				maxvel = vector.new(0.5, 1.0, 0.5),
+				minacc = vector.new(0, -0.4, 0),
+				maxacc = vector.new(0, 0, 0),
+				minexptime = 0.4,
+				maxexptime = 0.8,
+				minsize = 1,
+				maxsize = 2.5,
+				texture = "jan_willem_chalk.png", -- Твоя текстура мела
+				glow = 5,
+			})
+		end
+	end,
+})
+
+-- ============================================================
+-- Поведение Jan Willem (level 6): Фаза ROF с доской -> Атака
+-- ============================================================
+local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
+	self._jan_timer = self._jan_timer - dtime
+
+	local data = BOSSES[self._level]
+	local default_tex = data and data.tex or "boss_janwillem.png"
+
+	-- Обработка таймера режима ускорения
+	if self._speed_timer > 0 then
+		self._speed_timer = self._speed_timer - dtime
+		if self._speed_timer <= 0 then
+			self._speed_mult = 1.0
+			-- Возвращаем дефолтную текстуру и имя
+			self.object:set_properties({
+				textures = { default_tex },
+				nametag = (data and data.name or "Jan Willem") ..
+					" [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "]",
+				nametag_color = "#FFFFFF",
+			})
+		end
+	end
+
+	if self._jan_phase == "normal" then
+		-- Обычная ходьба к игроку
+		local ppos = nearest:get_pos()
+		local dir = vector.direction(pos, ppos)
+		self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+		local speed = 1.8 * self._speed_mult
+		self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+		self.object:set_animation({ x = 168, y = 187 }, 30 * self._speed_mult, 0, true)
+
+		-- Обычный ближний бой
+		self._attack_cooldown = self._attack_cooldown - dtime
+		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
+			if nearest:is_player() then
+				nearest:set_hp(math.max(0, nearest:get_hp() - self._damage), { type = "punch" })
+			else
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
+			end
+			self._attack_cooldown = 1.5 / self._speed_mult
+			self.object:set_animation({ x = 189, y = 198 }, 30 * self._speed_mult, 0, false)
+		end
+
+		-- Переход в режим ROF (Взлет)
+		if self._jan_timer <= 0 then
+			self._jan_phase = "floating_prep"
+			self._jan_timer = 3.5 -- Длительность ROF фазы (как у Розанны)
+			self._jan_board_spawned = false
+			self._jan_next_attack = (math.random() > 0.5) and "teleport" or "speed"
+
+			-- Очистка старой доски на всякий случай
+			if self._jan_board_entity and self._jan_board_entity:get_pos() then
+				self._jan_board_entity:remove()
+				self._jan_board_entity = nil
+			end
+
+			-- Взлетаем вверх
+			self.object:set_velocity(vector.new(0, 5, 0))
+
+			-- Включаем речь (звук остановится, когда фаза завершится)
+			if self._jan_speech_sound then
+				minetest.sound_stop(self._jan_speech_sound)
+			end
+			self._jan_speech_sound = minetest.sound_play("jan_speech" .. math.random(1, 2),
+				{ pos = pos, gain = 1.5, max_hear_distance = 30, loop = false })
+
+
+			minetest.chat_send_all("Jan Willem pakt zijn bord...")
+		end
+	elseif self._jan_phase == "floating_prep" then
+		-- Парение на месте во время ROF
+		self.object:set_velocity(vector.new(0, 0.2, 0))
+		self.object:set_animation({ x = 189, y = 198 }, 20, 0, true)
+
+		local ppos = nearest:get_pos()
+		self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
+
+		-- Спавним одну школьную доску чуть позже взлета (как у Розанны)
+		if not self._jan_board_spawned and self._jan_timer < 3.0 then
+			self._jan_board_spawned = true
+			local spawn_pos = vector.add(pos, vector.new(0.5, 1.8, 0))
+			local ent = minetest.add_entity(spawn_pos, "boss:jan_willem_board")
+			self._jan_board_entity = ent
+
+			minetest.sound_play("default_place_node_hard", { pos = pos, gain = 0.5, max_hear_distance = 15 })
+		end
+
+		-- Удерживаем доску рядом с рукой/телом босса, пока он летит
+		if self._jan_board_entity and self._jan_board_entity:get_pos() then
+			self._jan_board_entity:set_pos(vector.add(pos, vector.new(0.5, 1.8, 0)))
+		end
+
+		
+
+		-- ROF завершен -> СТОП ЗВУК, удаление доски и выполнение атаки
+		if self._jan_timer <= 0 then
+			-- 1. СТОП ЗВУК РЕЧИ
+			if self._jan_speech_sound then
+				minetest.sound_stop(self._jan_speech_sound)
+				self._jan_speech_sound = nil
+			end
+
+			-- 2. Удаляем летающую доску
+			if self._jan_board_entity and self._jan_board_entity:get_pos() then
+				self._jan_board_entity:remove()
+				self._jan_board_entity = nil
+			end
+
+			-- 3. Выполняем выбранное действие
+			if self._jan_next_attack == "teleport" then
+				-- АТАКА 1: Телепорт к игроку и удар
+				local tpos = nearest:get_pos()
+				self.object:set_pos(tpos)
+
+				-- Наносим удар
+				if nearest:is_player() then
+					nearest:set_hp(math.max(0, nearest:get_hp() - (self._damage * 1.5)), { type = "punch" })
+				else
+					nearest:punch(self.object, 1.0, { damage_groups = { fleshy = math.floor(self._damage * 1.5) } },
+						vector.new(0, 0, 0))
+				end
+				self._attack_cooldown = 1.2
+
+				-- Сброс на обычную текстуру
+				self.object:set_properties({ textures = { default_tex } })
+				self._jan_phase = "normal"
+				self._jan_timer = 7.0 + math.random() * 4.0
+			elseif self._jan_next_attack == "speed" then
+				-- АТАКА 2: Ускорение х2
+				self._speed_mult = 4.0
+				self._speed_timer = 10.0 -- Длится 10 секунд
+
+				self.object:set_properties({
+					nametag = "Jan Willem [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] 4X snelheid!",
+					nametag_color = "#FFFF00",
+				})
+
+				self._jan_phase = "normal"
+				self._jan_timer = 12.0 + math.random() * 4.0
+			end
+		end
+	end
+end
 
 -- Phases: "normal" → "drawing" → "armed" → (redraw after timer)
 -- Allowed weapons (blacklist: diamond, ancient, dragonpower, elements)
@@ -1353,7 +1561,7 @@ minetest.register_entity("boss:teacher", {
 		-- Accept hits from players, stunt double, or boomerang
 		local is_stunt = puncher:get_luaentity() and puncher:get_luaentity().name == "trailer:stunt_double"
 		local is_boomerang = puncher:get_luaentity() and
-		puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
+			puncher:get_luaentity().name == "registered:appelflap_boomerang_ent"
 		if not puncher:is_player() and not is_stunt and not is_boomerang then return end
 
 		-- Hugo linked phase: invulnerable while Dragon lives
@@ -1459,6 +1667,13 @@ minetest.register_entity("boss:teacher", {
 			if pos and data.drop then
 				minetest.add_item(pos, data.drop)
 			end
+			if self._jan_speech_sound then
+				minetest.sound_stop(self._jan_speech_sound)
+				self._jan_speech_sound = nil
+			end
+			if self._jan_board_entity and self._jan_board_entity:get_pos() then
+				self._jan_board_entity:remove()
+			end
 			if self._drumstick_entity and self._drumstick_entity:get_pos() then
 				self._drumstick_entity:remove()
 			end
@@ -1548,6 +1763,12 @@ minetest.register_entity("boss:teacher", {
 		-- Rosanne (level 5): drawing ability
 		if self._level == 5 then
 			rosanne_step(self, dtime, pos, nearest, nearest_dist)
+			return
+		end
+
+		-- Jan Willem (level 6): teleport and speed attacks
+		if self._level == 6 then
+			jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 			return
 		end
 
@@ -1922,6 +2143,15 @@ function boss.set_level(obj, level)
 		lua._drawing_entity  = nil
 		lua._drawing_spawned = false
 		lua._weapon_entity   = nil
+	end
+	-- Jan Willem: initialize attacks
+	if level == 6 then
+		lua._jan_phase = "normal"
+		lua._jan_timer = 6.0 + math.random() * 4.0
+		lua._jan_speech_sound = nil
+		lua._jan_next_attack = nil
+		lua._speed_mult = 1.0
+		lua._speed_timer = 0
 	end
 end
 
@@ -2311,7 +2541,7 @@ minetest.register_entity("boss:companion_dragon", {
 
 	on_activate        = function(self, staticdata)
 		self.object:set_animation({ x = 321, y = 359 }, 35, 0, true) -- hover
-		self.object:set_armor_groups({ immortal = 1 })       -- companion can't be killed by enemies
+		self.object:set_armor_groups({ immortal = 1 })         -- companion can't be killed by enemies
 	end,
 
 	on_step            = function(self, dtime)
@@ -2766,7 +2996,7 @@ minetest.register_entity("boss:victory_dragon", {
 
 	rider              = nil,
 	_phase             = "intro", -- intro / waiting / takeoff / flying / landing / landed
-	_phase_timer       = 2.5, -- intro duration
+	_phase_timer       = 2.5,  -- intro duration
 	_anim_timer        = 0,
 	_current_anim      = "hover",
 	_flight_height     = 0, -- target y during flight
