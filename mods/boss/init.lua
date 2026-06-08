@@ -903,9 +903,104 @@ minetest.register_entity("boss:raisin", {
 -- Jan Willem (level 6): ROF (взлет), телепорт и ускорение
 -- ============================================================
 
--- ============================================================
+local JAN_WILLEM_GLITCH_NAMES = {
+	"DNSProbeStart",
+	"ERROR_404",
+	"Jan 010110",
+	"NilVariable",
+	"NULL_Willem",
+	"NullFile?",
+	"ErrFileNotFound",
+	"NxDomainFinish",
+	"Willem_Exception",   -- Исключение в коде Яна
+	"Jan_Core_Dumped",     -- Критический сбой ядра Яна
+	"Jan_NaN_Value",       -- Не-число в вычислениях
+	"Willem_Overclock",    -- Опасный разгон процессора Виллема
+	"Stack_Overflow",      -- Переполнение стека
+	"Segmentation_Fault",  -- Ошибка обращения к памяти
+	"Kernel_Panic",        -- Паника ядра операционной системы
+	"Jan_GET_403_Forbidden" -- Доступ заблокирован
+}
+
+-- Квантовая копия Яна Виллема (Иллюзия)
+minetest.register_entity("boss:jan_willem_clone", {
+	initial_properties = {
+		visual = "mesh",
+		mesh = "character.b3d",
+		textures = { "boss_janwillem.png" }, -- Твоя стандартная текстура босса
+		physical = true,
+		collide_with_objects = false,
+		collisionbox = { -0.4, 0.0, -0.4, 0.4, 2.0, 0.4 },
+		visual_size = { x = 1.2, y = 1.2, z = 1.2 },
+		static_save = false,
+		nametag = "Jan Willem",
+		nametag_color = "#ff7a70",
+	},
+	_lifetime = 2.0, -- Исчезнет через 2 секунды
+	_glitch_timer = 0,
+
+	on_activate = function(self)
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true) -- Стойка/ходьба
+		self.object:set_armor_groups({ fleshy = 100 })
+	end,
+
+	on_punch = function(self, puncher)
+		-- Если игрок бьет фантома, он мгновенно испаряется
+		if puncher and puncher:is_player() then
+			local pos = self.object:get_pos()
+			if pos then
+				-- Взрыв частиц мела при исчезновении
+				minetest.add_particlespawner({
+					amount = 15, time = 0.2,
+					minpos = vector.add(pos, vector.new(-0.4, 0.5, -0.4)), maxpos = vector.add(pos, vector.new(0.4, 1.8, 0.4)),
+					minvel = vector.new(-1, 0.5, -1), maxvel = vector.new(1, 2, 1),
+					minexptime = 0.3, maxexptime = 0.6, minsize = 1.5, maxsize = 3,
+					texture = "jan_willem_chalk.png", glow = 6,
+				})
+			end
+			self.object:remove()
+		end
+		return true
+	end,
+
+	on_step = function(self, dtime)
+		self._lifetime = self._lifetime - dtime
+		if self._lifetime <= 0 then
+			local pos = self.object:get_pos()
+			if pos then
+				-- Облако мела при авто-исчезновении по таймеру
+				minetest.add_particlespawner({
+					amount = 10, time = 0.1,
+					minpos = vector.add(pos, vector.new(-0.3, 0.5, -0.3)), maxpos = vector.add(pos, vector.new(0.3, 1.8, 0.3)),
+					minvel = vector.new(-0.5, 0.2, -0.5), maxvel = vector.new(0.5, 1, 0.5),
+					minexptime = 0.4, maxexptime = 0.7, minsize = 1, maxsize = 2,
+					texture = "jan_willem_chalk.png", glow = 4,
+				})
+			end
+			self.object:remove()
+		end
+		-- МЕХАНИКА ГЛЮЧАЩЕГО НЕЙМТЕГА
+		self._glitch_timer = self._glitch_timer - dtime
+		if self._glitch_timer <= 0 then
+			-- Меняем имя ОЧЕНЬ часто (каждые 0.08 сек)
+			self._glitch_timer = 0.08 
+
+			-- Шанс 75%, что имя будет правильным, и 25%, что выскочит бред на доли секунды
+			local current_name = "Jan Willem"
+			if math.random() < 0.40 then
+				current_name = JAN_WILLEM_GLITCH_NAMES[math.random(1, #JAN_WILLEM_GLITCH_NAMES)]
+			end
+
+			self.object:set_properties({
+				nametag = current_name,
+				-- Можно сделать, чтобы у бредовых имён цвет тоже становился фиолетовым/жёлтым для пущего эффекта
+				nametag_color = (current_name == "Jan Willem") and "#ff7a70" or "#00FFFF",
+			})
+		end
+	end,
+})
+
 -- Декоративный объект Jan Willem: Школьная Доска с эффектом мела
--- ============================================================
 minetest.register_entity("boss:jan_willem_board", {
 	initial_properties = {
 		visual = "sprite",
@@ -928,10 +1023,6 @@ minetest.register_entity("boss:jan_willem_board", {
 	on_step            = function(self, dtime)
 		local pos = self.object:get_pos()
 		if not pos then return end
-
-		-- 1. Крутим доску (Spin)
-		self._spin = self._spin + dtime * 5.0
-		self.object:set_yaw(self._spin)
 
 		-- 2. Покачиваем вверх-вниз (Bobbing)
 		self._bob = self._bob + dtime * 3.0
@@ -961,32 +1052,26 @@ minetest.register_entity("boss:jan_willem_board", {
 	end,
 })
 
--- ============================================================
--- Поведение Jan Willem (level 6): Фаза ROF с доской -> Атака
--- ============================================================
 local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 	self._jan_timer = self._jan_timer - dtime
 
 	local data = BOSSES[self._level]
-	local default_tex = data and data.tex or "boss_janwillem.png"
 
-	-- Обработка таймера режима ускорения
+	-- Таймер режима ускорения
 	if self._speed_timer > 0 then
 		self._speed_timer = self._speed_timer - dtime
 		if self._speed_timer <= 0 then
 			self._speed_mult = 1.0
-			-- Возвращаем дефолтную текстуру и имя
+			-- Сброс имени на обычное
 			self.object:set_properties({
-				textures = { default_tex },
-				nametag = (data and data.name or "Jan Willem") ..
-					" [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "]",
+				nametag = (data and data.name or "Jan Willem") .. " [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "]",
 				nametag_color = "#FFFFFF",
 			})
 		end
 	end
 
 	if self._jan_phase == "normal" then
-		-- Обычная ходьба к игроку
+		-- Бег к игроку
 		local ppos = nearest:get_pos()
 		local dir = vector.direction(pos, ppos)
 		self.object:set_yaw(minetest.dir_to_yaw(dir))
@@ -995,7 +1080,7 @@ local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 		self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
 		self.object:set_animation({ x = 168, y = 187 }, 30 * self._speed_mult, 0, true)
 
-		-- Обычный ближний бой
+		-- Ближний бой
 		self._attack_cooldown = self._attack_cooldown - dtime
 		if nearest_dist < 2.5 and self._attack_cooldown <= 0 then
 			if nearest:is_player() then
@@ -1010,11 +1095,10 @@ local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 		-- Переход в режим ROF (Взлет)
 		if self._jan_timer <= 0 then
 			self._jan_phase = "floating_prep"
-			self._jan_timer = 3.5 -- Длительность ROF фазы (как у Розанны)
+			self._jan_timer = 3.5
 			self._jan_board_spawned = false
 			self._jan_next_attack = (math.random() > 0.5) and "teleport" or "speed"
 
-			-- Очистка старой доски на всякий случай
 			if self._jan_board_entity and self._jan_board_entity:get_pos() then
 				self._jan_board_entity:remove()
 				self._jan_board_entity = nil
@@ -1023,86 +1107,105 @@ local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 			-- Взлетаем вверх
 			self.object:set_velocity(vector.new(0, 5, 0))
 
-			-- Включаем речь (звук остановится, когда фаза завершится)
+			-- Включаем речь
 			if self._jan_speech_sound then
 				minetest.sound_stop(self._jan_speech_sound)
 			end
 			self._jan_speech_sound = minetest.sound_play("jan_speech" .. math.random(1, 2),
 				{ pos = pos, gain = 1.5, max_hear_distance = 30, loop = false })
 
-
 			minetest.chat_send_all("Jan Willem pakt zijn bord...")
 		end
+
 	elseif self._jan_phase == "floating_prep" then
-		-- Парение на месте во время ROF
+		-- Парение во время подготовки
 		self.object:set_velocity(vector.new(0, 0.2, 0))
 		self.object:set_animation({ x = 189, y = 198 }, 20, 0, true)
-
+		
 		local ppos = nearest:get_pos()
 		self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
 
-		-- Спавним одну школьную доску чуть позже взлета (как у Розанны)
+		-- Спавн крутящейся доски (с твоими частицами мела внутри энтити!)
 		if not self._jan_board_spawned and self._jan_timer < 3.0 then
 			self._jan_board_spawned = true
 			local spawn_pos = vector.add(pos, vector.new(0.5, 1.8, 0))
 			local ent = minetest.add_entity(spawn_pos, "boss:jan_willem_board")
 			self._jan_board_entity = ent
-
+			
 			minetest.sound_play("default_place_node_hard", { pos = pos, gain = 0.5, max_hear_distance = 15 })
 		end
 
-		-- Удерживаем доску рядом с рукой/телом босса, пока он летит
 		if self._jan_board_entity and self._jan_board_entity:get_pos() then
 			self._jan_board_entity:set_pos(vector.add(pos, vector.new(0.5, 1.8, 0)))
 		end
 
-		
-
-		-- ROF завершен -> СТОП ЗВУК, удаление доски и выполнение атаки
+		-- ROF закончен -> Время Квантового Разделения!
 		if self._jan_timer <= 0 then
-			-- 1. СТОП ЗВУК РЕЧИ
 			if self._jan_speech_sound then
 				minetest.sound_stop(self._jan_speech_sound)
 				self._jan_speech_sound = nil
 			end
-
-			-- 2. Удаляем летающую доску
 			if self._jan_board_entity and self._jan_board_entity:get_pos() then
 				self._jan_board_entity:remove()
 				self._jan_board_entity = nil
 			end
 
-			-- 3. Выполняем выбранное действие
+			-- СПАВН 2 КОПИЙ (Суперпозиция)
+			-- Настоящий босс и копии будут стоять в треугольнике вокруг игрока или текущей позиции
+			for i = 1, 2 do
+				local offset = vector.new(math.random(-4, 4), 0, math.random(-4, 4))
+				local clone_pos = vector.add(pos, offset)
+				local clone = minetest.add_entity(clone_pos, "boss:jan_willem_clone")
+				if clone then
+					clone:set_yaw(self.object:get_yaw())
+					-- Облако мела при появлении копии
+					minetest.add_particlespawner({
+						amount = 15, time = 0.2,
+						minpos = vector.add(clone_pos, vector.new(-0.4, 0, -0.4)), maxpos = vector.add(clone_pos, vector.new(0.4, 1.5, 0.4)),
+						minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 2, 1),
+						minexptime = 0.4, maxexptime = 0.8, minsize = 2, maxsize = 4,
+						texture = "jan_willem_chalk.png", glow = 8,
+					})
+				end
+			end
+
+			-- Сама атака босса
 			if self._jan_next_attack == "teleport" then
-				-- АТАКА 1: Телепорт к игроку и удар
+				-- АТАКА 1: Телепорт к игроку за спину / впритык
 				local tpos = nearest:get_pos()
 				self.object:set_pos(tpos)
 
-				-- Наносим удар
+				-- Частицы мела на месте появления настоящего босса
+				minetest.add_particlespawner({
+					amount = 20, time = 0.2,
+					minpos = vector.add(tpos, vector.new(-0.5, 0, -0.5)), maxpos = vector.add(tpos, vector.new(0.5, 1.5, 0.5)),
+					minvel = vector.new(-2, 1, -2), maxvel = vector.new(2, 3, 2),
+					minexptime = 0.4, maxexptime = 0.8, minsize = 2, maxsize = 4,
+					texture = "jan_willem_chalk.png", glow = 8,
+				})
+
 				if nearest:is_player() then
 					nearest:set_hp(math.max(0, nearest:get_hp() - (self._damage * 1.5)), { type = "punch" })
 				else
-					nearest:punch(self.object, 1.0, { damage_groups = { fleshy = math.floor(self._damage * 1.5) } },
-						vector.new(0, 0, 0))
+					nearest:punch(self.object, 1.0, { damage_groups = { fleshy = math.floor(self._damage * 1.5) } }, vector.new(0,0,0))
 				end
 				self._attack_cooldown = 1.2
 
-				-- Сброс на обычную текстуру
-				self.object:set_properties({ textures = { default_tex } })
 				self._jan_phase = "normal"
 				self._jan_timer = 7.0 + math.random() * 4.0
-			elseif self._jan_next_attack == "speed" then
-				-- АТАКА 2: Ускорение х2
-				self._speed_mult = 4.0
-				self._speed_timer = 10.0 -- Длится 10 секунд
 
+			elseif self._jan_next_attack == "speed" then
+				-- АТАКА 2: Разгон частиц (Скорость x4!)
+				self._speed_mult = 4.0
+				self._speed_timer = 8.0 -- Бешеный бег длится 8 секунд
+				
 				self.object:set_properties({
 					nametag = "Jan Willem [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] 4X snelheid!",
-					nametag_color = "#FFFF00",
+					nametag_color = "#FF1111",
 				})
 
 				self._jan_phase = "normal"
-				self._jan_timer = 12.0 + math.random() * 4.0
+				self._jan_timer = 10.0 + math.random() * 3.0
 			end
 		end
 	end
