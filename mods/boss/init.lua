@@ -1195,12 +1195,12 @@ local function jan_willem_step(self, dtime, pos, nearest, nearest_dist)
 				self._jan_timer = 7.0 + math.random() * 4.0
 
 			elseif self._jan_next_attack == "speed" then
-				-- АТАКА 2: Разгон частиц (Скорость x4!)
-				self._speed_mult = 4.0
+				-- АТАКА 2: Разгон частиц (Скорость x2!)
+				self._speed_mult = 2.0
 				self._speed_timer = 8.0 -- Бешеный бег длится 8 секунд
 				
 				self.object:set_properties({
-					nametag = "Jan Willem [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] 4X snelheid!",
+					nametag = "Jan Willem [" .. math.max(0, self._hp) .. "/" .. self._max_hp .. "] 2X snelheid!",
 					nametag_color = "#FF1111",
 				})
 
@@ -2281,10 +2281,10 @@ local GLAD_COLORS   = {
 }
 local GLAD_LABELS   = {
 	nominativus = "NOMINATIVUS [springkracht]",
-	accusativus = "ACCUSATIVUS [snelheid +25%]",
-	dativus     = "DATIVUS [genezing +5%]",
-	genitivus   = "GENITIVUS [schade +5]",
-	ablativus   = "ABLATIVUS [weerstand +10%]",
+	accusativus = "ACCUSATIVUS [snelheid +100%]",
+	dativus     = "DATIVUS [genezing +20%]",
+	genitivus   = "GENITIVUS [schade +20]",
+	ablativus   = "ABLATIVUS [weerstand +30%]",
 }
 -- Base stats
 local GLAD_BASE_HP  = 280
@@ -2307,14 +2307,14 @@ local function glad_apply_state(self, state)
 	if state == "nominativus" then
 		-- Jump buff handled in on_step; nothing to apply here
 	elseif state == "accusativus" then
-		self._speed = GLAD_BASE_SPD * 1.25
+		self._speed = GLAD_BASE_SPD * 2
 	elseif state == "dativus" then
-		local heal = math.floor(self._max_hp * 0.05)
+		local heal = math.floor(self._max_hp * 0.2)
 		self._hp   = math.min(self._hp + heal, self._max_hp)
 	elseif state == "genitivus" then
-		self._damage = GLAD_BASE_DMG + 5
+		self._damage = GLAD_BASE_DMG + 7
 	elseif state == "ablativus" then
-		self._dmg_resist = 0.10
+		self._dmg_resist = 0.30
 	end
 end
 
