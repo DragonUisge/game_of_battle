@@ -481,18 +481,17 @@ minetest.register_entity("registered:dragibus", {
 					break
 				end
 			end
-			-- 2. Спавним нового студента на месте конфеты
+			-- 2. Spawn new student(s)
 			if pos then
 				local new_student = minetest.add_entity(pos, "enemy:student")
 				if new_student then
 					local ent = new_student:get_luaentity()
 					if ent then
-						-- Подстраиваем уровень нового студента под текущую волну
+						-- Wave
 						ent._level = (enemy and enemy.current_level) or 1
-						ent._hp = 20 -- даем ему нормальное здоровье, чтобы не умер с одного удара
 					end
 					
-					-- Красивый эффект появления (красные искры вокруг нового студента)
+					-- White particles
 					minetest.add_particlespawner({
 						amount = 15,
 						time = 0.2,

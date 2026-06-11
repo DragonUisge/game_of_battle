@@ -334,6 +334,7 @@ minetest.register_entity("enemy:student", {
 
             -- Поворачиваемся лицом к конфете
             self.object:set_yaw(minetest.dir_to_yaw(dir))
+			
 
             -- Если подошли вплотную (меньше 0.8 блока), застываем на ней
             if candy_dist < 0.8 then
@@ -342,7 +343,7 @@ minetest.register_entity("enemy:student", {
                 return -- Важно! Прерываем шаг, чтобы не искать игроков и не атаковать
             else
                 -- Бежим к конфете с базовой скоростью студента
-                local speed = 2.5
+                local speed = 7
                 self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
                 return -- Прерываем шаг, бежим только за конфетой
             end
