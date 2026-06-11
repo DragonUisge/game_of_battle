@@ -412,7 +412,7 @@ local function dragibus_shoot(itemstack, user, pointed_thing)
 	-- Корректируем высоту спавна под глаза игрока
 	pos.y = pos.y + 1.5
 	local dir = user:get_look_dir()
-	local speed = 12
+	local speed = 27
 
 	-- Цикл для спавна нужного количества конфет
 	for i = 1, to_throw do
