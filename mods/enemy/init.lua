@@ -299,62 +299,104 @@ minetest.register_entity("enemy:student", {
 	end,
 
 	on_step = function(self, dtime)
-		local pos = self.object:get_pos()
-		if not pos then return end
+        local pos = self.object:get_pos()
+        if not pos then return end
 
-		if self._frozen then
-			self.object:set_velocity(vector.new(0, 0, 0))
-			return
-		end
+        if self._frozen then
+            self.object:set_velocity(vector.new(0, 0, 0))
+            return
+        end
 
-		-- Find nearest player (or stunt double in trailer mode)
-		local nearest = nil
-		local nearest_dist = math.huge
-		if trailer and trailer.active and trailer.stunt and trailer.stunt:get_pos() then
-			nearest = trailer.stunt
-			nearest_dist = vector.distance(pos, trailer.stunt:get_pos())
-		else
-			for _, player in ipairs(minetest.get_connected_players()) do
-				local ppos = player:get_pos()
-				local dist = vector.distance(pos, ppos)
-				if dist < nearest_dist then
-					nearest = player
-					nearest_dist = dist
-				end
-			end
-		end
+        -- ══════════════════════════════════════════════════════════════
+        -- ЛОГИКА КОНФЕТЫ DRAGIBUS
+        -- ══════════════════════════════════════════════════════════════
+        local nearest_candy = nil
+        local candy_dist = 25 -- Радиус, в котором студент замечает конфеты
+        
+        -- Проверяем глобальную таблицу конфет (защита от nil, если еще ничего не бросили)
+        local drag_list = active_dragibus or {}
+        
+        for _, drag_obj in ipairs(drag_list) do
+            if drag_obj and drag_obj:get_pos() then
+                local dpos = drag_obj:get_pos()
+                local dist = vector.distance(pos, dpos)
+                if dist < candy_dist then
+                    candy_dist = dist
+                    nearest_candy = drag_obj
+                end
+            end
+        end
 
-		if not nearest then return end
+        -- Если конфету нашли, студент полностью переключается на неё
+        if nearest_candy then
+            local cpos = nearest_candy:get_pos()
+            local dir = vector.direction(pos, cpos)
 
-		local ppos = nearest:get_pos()
-		local dir = vector.direction(pos, ppos)
+            -- Поворачиваемся лицом к конфете
+            self.object:set_yaw(minetest.dir_to_yaw(dir))
 
-		-- Face the player
-		self.object:set_yaw(minetest.dir_to_yaw(dir))
+            -- Если подошли вплотную (меньше 0.8 блока), застываем на ней
+            if candy_dist < 0.8 then
+                -- Сбрасываем X и Z скорость в 0, но оставляем гравитацию -9.81, чтобы не парить в воздухе
+                self.object:set_velocity(vector.new(0, -9.81, 0))
+                return -- Важно! Прерываем шаг, чтобы не искать игроков и не атаковать
+            else
+                -- Бежим к конфете с базовой скоростью студента
+                local speed = 2.5
+                self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+                return -- Прерываем шаг, бежим только за конфетой
+            end
+        end
+        -- ══════════════════════════════════════════════════════════════
 
-		-- Move toward player
-		local speed = 2.5
-		self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+        -- Find nearest player (or stunt double in trailer mode)
+        local nearest = nil
+        local nearest_dist = math.huge
+        if trailer and trailer.active and trailer.stunt and trailer.stunt:get_pos() then
+            nearest = trailer.stunt
+            nearest_dist = vector.distance(pos, trailer.stunt:get_pos())
+        else
+            for _, player in ipairs(minetest.get_connected_players()) do
+                local ppos = player:get_pos()
+                local dist = vector.distance(pos, ppos)
+                if dist < nearest_dist then
+                    nearest = player
+                    nearest_dist = dist
+                end
+            end
+        end
 
-		-- Attack if close enough
-		self._attack_cooldown = self._attack_cooldown - dtime
-		if nearest_dist < 2.0 and self._attack_cooldown <= 0 then
-			-- In trailer mode, punch the stunt double entity instead of set_hp
-			if nearest:is_player() then
-				nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
-			else
-				nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0, 0, 0))
-			end
-			self._attack_cooldown = 1.0
-			-- Play mine animation briefly
-			self.object:set_animation({x = 189, y = 198}, 30, 0, false)
-			minetest.after(0.5, function()
-				if self.object and self.object:get_pos() then
-					self.object:set_animation({x = 168, y = 187}, 30, 0, true)
-				end
-			end)
-		end
-	end,
+        if not nearest then return end
+
+        local ppos = nearest:get_pos()
+        local dir = vector.direction(pos, ppos)
+
+        -- Face the player
+        self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+        -- Move toward player
+        local speed = 2.5
+        self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+
+        -- Attack if close enough
+        self._attack_cooldown = self._attack_cooldown - dtime
+        if nearest_dist < 2.0 and self._attack_cooldown <= 0 then
+            -- In trailer mode, punch the stunt double entity instead of set_hp
+            if nearest:is_player() then
+                nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
+            else
+                nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0, 0, 0))
+            end
+            self._attack_cooldown = 1.0
+            -- Play mine animation briefly
+            self.object:set_animation({x = 189, y = 198}, 30, 0, false)
+            minetest.after(0.5, function()
+                if self.object and self.object:get_pos() then
+                    self.object:set_animation({x = 168, y = 187}, 30, 0, true)
+                end
+            end)
+        end
+    end,
 })
 
 -- Spawn a wave of students for a given level
