@@ -489,7 +489,7 @@ function enemy.reset_all()
 	enemy.boss_alive = nil
 
 	enemy.wave_active = false
-	enemy.current_level = 0
+	enemy.current_level = 0  -- оставляем 0, так как таймер сам прибавит +1 при спавне
 	enemy.wave_triggered = {}
 
 	-- Reset time to 08:00
@@ -545,41 +545,41 @@ minetest.register_chatcommand("restart", {
 	end,
 })
 
--- Time-based wave spawning
-local last_check_time = ""
+-- -- Time-based wave spawning
+-- local last_check_time = ""
 
--- Call this after editing enemy.break_times so new times can fire
-function enemy.refresh_schedule()
-	last_check_time = ""
-end
+-- -- Call this after editing enemy.break_times so new times can fire
+-- function enemy.refresh_schedule()
+-- 	last_check_time = ""
+-- end
 
-minetest.register_globalstep(function(dtime)
-	if enemy.wave_active then return end
-	if enemy.current_level >= 7 then return end
+-- minetest.register_globalstep(function(dtime)
+-- 	if enemy.wave_active then return end
+-- 	if enemy.current_level >= 7 then return end
 
-	local h = game_time.get_hour()
-	local m = game_time.get_minute()
-	local time_key = string.format("%02d:%02d", h, m)
+-- 	local h = game_time.get_hour()
+-- 	local m = game_time.get_minute()
+-- 	local time_key = string.format("%02d:%02d", h, m)
 
-	-- Don't check the same minute twice
-	if time_key == last_check_time then return end
-	last_check_time = time_key
+-- 	-- Don't check the same minute twice
+-- 	if time_key == last_check_time then return end
+-- 	last_check_time = time_key
 
-	-- Check if it's a break time
-	for _, bt in ipairs(enemy.break_times) do
-		if h == bt.h and m == bt.m then
-			-- If this break slot has a lesson, no wave spawns
-			if bt.lesson then return end
-			-- Check if this specific break has already triggered
-			local wave_key = enemy.current_level + 1 .. "_" .. time_key
-			if not enemy.wave_triggered[wave_key] then
-				enemy.wave_triggered[wave_key] = true
-				enemy.spawn_wave(enemy.current_level + 1)
-			end
-			return
-		end
-	end
-end)
+-- 	-- Check if it's a break time
+-- 	for _, bt in ipairs(enemy.break_times) do
+-- 		if h == bt.h and m == bt.m then
+-- 			-- If this break slot has a lesson, no wave spawns
+-- 			if bt.lesson then return end
+-- 			-- Check if this specific break has already triggered
+-- 			local wave_key = enemy.current_level + 1 .. "_" .. time_key
+-- 			if not enemy.wave_triggered[wave_key] then
+-- 				enemy.wave_triggered[wave_key] = true
+-- 				enemy.spawn_wave(enemy.current_level + 1)
+-- 			end
+-- 			return
+-- 		end
+-- 	end
+-- end)
 
 -- BGM per-player sync: mute when player enters arena 2 or mounts dragon,
 -- resume when they leave. Checked every second.
@@ -605,5 +605,34 @@ minetest.register_globalstep(function(dtime)
 			bgm.handles[pname] = minetest.sound_play(bgm.current,
 				{to_player = pname, gain = 0.8})
 		end
+	end
+end)
+
+-- Таймер для последовательного спавна уровней босса
+local level_cooldown = 0
+
+minetest.register_globalstep(function(dtime)
+	-- Если волна сейчас активна, сбрасываем таймер и ждем её завершения
+	if enemy.wave_active then
+		level_cooldown = 0
+		return
+	end
+
+	-- Если все боссы уже побеждены (пройдено 7 уровней), останавливаем таймер
+	if enemy.current_level >= 7 then
+		return
+	end
+
+	-- Отсчет 10 секунд в режиме затишья
+	level_cooldown = level_cooldown + dtime
+
+	if level_cooldown >= 15.0 then
+		level_cooldown = 0
+		
+		-- Вычисляем следующий уровень (начиная с 1)
+		local next_level = enemy.current_level + 1
+		
+		-- Спавним волну нужного уровня
+		enemy.spawn_wave(next_level)
 	end
 end)
