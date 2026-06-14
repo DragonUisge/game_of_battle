@@ -158,13 +158,13 @@ local function schedule_formspec()
 		-- Periods 1-2, Pauze 1, Periods 3-4, Pauze 2, Periods 5-6, Pauze 3, Period 7
 		period_row(1, "08:00 – 09:00", 1.65) ..
 		period_row(2, "09:00 – 10:00", 2.45) ..
-		break_row(1, "Pauze 1  (Golf 1)", 3.15) ..
+		break_row(1, "Pauze 1", 3.15) ..
 		period_row(3, "10:10 – 11:10", 3.95) ..
 		period_row(4, "11:10 – 12:10", 4.75) ..
-		break_row(2, "Pauze 2  (Golf 2)", 5.45) ..
+		break_row(2, "Pauze 2", 5.45) ..
 		period_row(5, "12:10 – 13:10", 6.25) ..
 		period_row(6, "13:10 – 14:10", 7.05) ..
-		break_row(3, "Pauze 3  (Golf 3)", 7.75) ..
+		break_row(3, "Pauze 3", 7.75) ..
 		period_row(7, "14:15 – 15:00", 8.55) ..
 		-- Save
 		"button_exit[4.0,9.5;4.0,0.7;save;💾 Opslaan]"

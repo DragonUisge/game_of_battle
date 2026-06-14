@@ -725,16 +725,19 @@ minetest.register_globalstep(function(dtime)
 		return
 	end
 
-	-- Отсчет 10 секунд в режиме затишья
+	-- Accumulate cooldown; first wave gets a longer pre-spawn delay
 	level_cooldown = level_cooldown + dtime
 
-	if level_cooldown >= 15.0 then
+	-- First wave: 25s warning; subsequent gaps: 15s
+	local threshold = (enemy.current_level == 0) and 25.0 or 15.0
+
+	if level_cooldown >= threshold then
 		level_cooldown = 0
 
-		-- Вычисляем следующий уровень (начиная с 1)
+		-- Compute next level (start from 1)
 		local next_level = enemy.current_level + 1
 
-		-- Спавним волну нужного уровня
+		-- Spawn the needed level
 		enemy.spawn_wave(next_level)
 	end
 end)
