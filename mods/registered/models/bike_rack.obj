@@ -1,0 +1,40 @@
+# Fietsenrek: 3 fietsen naast elkaar, 1.5 blokken hoog, 1.5 blokken breed
+# Elke fiets is een aparte groep met eigen materiaal voor verschillende kleuren
+
+vt 0 0
+vt 1 0
+vt 1 1
+vt 0 1
+
+# Fiets 1 (vooraan, z = -0.35)
+v -0.75 -0.5 -0.35
+v 0.75 -0.5 -0.35
+v 0.75 1.0 -0.35
+v -0.75 1.0 -0.35
+
+# Fiets 2 (midden, z = 0)
+v -0.75 -0.5 0
+v 0.75 -0.5 0
+v 0.75 1.0 0
+v -0.75 1.0 0
+
+# Fiets 3 (achteraan, z = 0.35)
+v -0.75 -0.5 0.35
+v 0.75 -0.5 0.35
+v 0.75 1.0 0.35
+v -0.75 1.0 0.35
+
+g fiets1
+usemtl m1
+f 1/1 2/2 3/3 4/4
+f 4/4 3/3 2/2 1/1
+
+g fiets2
+usemtl m2
+f 5/1 6/2 7/3 8/4
+f 8/4 7/3 6/2 5/1
+
+g fiets3
+usemtl m3
+f 9/1 10/2 11/3 12/4
+f 12/4 11/3 10/2 9/1
