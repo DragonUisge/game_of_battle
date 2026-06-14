@@ -1630,3 +1630,205 @@ minetest.register_craftitem("registered:apple", {
 	inventory_image = "registered_apple.png",
 	on_use = minetest.item_eat(3),
 })
+
+-- ══════════════════════════════════════════════════════════════
+-- Bouwers Hamer — breekt alle blokken instant (voor arena-bouw)
+-- Added by Ege
+-- ══════════════════════════════════════════════════════════════
+
+minetest.register_tool("registered:builder_hammer", {
+	description = "Bouwers Hamer (breekt alles)",
+	inventory_image = "registered_builder_hammer.png",
+	tool_capabilities = {
+		full_punch_interval = 0.1,
+		max_drop_level = 3,
+		groupcaps = {
+			cracky  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			choppy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			snappy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			crumbly = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			oddly_breakable_by_hand = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+		},
+	},
+})
+
+-- ══════════════════════════════════════════════════════════════
+-- Sloophamer — sla op een muurblok en de hele muur verdwijnt
+-- Scant de muur horizontaal EN verticaal:
+--   Verticaal: verwijdert alles TUSSEN vloer en plafond (laat beide intact)
+--   Horizontaal: breidt uit in alle 4 richtingen langs de muur
+-- Added by Ege
+-- ══════════════════════════════════════════════════════════════
+
+minetest.register_tool("registered:destruction_hammer", {
+	description = "Sloophamer (vernietigt hele muren)",
+	inventory_image = "registered_destruction_hammer.png",
+	tool_capabilities = {
+		full_punch_interval = 0.5,
+		max_drop_level = 3,
+		groupcaps = {
+			cracky  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			choppy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			snappy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			crumbly = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			oddly_breakable_by_hand = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+		},
+	},
+	after_use = function(itemstack, user, node, digparams)
+		return itemstack  -- voorkom slijtage
+	end,
+})
+
+-- Helper: vind de muur-grenzen voor een kolom
+local destruction_floor_y = 0
+
+local function find_wall_bounds(x, hit_y, z)
+	local top_y = hit_y
+	while true do
+		local above = minetest.get_node(vector.new(x, top_y + 1, z))
+		if above.name == "air" or above.name == "ignore" then break end
+		top_y = top_y + 1
+		if top_y > hit_y + 20 then break end
+	end
+	local min_y = destruction_floor_y + 1
+	return min_y, top_y
+end
+
+local function remove_wall_column(x, z, min_y, max_y)
+	local removed = 0
+	for y = min_y, max_y do
+		local p = vector.new(x, y, z)
+		local n = minetest.get_node(p)
+		if n.name ~= "air" and n.name ~= "ignore" then
+			minetest.remove_node(p)
+			removed = removed + 1
+		end
+	end
+	return removed
+end
+
+minetest.register_on_dignode(function(pos, oldnode, digger)
+	if not digger or not digger:is_player() then return end
+	if digger:get_wielded_item():get_name() ~= "registered:destruction_hammer" then return end
+
+	destruction_floor_y = math.floor(digger:get_pos().y)
+
+	local min_y, max_y = find_wall_bounds(pos.x, pos.y, pos.z)
+	local total_removed = 0
+
+	total_removed = total_removed + remove_wall_column(pos.x, pos.z, min_y, max_y)
+
+	local directions = {
+		{dx = 1, dz = 0},
+		{dx = -1, dz = 0},
+		{dx = 0, dz = 1},
+		{dx = 0, dz = -1},
+	}
+
+	for _, dir in ipairs(directions) do
+		local step = 1
+		while step <= 50 do
+			local cx = pos.x + dir.dx * step
+			local cz = pos.z + dir.dz * step
+			local check = minetest.get_node(vector.new(cx, pos.y, cz))
+			if check.name == "air" or check.name == "ignore" then
+				break
+			end
+			local col_min, col_max = find_wall_bounds(cx, pos.y, cz)
+			total_removed = total_removed + remove_wall_column(cx, cz, col_min, col_max)
+			step = step + 1
+		end
+	end
+
+	minetest.add_particlespawner({
+		amount = 50,
+		time = 0.4,
+		minpos = vector.new(pos.x - 2, min_y, pos.z - 2),
+		maxpos = vector.new(pos.x + 2, max_y, pos.z + 2),
+		minvel = vector.new(-4, -1, -4),
+		maxvel = vector.new(4, 4, 4),
+		minacc = vector.new(0, -5, 0),
+		maxacc = vector.new(0, -3, 0),
+		minexptime = 0.3,
+		maxexptime = 0.8,
+		minsize = 1,
+		maxsize = 3,
+		texture = "default_stone.png",
+	})
+
+	minetest.sound_play("default_break_glass",
+		{pos = pos, gain = 1.0, max_hear_distance = 20})
+
+	minetest.chat_send_player(digger:get_player_name(),
+		total_removed .. " blokken vernietigd!")
+end)
+
+-- ══════════════════════════════════════════════════════════════
+-- Decoratieve fietsenrekken — multi-color bikes voor fietsenstalling
+-- Added by Ege
+-- ══════════════════════════════════════════════════════════════
+
+-- Elk rek bevat 3 fietsen met elk een eigen kleur (via 3 materialen in de mesh)
+-- Groter formaat: 1.5 blokken breed, 1.5 blokken hoog
+-- Lijst met alle rack-namen voor willekeurige plaatsing
+local bike_rack_names = {}
+local bike_racks = {
+	{name = "bike_rack",       desc = "Fietsenrek (Rood/Blauw/Groen)",
+		t1 = "registered_bike_rack_red.png",
+		t2 = "registered_bike_rack_blue.png",
+		t3 = "registered_bike_rack_green.png"},
+	{name = "bike_rack_warm",  desc = "Fietsenrek (Oranje/Roze/Rood)",
+		t1 = "registered_bike_rack_orange.png",
+		t2 = "registered_bike_rack_pink.png",
+		t3 = "registered_bike_rack_red.png"},
+	{name = "bike_rack_cool",  desc = "Fietsenrek (Blauw/Groen/Zwart)",
+		t1 = "registered_bike_rack_blue.png",
+		t2 = "registered_bike_rack_green.png",
+		t3 = "registered_bike_rack_black.png"},
+	{name = "bike_rack_dark",  desc = "Fietsenrek (Zwart/Rood/Blauw)",
+		t1 = "registered_bike_rack_black.png",
+		t2 = "registered_bike_rack_red.png",
+		t3 = "registered_bike_rack_blue.png"},
+	{name = "bike_rack_bright", desc = "Fietsenrek (Roze/Oranje/Groen)",
+		t1 = "registered_bike_rack_pink.png",
+		t2 = "registered_bike_rack_orange.png",
+		t3 = "registered_bike_rack_green.png"},
+	{name = "bike_rack_mixed", desc = "Fietsenrek (Groen/Zwart/Oranje)",
+		t1 = "registered_bike_rack_green.png",
+		t2 = "registered_bike_rack_black.png",
+		t3 = "registered_bike_rack_orange.png"},
+}
+
+for _, rack in ipairs(bike_racks) do
+	bike_rack_names[#bike_rack_names + 1] = "registered:" .. rack.name
+	minetest.register_node("registered:" .. rack.name, {
+		description = rack.desc,
+		drawtype = "mesh",
+		mesh = "bike_rack.obj",
+		paramtype = "light",
+		paramtype2 = "facedir",
+		use_texture_alpha = "clip",
+		-- 3 tiles: één per fiets/materiaal in de mesh
+		tiles = {rack.t1, rack.t2, rack.t3},
+		inventory_image = rack.t1,
+		wield_image = rack.t1,
+		walkable = true,
+		selection_box = {
+			type = "fixed",
+			fixed = {-0.75, -0.5, -0.4, 0.75, 1.0, 0.4},
+		},
+		collision_box = {
+			type = "fixed",
+			fixed = {-0.75, -0.5, -0.4, 0.75, 1.0, 0.4},
+		},
+		groups = {cracky = 2, oddly_breakable_by_hand = 2},
+		sounds = sound_stone(),
+		on_blast = function() end,
+		-- Bij plaatsing: wissel naar een willekeurig kleurcombi
+		after_place_node = function(pos, placer, itemstack, pointed_thing)
+			local random_rack = bike_rack_names[math.random(#bike_rack_names)]
+			local node = minetest.get_node(pos)
+			minetest.swap_node(pos, {name = random_rack, param2 = node.param2})
+		end,
+	})
+end

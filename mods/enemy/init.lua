@@ -4,6 +4,55 @@
 -- Students: 1 HP, 1 damage, size scales from 60% (level 1) to 100% (level 6)
 
 enemy = {}
+enemy.build_mode = false  -- bouwmodus: geen vijanden, tijd bevroren
+
+-- /bouwmodus commando: zet vijanden en tijd uit, geeft bouwgereedschap
+minetest.register_chatcommand("bouwmodus", {
+	description = "Schakel bouwmodus in/uit (geen vijanden, tijd stopt, bouwspullen)",
+	privs = {server = true},
+	func = function(name, param)
+		enemy.build_mode = not enemy.build_mode
+		if enemy.build_mode then
+			-- Verwijder alle levende studenten
+			if enemy.alive_students then
+				for _, obj in ipairs(enemy.alive_students) do
+					if obj and obj:get_pos() then obj:remove() end
+				end
+				enemy.alive_students = {}
+			end
+			-- Stop de boss als die er is
+			if enemy.boss_alive and enemy.boss_alive:get_pos() then
+				enemy.boss_alive:remove()
+				enemy.boss_alive = nil
+			end
+			enemy.wave_active = false
+
+			-- Geef bouwgereedschap en materialen
+			local player = minetest.get_player_by_name(name)
+			if player then
+				local inv = player:get_inventory()
+				local items = {
+					"registered:builder_hammer 1",
+					"registered:destruction_hammer 1",
+					"registered:bike_rack 99",
+					"registered:stone 99",
+					"registered:wood 99",
+					"registered:glass 99",
+					"registered:meselamp 99",
+					"registered:diamondblock 99",
+					"registered:cobble 99",
+				}
+				for _, item in ipairs(items) do
+					inv:add_item("main", item)
+				end
+			end
+
+			return true, "Bouwmodus AAN — gereedschap en materialen uitgedeeld! Rustig bouwen!"
+		else
+			return true, "Bouwmodus UIT — vijanden komen weer!"
+		end
+	end,
+})
 
 -- ============================================================
 -- Dynamic BGM loop system for boss waves
@@ -655,6 +704,7 @@ end)
 local level_cooldown = 0
 
 minetest.register_globalstep(function(dtime)
+	if enemy.build_mode then return end  -- bouwmodus: geen waves
 	-- Если волна сейчас активна, сбрасываем таймер и ждем её завершения
 	if enemy.wave_active then
 		level_cooldown = 0

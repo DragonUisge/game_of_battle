@@ -89,3 +89,26 @@ minetest.register_on_mods_loaded(function()
 		end
 	end)
 end)
+
+-- ── Schematic opslaan commando ──────────────────────────────────────────────
+-- Gebruik: /save_arena — slaat de huidige fietsarena op als nieuw .mts bestand
+-- Added by Ege
+minetest.register_chatcommand("save_arena", {
+	description = "Sla de fietsarena op als schematic (.mts)",
+	privs = {server = true},
+	func = function(name, param)
+		-- Opslaan in world-map (mod-map is beveiligd door mod security)
+		local filepath = minetest.get_worldpath() .. "/fietsarena.mts"
+		-- Maak een schematic van het hele arena-gebied
+		local minp = vector.new(ORIGIN.x, ORIGIN.y, ORIGIN.z)
+		local maxp = vector.new(
+			ORIGIN.x + SCHEM_SIZE.x - 1,
+			ORIGIN.y + SCHEM_SIZE.y - 1,
+			ORIGIN.z + SCHEM_SIZE.z - 1
+		)
+		minetest.create_schematic(minp, maxp, nil, filepath)
+		return true, "Arena opgeslagen als fietsarena.mts! (" ..
+			minetest.pos_to_string(minp) .. " tot " ..
+			minetest.pos_to_string(maxp) .. ")"
+	end,
+})
