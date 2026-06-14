@@ -86,6 +86,7 @@ end
 local elapsed = 0
 
 minetest.register_globalstep(function(dtime)
+	if enemy and enemy.build_mode then return end  -- bouwmodus: tijd bevroren
 	elapsed = elapsed + dtime
 	if elapsed < TICK then return end
 	elapsed = elapsed - TICK

@@ -1654,6 +1654,117 @@ minetest.register_tool("registered:builder_hammer", {
 })
 
 -- ══════════════════════════════════════════════════════════════
+-- Sloophamer — sla op een muurblok en de hele muur verdwijnt
+-- Scant de muur horizontaal EN verticaal:
+--   Verticaal: verwijdert alles TUSSEN vloer en plafond (laat beide intact)
+--   Horizontaal: breidt uit in alle 4 richtingen langs de muur
+-- Added by Ege
+-- ══════════════════════════════════════════════════════════════
+
+minetest.register_tool("registered:destruction_hammer", {
+	description = "Sloophamer (vernietigt hele muren)",
+	inventory_image = "registered_destruction_hammer.png",
+	tool_capabilities = {
+		full_punch_interval = 0.5,
+		max_drop_level = 3,
+		groupcaps = {
+			cracky  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			choppy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			snappy  = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			crumbly = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+			oddly_breakable_by_hand = {times = {[1]=0.0, [2]=0.0, [3]=0.0}, uses = 0, maxlevel = 3},
+		},
+	},
+	after_use = function(itemstack, user, node, digparams)
+		return itemstack  -- voorkom slijtage
+	end,
+})
+
+-- Helper: vind de muur-grenzen voor een kolom
+local destruction_floor_y = 0
+
+local function find_wall_bounds(x, hit_y, z)
+	local top_y = hit_y
+	while true do
+		local above = minetest.get_node(vector.new(x, top_y + 1, z))
+		if above.name == "air" or above.name == "ignore" then break end
+		top_y = top_y + 1
+		if top_y > hit_y + 20 then break end
+	end
+	local min_y = destruction_floor_y + 1
+	return min_y, top_y
+end
+
+local function remove_wall_column(x, z, min_y, max_y)
+	local removed = 0
+	for y = min_y, max_y do
+		local p = vector.new(x, y, z)
+		local n = minetest.get_node(p)
+		if n.name ~= "air" and n.name ~= "ignore" then
+			minetest.remove_node(p)
+			removed = removed + 1
+		end
+	end
+	return removed
+end
+
+minetest.register_on_dignode(function(pos, oldnode, digger)
+	if not digger or not digger:is_player() then return end
+	if digger:get_wielded_item():get_name() ~= "registered:destruction_hammer" then return end
+
+	destruction_floor_y = math.floor(digger:get_pos().y)
+
+	local min_y, max_y = find_wall_bounds(pos.x, pos.y, pos.z)
+	local total_removed = 0
+
+	total_removed = total_removed + remove_wall_column(pos.x, pos.z, min_y, max_y)
+
+	local directions = {
+		{dx = 1, dz = 0},
+		{dx = -1, dz = 0},
+		{dx = 0, dz = 1},
+		{dx = 0, dz = -1},
+	}
+
+	for _, dir in ipairs(directions) do
+		local step = 1
+		while step <= 50 do
+			local cx = pos.x + dir.dx * step
+			local cz = pos.z + dir.dz * step
+			local check = minetest.get_node(vector.new(cx, pos.y, cz))
+			if check.name == "air" or check.name == "ignore" then
+				break
+			end
+			local col_min, col_max = find_wall_bounds(cx, pos.y, cz)
+			total_removed = total_removed + remove_wall_column(cx, cz, col_min, col_max)
+			step = step + 1
+		end
+	end
+
+	minetest.add_particlespawner({
+		amount = 50,
+		time = 0.4,
+		minpos = vector.new(pos.x - 2, min_y, pos.z - 2),
+		maxpos = vector.new(pos.x + 2, max_y, pos.z + 2),
+		minvel = vector.new(-4, -1, -4),
+		maxvel = vector.new(4, 4, 4),
+		minacc = vector.new(0, -5, 0),
+		maxacc = vector.new(0, -3, 0),
+		minexptime = 0.3,
+		maxexptime = 0.8,
+		minsize = 1,
+		maxsize = 3,
+		texture = "default_stone.png",
+	})
+
+	minetest.sound_play("default_break_glass",
+		{pos = pos, gain = 1.0, max_hear_distance = 20})
+
+	minetest.chat_send_player(digger:get_player_name(),
+		total_removed .. " blokken vernietigd!")
+end)
+
+-- ══════════════════════════════════════════════════════════════
 -- Decoratieve fietsenrekken — multi-color bikes voor fietsenstalling
 -- Added by Ege
 -- ══════════════════════════════════════════════════════════════
