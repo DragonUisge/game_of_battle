@@ -394,6 +394,137 @@ minetest.register_tool("registered:sword_dragonpower", {
 	},
 })
 
+-- Глобальный список всех брошенных конфет в мире для поиска студентами
+active_dragibus = {}
+
+-- Функция спавна 3 летящих конфет при броске (с разбросом)
+local function dragibus_shoot(itemstack, user, pointed_thing)
+	if not user or not user:is_player() then return itemstack end
+	local pname = user:get_player_name()
+	local pos = user:get_pos()
+	if not pos then return itemstack end
+
+	-- Проверяем, сколько конфет есть в руке (бросаем 3, но если осталась 1 или 2 — бросаем сколько есть)
+	local current_count = itemstack:get_count()
+	local to_throw = math.min(current_count, 3)
+	if to_throw <= 0 then return itemstack end
+
+	-- Корректируем высоту спавна под глаза игрока
+	pos.y = pos.y + 1.5
+	local dir = user:get_look_dir()
+	local speed = 27
+
+	-- Цикл для спавна нужного количества конфет
+	for i = 1, to_throw do
+		-- Добавляем случайный разброс по осям X, Y, Z, чтобы конфеты летели веером
+		local spread_dir = vector.new(
+			dir.x + (math.random() - 0.5) * 0.25,
+			dir.y + (math.random() - 0.5) * 0.25,
+			dir.z + (math.random() - 0.5) * 0.25
+		)
+		-- Нормализуем вектор, чтобы скорость броска оставалась одинаковой
+		spread_dir = vector.normalize(spread_dir)
+
+		local drag = minetest.add_entity(pos, "registered:dragibus")
+		if drag then
+			drag:set_velocity(vector.multiply(spread_dir, speed))
+			local ent = drag:get_luaentity()
+			if ent then
+				ent._owner = pname
+			end
+		end
+	end
+
+	-- Забираем ровно столько штук, сколько было выпущено
+	itemstack:take_item(1)
+
+	-- Звук броска
+	minetest.sound_play("default_place_node_hard",
+		{ pos = pos, gain = 0.5, max_hear_distance = 15 })
+
+	return itemstack
+end
+-- Регистрация самого предмета "Конфета Dragibus" в инвентаре
+minetest.register_craftitem("registered:dragibus", {
+	description = "Dragibus",
+	inventory_image = "registered_dragibus.png",
+	stack_max = 99,
+	on_secondary_use = dragibus_shoot,
+	on_place = dragibus_shoot,
+})
+
+-- Регистрация летящей/лежащей на полу сущности Dragibus
+minetest.register_entity("registered:dragibus", {
+	initial_properties = {
+		visual               = "sprite",
+		visual_size          = { x = 0.3, y = 0.3, z = 0.3 },
+		textures             = { "registered_dragibus.png" },
+		physical             = true,
+		collide_with_objects = false,
+		collisionbox         = { -0.15, -0.15, -0.15, 0.15, 0.15, 0.15 },
+		static_save          = false,
+		pointable            = false,
+	},
+
+	_lifetime = 0,
+	_landed   = false,
+
+	on_step = function(self, dtime, moveresult)
+		self._lifetime = self._lifetime + dtime
+
+		-- Защита от вечного лежания (удаляем через 11 секунд на всякий случай)
+		if self._lifetime > 11 then
+			local pos = self.object:get_pos()
+			for i, d in ipairs(active_dragibus) do
+				if d == self.object then
+					table.remove(active_dragibus, i)
+					break
+				end
+			end
+			-- 2. Спавним нового студента на месте конфеты
+			if pos then
+				local new_student = minetest.add_entity(pos, "enemy:student")
+				if new_student then
+					local ent = new_student:get_luaentity()
+					if ent then
+						-- Подстраиваем уровень нового студента под текущую волну
+						ent._level = (enemy and enemy.current_level) or 1
+						ent._hp = 20 -- даем ему нормальное здоровье, чтобы не умер с одного удара
+					end
+					
+					-- Красивый эффект появления (красные искры вокруг нового студента)
+					minetest.add_particlespawner({
+						amount = 15,
+						time = 0.2,
+						minpos = vector.add(pos, vector.new(-0.3, 0, -0.3)),
+						maxpos = vector.add(pos, vector.new(0.3, 1.0, 0.3)),
+						minvel = vector.new(-1, 1, -1),
+						maxvel = vector.new(1, 3, 1),
+						texture = "water_particle.png",
+						glow = 10,
+					})
+				end
+			end
+			self.object:remove()
+			return
+		end
+
+		-- Проверка приземления на блок
+		if not self._landed and moveresult and moveresult.collisions then
+			for _, col in ipairs(moveresult.collisions) do
+				if col.type == "node" then
+					self._landed = true
+					self.object:set_velocity(vector.new(0, 0, 0))
+					self.object:set_acceleration(vector.new(0, 0, 0))
+					-- Добавляем в глобальный список, чтобы студенты её увидели
+					table.insert(active_dragibus, self.object)
+					break
+				end
+			end
+		end
+	end,
+})
+
 -- ══════════════════════════════════════════════════════════════
 -- Sword of Four Elements — states: ijs / vuur / water / wind
 -- Sneak + Rightclick cycles to the next element.

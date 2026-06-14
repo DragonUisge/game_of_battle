@@ -71,53 +71,60 @@ end
 
 -- Build food shop formspec
 local function build_food_formspec(npc_name, coins)
-	-- Row layout: 5 items, each 2.3 wide, starting at x=0.4 with 0.3 gap
-	local ix      = { 0.4, 2.9, 5.4, 7.9, 10.4 }
-	local iw, ih  = 2.3, 2.3
-	local btn_y   = 1.65                                          -- top of item buttons
-	local name_y  = btn_y + ih + 0.25                             -- label: item name
-	local price_y = name_y + 0.45                                 -- label: price
-	local close_y = price_y + 0.65                                -- close button y
+    -- Новая раскладка: 6 предметов. Уменьшаем ширину до 1.8 и зазоры, чтобы всё влезло в экран 13.1
+    local ix      = { 0.4, 2.4, 4.4, 6.4, 8.4, 10.4 }
+    local iw, ih  = 1.8, 1.8                                      -- Чуть уменьшили размер кнопок с 2.3 до 1.8
+    local btn_y   = 1.65                                          -- Верх кнопок
+    local name_y  = btn_y + ih + 0.25                             -- Название предмета
+    local price_y = name_y + 0.45                                 -- Цена
+    local close_y = price_y + 0.65                                -- Кнопка закрытия
 
-	local heal    = { "+3 HP", "+5 HP", "+7 HP", "+10 HP", "6x munitie" } -- tooltips
+    local heal    = { "+3 HP", "+5 HP", "+7 HP", "+10 HP", "6x munitie", "Студенты отвлекутся на 10 сек" }
 
-	return
-		"formspec_version[4]" ..
-		"size[13.1," .. (close_y + 0.9) .. "]" ..
-		"no_prepend[]" ..
-		"bgcolor[#111122;true;#0d0d1f]" ..
-		-- Header bar
-		"box[0.2,0.2;12.7,0.55;#1a2a5a]" ..
-		"label[0.4,0.38;🍴 " .. minetest.formspec_escape(npc_name) .. " — Kantine]" ..
-		-- Coin balance
-		"box[0.2,0.9;12.7,0.45;#0d1a3a]" ..
-		"label[0.4,1.06;💰 Saldo: " .. coins .. " munten]" ..
-		-- Items
-		"image_button[" .. ix[1] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_apple.png;buy_apple;]" ..
-		"tooltip[buy_apple;Appel — geneest " .. heal[1] .. "]" ..
-		"label[" .. ix[1] .. "," .. name_y .. ";Appel]" ..
-		"label[" .. ix[1] .. "," .. price_y .. ";2 munten]" ..
-		"image_button[" .. ix[2] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_bread.png;buy_bread;]" ..
-		"tooltip[buy_bread;Brood — geneest " .. heal[2] .. "]" ..
-		"label[" .. ix[2] .. "," .. name_y .. ";Brood]" ..
-		"label[" .. ix[2] .. "," .. price_y .. ";4 munten]" ..
-		"image_button[" .. ix[3] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_fish.png;buy_fish;]" ..
-		"tooltip[buy_fish;Vis — geneest " .. heal[3] .. "]" ..
-		"label[" .. ix[3] .. "," .. name_y .. ";Vis]" ..
-		"label[" .. ix[3] .. "," .. price_y .. ";6 munten]" ..
-		"image_button[" .. ix[4] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_meat.png;buy_meat;]" ..
-		"tooltip[buy_meat;Vlees — geneest " .. heal[4] .. "]" ..
-		"label[" .. ix[4] .. "," .. name_y .. ";Vlees]" ..
-		"label[" .. ix[4] .. "," .. price_y .. ";8 munten]" ..
+    return
+        "formspec_version[4]" ..
+        "size[13.1," .. (close_y + 0.9) .. "]" ..
+        "no_prepend[]" ..
+        "bgcolor[#111122;true;#0d0d1f]" ..
+        -- Header bar
+        "box[0.2,0.2;12.7,0.55;#1a2a5a]" ..
+        "label[0.4,0.38;🍴 " .. minetest.formspec_escape(npc_name) .. " — Kantine]" ..
+        -- Coin balance
+        "box[0.2,0.9;12.7,0.45;#0d1a3a]" ..
+        "label[0.4,1.06;💰 Saldo: " .. coins .. " munten]" ..
+        
+        -- РЯД ПРЕДМЕТОВ
+        "image_button[" .. ix[1] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_apple.png;buy_apple;]" ..
+        "tooltip[buy_apple;Appel — geneest " .. heal[1] .. "]" ..
+        "label[" .. ix[1] .. "," .. name_y .. ";Appel]" ..
+        "label[" .. ix[1] .. "," .. price_y .. ";2 munten]" ..
+        
+        "image_button[" .. ix[2] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_bread.png;buy_bread;]" ..
+        "tooltip[buy_bread;Brood — geneest " .. heal[2] .. "]" ..
+        "label[" .. ix[2] .. "," .. name_y .. ";Brood]" ..
+        "label[" .. ix[2] .. "," .. price_y .. ";4 munten]" ..
+        
+        "image_button[" .. ix[3] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_fish.png;buy_fish;]" ..
+        "tooltip[buy_fish;Vis — geneest " .. heal[3] .. "]" ..
+        "label[" .. ix[3] .. "," .. name_y .. ";Vis]" ..
+        "label[" .. ix[3] .. "," .. price_y .. ";6 munten]" ..
+        
+        "image_button[" .. ix[4] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_meat.png;buy_meat;]" ..
+        "tooltip[buy_meat;Vlees — geneest " .. heal[4] .. "]" ..
+        "label[" .. ix[4] .. "," .. name_y .. ";Vlees]" ..
+        "label[" .. ix[4] .. "," .. price_y .. ";8 munten]" ..
 
-		-- Fanta 6-Pack (munitie voor de Fanta Bazooka)
-		"image_button[" .. ix[5] .. "," ..
-		btn_y .. ";" .. iw .. "," .. ih .. ";registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
-		"tooltip[buy_fanta_sixpack;Fanta 6-Pack — " .. heal[5] .. "]" ..
-		"label[" .. ix[5] .. "," .. name_y .. ";Fanta 6-Pack]" ..
-		"label[" .. ix[5] .. "," .. price_y .. ";5 munten]" ..
+        "image_button[" .. ix[5] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_fanta_sixpack.png;buy_fanta_sixpack;]" ..
+        "tooltip[buy_fanta_sixpack;Fanta 6-Pack — " .. heal[5] .. "]" ..
+        "label[" .. ix[5] .. "," .. name_y .. ";Fanta 6-Pack]" ..
+        "label[" .. ix[5] .. "," .. price_y .. ";5 munten]" ..
+        
+        "image_button[" .. ix[6] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_dragibus.png;buy_dragibus;]" ..
+        "tooltip[buy_dragibus;Dragibus — " .. heal[6] .. "]" ..
+        "label[" .. ix[6] .. "," .. name_y .. ";Dragibus]" ..
+        "label[" .. ix[6] .. "," .. price_y .. ";5 munten]" ..
 
-		"button_exit[4.8," .. close_y .. ";3.5,0.7;close;✖ Sluiten]"
+        "button_exit[4.8," .. close_y .. ";3.5,0.7;close;✖ Sluiten]"
 end
 
 -- NPC entity definition
@@ -298,6 +305,7 @@ local FOOD_ITEMS = {
 	buy_meat          = { item = "registered:meat", price = 8, name = "Vlees" },
 	-- Fanta 6-Pack: geeft 6x fanta_ammo (munitie voor de Fanta Bazooka)
 	buy_fanta_sixpack = { item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6 },
+	buy_dragibus = { item = "registered:dragibus", price = 5, name = "Dragibus"}
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)
