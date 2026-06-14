@@ -1906,9 +1906,9 @@ minetest.register_entity("boss:summoned_dragon", {
 		backface_culling = false,
 	},
 
-	_hp = 100,
+	_hp = 50,
 	_max_hp = 20,
-	_damage = 3,
+	_damage = 2,
 	_attack_cooldown = 0,
 	_roar_timer = 3.0,
 	_breath_timer = 0,

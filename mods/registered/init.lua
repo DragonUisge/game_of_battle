@@ -1348,9 +1348,9 @@ local function fanta_explode(pos, owner)
 		else
 			local ent = obj:get_luaentity()
 			-- Damage to enemies (students and bosses)
-			-- 50 damage per Fanta: a boss (100 HP) goes down in 2 shots!
+			-- 50 damage per Fanta: a boss (100 HP) goes down in 3 shots!
 			if ent and ent._hp then
-				ent._hp = ent._hp - 50
+				ent._hp = ent._hp - 40
 				if ent._hp <= 0 then
 					-- Student defeated
 					if ent.name == "enemy:student" then
