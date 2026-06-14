@@ -196,7 +196,7 @@ minetest.register_entity("npc:npc", {
 			local meta = player:get_meta()
 			local coins = meta:get_int("coins")
 
-			if npc_name == "Eetverkoper" then
+			if npc_name == "Eetverkoper (kantineguy)" then
 				minetest.show_formspec(pname, "npc:food_shop",
 					build_food_formspec(npc_name, coins))
 			else
@@ -246,9 +246,9 @@ local function ensure_npcs()
 		if not ref_w or not ref_w:get_pos() then
 			npc.spawn_npc(vector.new(14, 1.5, 0.8), "Wapenverkoper", "npc_wapenverkoper.png")
 		end
-		local ref_e = npc._refs["Eetverkoper"]
+		local ref_e = npc._refs["Eetverkoper (kantineguy)"]
 		if not ref_e or not ref_e:get_pos() then
-			npc.spawn_npc(vector.new(10, 1.5, 1), "Eetverkoper", "npc_eetverkoper.png")
+			npc.spawn_npc(vector.new(10, 1.5, 1), "Eetverkoper (kantineguy)", "npc_eetverkoper.png")
 		end
 	end)
 end

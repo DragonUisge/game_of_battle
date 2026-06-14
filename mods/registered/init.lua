@@ -1557,7 +1557,7 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 	local inv = user:get_inventory()
 	if not inv:contains_item("main", "registered:fanta_ammo") then
 		minetest.chat_send_player(pname,
-			"Geen Fanta munitie! Koop een 6-pack bij de Eetverkoper.")
+			"Geen Fanta munitie! Koop een 6-pack bij de kantineguy.")
 		return itemstack
 	end
 

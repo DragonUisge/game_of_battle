@@ -4,12 +4,12 @@
 -- Students: 1 HP, 1 damage, size scales from 60% (level 1) to 100% (level 6)
 
 enemy = {}
-enemy.build_mode = false  -- bouwmodus: geen vijanden, tijd bevroren
+enemy.build_mode = false -- bouwmodus: geen vijanden, tijd bevroren
 
 -- /bouwmodus commando: zet vijanden en tijd uit, geeft bouwgereedschap
 minetest.register_chatcommand("bouwmodus", {
 	description = "Schakel bouwmodus in/uit (geen vijanden, tijd stopt, bouwspullen)",
-	privs = {server = true},
+	privs = { server = true },
 	func = function(name, param)
 		enemy.build_mode = not enemy.build_mode
 		if enemy.build_mode then
@@ -60,10 +60,10 @@ minetest.register_chatcommand("bouwmodus", {
 -- ============================================================
 
 local bgm = {
-	handles  = {},      -- [pname] = sound handle (per player)
-	active   = false,   -- flag checked by minetest.after callbacks
-	sequence = {},      -- upcoming tracks to play
-	current  = nil,     -- name of track currently playing
+	handles  = {}, -- [pname] = sound handle (per player)
+	active   = false, -- flag checked by minetest.after callbacks
+	sequence = {}, -- upcoming tracks to play
+	current  = nil, -- name of track currently playing
 }
 
 -- Arena 2 bounding box (ORIGIN2 = -330,177,-440; size 51×9×62)
@@ -77,8 +77,8 @@ local function is_exempt(player)
 	local pos = player:get_pos()
 	if not pos then return false end
 	return pos.x >= ARENA2_MIN.x and pos.x <= ARENA2_MAX.x
-	   and pos.y >= ARENA2_MIN.y and pos.y <= ARENA2_MAX.y
-	   and pos.z >= ARENA2_MIN.z and pos.z <= ARENA2_MAX.z
+		and pos.y >= ARENA2_MIN.y and pos.y <= ARENA2_MAX.y
+		and pos.z >= ARENA2_MIN.z and pos.z <= ARENA2_MAX.z
 end
 enemy.is_exempt = is_exempt
 
@@ -96,7 +96,7 @@ local TRACK_DURATIONS = {
 }
 
 -- Tracks that form the repeating loop body
-local LOOP_TRACKS = {"middle1", "middle2", "middle3", "bridge1", "bridge2", "bridge3", "bridge4"}
+local LOOP_TRACKS = { "middle1", "middle2", "middle3", "bridge1", "bridge2", "bridge3", "bridge4" }
 
 local function shuffle(t)
 	for i = #t, 2, -1 do
@@ -120,7 +120,7 @@ local function play_track(name)
 	for _, player in ipairs(minetest.get_connected_players()) do
 		local pname = player:get_player_name()
 		if not is_exempt(player) then
-			bgm.handles[pname] = minetest.sound_play(name, {to_player = pname, gain = 0.8})
+			bgm.handles[pname] = minetest.sound_play(name, { to_player = pname, gain = 0.8 })
 		end
 	end
 	return TRACK_DURATIONS[name] or 30.0
@@ -174,11 +174,11 @@ function enemy.stop_bgm()
 end
 
 -- Wave state
-enemy.current_level = 0      -- 0 = no wave active yet, 1-7 = current level
-enemy.wave_active = false     -- true while enemies are alive
-enemy.alive_students = {}     -- objectrefs of living students
-enemy.boss_alive = nil        -- objectref of living boss
-enemy.wave_triggered = {}     -- track which break times have already triggered
+enemy.current_level = 0   -- 0 = no wave active yet, 1-7 = current level
+enemy.wave_active = false -- true while enemies are alive
+enemy.alive_students = {} -- objectrefs of living students
+enemy.boss_alive = nil    -- objectref of living boss
+enemy.wave_triggered = {} -- track which break times have already triggered
 
 -- Subjects available in the schedule
 enemy.SUBJECTS = {
@@ -190,30 +190,30 @@ enemy.SUBJECTS = {
 -- Break times (hour, minute) — can be changed via the schedule computer
 -- .lesson = nil  → real break (wave spawns); .lesson = "Subject" → lesson (no wave)
 enemy.break_times = {
-	{h = 10, m = 10, lesson = nil},
-	{h = 12, m = 10, lesson = nil},
-	{h = 14, m = 15, lesson = nil},
+	{ h = 10, m = 10, lesson = nil },
+	{ h = 12, m = 10, lesson = nil },
+	{ h = 14, m = 15, lesson = nil },
 }
 
 -- 7-period daily schedule (subject name per period)
 enemy.schedule = {
-	"Wiskunde", "Nederlands",          -- periods 1-2 (before pauze 1)
-	"Engels",   "Aardrijkskunde",       -- periods 3-4 (before pauze 2)
-	"Latijn",   "Frans",               -- periods 5-6 (before pauze 3)
-	"Muziek",                           -- period  7   (after  pauze 3)
+	"Wiskunde", "Nederlands",  -- periods 1-2 (before pauze 1)
+	"Engels", "Aardrijkskunde", -- periods 3-4 (before pauze 2)
+	"Latijn", "Frans",         -- periods 5-6 (before pauze 3)
+	"Muziek",                  -- period  7   (after  pauze 3)
 }
 
 -- Defaults (used by Teinetarnagh to reset on unauthorised edits)
 enemy.DEFAULT_SCHEDULE = {
 	"Wiskunde", "Nederlands",
-	"Engels",   "Aardrijkskunde",
-	"Latijn",   "Frans",
+	"Engels", "Aardrijkskunde",
+	"Latijn", "Frans",
 	"Muziek",
 }
 enemy.DEFAULT_BREAK_TIMES = {
-	{h = 10, m = 10, lesson = nil},
-	{h = 12, m = 10, lesson = nil},
-	{h = 14, m = 15, lesson = nil},
+	{ h = 10, m = 10, lesson = nil },
+	{ h = 12, m = 10, lesson = nil },
+	{ h = 14, m = 15, lesson = nil },
 }
 
 -- Student spawn area (stairs)
@@ -255,11 +255,11 @@ minetest.register_entity("enemy:student", {
 	initial_properties = {
 		visual = "mesh",
 		mesh = "character.b3d",
-		textures = {"student_boy1.png"},
+		textures = { "student_boy1.png" },
 		physical = true,
 		collide_with_objects = true,
-		collisionbox = {-0.3, 0.0, -0.3, 0.3, 1.7, 0.3},
-		visual_size = {x = 0.6, y = 0.6, z = 0.6},
+		collisionbox = { -0.3, 0.0, -0.3, 0.3, 1.7, 0.3 },
+		visual_size = { x = 0.6, y = 0.6, z = 0.6 },
 		makes_footstep_sound = true,
 		static_save = false,
 		hp_max = 1,
@@ -272,8 +272,8 @@ minetest.register_entity("enemy:student", {
 	_frozen = false,
 
 	on_activate = function(self, staticdata)
-		self.object:set_animation({x = 168, y = 187}, 30, 0, true) -- walk
-		self.object:set_armor_groups({fleshy = 100})
+		self.object:set_animation({ x = 168, y = 187 }, 30, 0, true) -- walk
+		self.object:set_armor_groups({ fleshy = 100 })
 	end,
 
 	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
@@ -317,13 +317,18 @@ minetest.register_entity("enemy:student", {
 			local epos   = self.object:get_pos()
 			if estate == "fire" and epos then
 				minetest.add_particlespawner({
-					amount = 20, time = 0.5,
+					amount = 20,
+					time = 0.5,
 					minpos = vector.add(epos, vector.new(-0.3, 0.5, -0.3)),
-					maxpos = vector.add(epos, vector.new( 0.3, 1.8,  0.3)),
-					minvel = vector.new(-1, 1, -1), maxvel = vector.new(1, 3, 1),
-					minacc = vector.new(0, 1, 0),   maxacc = vector.new(0, 2, 0),
-					minexptime = 0.3, maxexptime = 0.7,
-					minsize = 2, maxsize = 4,
+					maxpos = vector.add(epos, vector.new(0.3, 1.8, 0.3)),
+					minvel = vector.new(-1, 1, -1),
+					maxvel = vector.new(1, 3, 1),
+					minacc = vector.new(0, 1, 0),
+					maxacc = vector.new(0, 2, 0),
+					minexptime = 0.3,
+					maxexptime = 0.7,
+					minsize = 2,
+					maxsize = 4,
 					texture = "draconis_fire_particle.png",
 					glow = 14,
 				})
@@ -344,109 +349,109 @@ minetest.register_entity("enemy:student", {
 			self.object:remove()
 			enemy.check_wave_clear()
 		end
-		return true  -- prevent engine damage handling
+		return true -- prevent engine damage handling
 	end,
 
 	on_step = function(self, dtime)
-        local pos = self.object:get_pos()
-        if not pos then return end
+		local pos = self.object:get_pos()
+		if not pos then return end
 
-        if self._frozen then
-            self.object:set_velocity(vector.new(0, 0, 0))
-            return
-        end
+		if self._frozen then
+			self.object:set_velocity(vector.new(0, 0, 0))
+			return
+		end
 
-        -- ══════════════════════════════════════════════════════════════
-        -- ЛОГИКА КОНФЕТЫ skittles
-        -- ══════════════════════════════════════════════════════════════
-        local nearest_candy = nil
-        local candy_dist = 25 -- Радиус, в котором студент замечает конфеты
-        
-        -- Проверяем глобальную таблицу конфет (защита от nil, если еще ничего не бросили)
-        local drag_list = active_skittles or {}
-        
-        for _, drag_obj in ipairs(drag_list) do
-            if drag_obj and drag_obj:get_pos() then
-                local dpos = drag_obj:get_pos()
-                local dist = vector.distance(pos, dpos)
-                if dist < candy_dist then
-                    candy_dist = dist
-                    nearest_candy = drag_obj
-                end
-            end
-        end
+		-- ══════════════════════════════════════════════════════════════
+		-- ЛОГИКА КОНФЕТЫ skittles
+		-- ══════════════════════════════════════════════════════════════
+		local nearest_candy = nil
+		local candy_dist = 25 -- Радиус, в котором студент замечает конфеты
 
-        -- Если конфету нашли, студент полностью переключается на неё
-        if nearest_candy then
-            local cpos = nearest_candy:get_pos()
-            local dir = vector.direction(pos, cpos)
+		-- Проверяем глобальную таблицу конфет (защита от nil, если еще ничего не бросили)
+		local drag_list = active_skittles or {}
 
-            -- Поворачиваемся лицом к конфете
-            self.object:set_yaw(minetest.dir_to_yaw(dir))
-			
+		for _, drag_obj in ipairs(drag_list) do
+			if drag_obj and drag_obj:get_pos() then
+				local dpos = drag_obj:get_pos()
+				local dist = vector.distance(pos, dpos)
+				if dist < candy_dist then
+					candy_dist = dist
+					nearest_candy = drag_obj
+				end
+			end
+		end
 
-            -- Если подошли вплотную (меньше 0.8 блока), застываем на ней
-            if candy_dist < 0.8 then
-                -- Сбрасываем X и Z скорость в 0, но оставляем гравитацию -9.81, чтобы не парить в воздухе
-                self.object:set_velocity(vector.new(0, -9.81, 0))
-                return -- Важно! Прерываем шаг, чтобы не искать игроков и не атаковать
-            else
-                -- Бежим к конфете с базовой скоростью студента
-                local speed = 7
-                self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
-                return -- Прерываем шаг, бежим только за конфетой
-            end
-        end
-        -- ══════════════════════════════════════════════════════════════
+		-- Если конфету нашли, студент полностью переключается на неё
+		if nearest_candy then
+			local cpos = nearest_candy:get_pos()
+			local dir = vector.direction(pos, cpos)
 
-        -- Find nearest player (or stunt double in trailer mode)
-        local nearest = nil
-        local nearest_dist = math.huge
-        if trailer and trailer.active and trailer.stunt and trailer.stunt:get_pos() then
-            nearest = trailer.stunt
-            nearest_dist = vector.distance(pos, trailer.stunt:get_pos())
-        else
-            for _, player in ipairs(minetest.get_connected_players()) do
-                local ppos = player:get_pos()
-                local dist = vector.distance(pos, ppos)
-                if dist < nearest_dist then
-                    nearest = player
-                    nearest_dist = dist
-                end
-            end
-        end
+			-- Поворачиваемся лицом к конфете
+			self.object:set_yaw(minetest.dir_to_yaw(dir))
 
-        if not nearest then return end
 
-        local ppos = nearest:get_pos()
-        local dir = vector.direction(pos, ppos)
+			-- Если подошли вплотную (меньше 0.8 блока), застываем на ней
+			if candy_dist < 0.8 then
+				-- Сбрасываем X и Z скорость в 0, но оставляем гравитацию -9.81, чтобы не парить в воздухе
+				self.object:set_velocity(vector.new(0, -9.81, 0))
+				return -- Важно! Прерываем шаг, чтобы не искать игроков и не атаковать
+			else
+				-- Бежим к конфете с базовой скоростью студента
+				local speed = 7
+				self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+				return -- Прерываем шаг, бежим только за конфетой
+			end
+		end
+		-- ══════════════════════════════════════════════════════════════
 
-        -- Face the player
-        self.object:set_yaw(minetest.dir_to_yaw(dir))
+		-- Find nearest player (or stunt double in trailer mode)
+		local nearest = nil
+		local nearest_dist = math.huge
+		if trailer and trailer.active and trailer.stunt and trailer.stunt:get_pos() then
+			nearest = trailer.stunt
+			nearest_dist = vector.distance(pos, trailer.stunt:get_pos())
+		else
+			for _, player in ipairs(minetest.get_connected_players()) do
+				local ppos = player:get_pos()
+				local dist = vector.distance(pos, ppos)
+				if dist < nearest_dist then
+					nearest = player
+					nearest_dist = dist
+				end
+			end
+		end
 
-        -- Move toward player
-        local speed = 2.5
-        self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+		if not nearest then return end
 
-        -- Attack if close enough
-        self._attack_cooldown = self._attack_cooldown - dtime
-        if nearest_dist < 2.0 and self._attack_cooldown <= 0 then
-            -- In trailer mode, punch the stunt double entity instead of set_hp
-            if nearest:is_player() then
-                nearest:set_hp(nearest:get_hp() - self._damage, {type = "punch"})
-            else
-                nearest:punch(self.object, 1.0, {damage_groups = {fleshy = self._damage}}, vector.new(0, 0, 0))
-            end
-            self._attack_cooldown = 1.0
-            -- Play mine animation briefly
-            self.object:set_animation({x = 189, y = 198}, 30, 0, false)
-            minetest.after(0.5, function()
-                if self.object and self.object:get_pos() then
-                    self.object:set_animation({x = 168, y = 187}, 30, 0, true)
-                end
-            end)
-        end
-    end,
+		local ppos = nearest:get_pos()
+		local dir = vector.direction(pos, ppos)
+
+		-- Face the player
+		self.object:set_yaw(minetest.dir_to_yaw(dir))
+
+		-- Move toward player
+		local speed = 2.5
+		self.object:set_velocity(vector.new(dir.x * speed, -9.81, dir.z * speed))
+
+		-- Attack if close enough
+		self._attack_cooldown = self._attack_cooldown - dtime
+		if nearest_dist < 2.0 and self._attack_cooldown <= 0 then
+			-- In trailer mode, punch the stunt double entity instead of set_hp
+			if nearest:is_player() then
+				nearest:set_hp(nearest:get_hp() - self._damage, { type = "punch" })
+			else
+				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
+			end
+			self._attack_cooldown = 1.0
+			-- Play mine animation briefly
+			self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
+			minetest.after(0.5, function()
+				if self.object and self.object:get_pos() then
+					self.object:set_animation({ x = 168, y = 187 }, 30, 0, true)
+				end
+			end)
+		end
+	end,
 })
 
 -- Spawn a wave of students for a given level
@@ -470,9 +475,9 @@ function enemy.spawn_wave(level)
 				local cbox_s = 0.3 * scale
 				local cbox_h = 1.7 * scale
 				obj:set_properties({
-					visual_size = {x = scale, y = scale, z = scale},
-					textures = {random_student_texture()},
-					collisionbox = {-cbox_s, 0.0, -cbox_s, cbox_s, cbox_h, cbox_s},
+					visual_size = { x = scale, y = scale, z = scale },
+					textures = { random_student_texture() },
+					collisionbox = { -cbox_s, 0.0, -cbox_s, cbox_s, cbox_h, cbox_s },
 				})
 				local lua = obj:get_luaentity()
 				if lua then
@@ -483,11 +488,15 @@ function enemy.spawn_wave(level)
 		end
 	end
 
-	-- Spawn boss
-	local boss_obj = minetest.add_entity(BOSS_SPAWN, "boss:teacher")
+	-- Spawn boss (use gladiator entity for Joachim / level 3)
+	local boss_entity_name = (level == 3) and "boss:gladiator" or "boss:teacher"
+	local boss_obj = minetest.add_entity(BOSS_SPAWN, boss_entity_name)
 	if boss_obj then
 		enemy.boss_alive = boss_obj
-		boss.set_level(boss_obj, level)
+		-- For normal teacher bosses, set level to configure stats/AI.
+		if boss_entity_name == "boss:teacher" then
+			boss.set_level(boss_obj, level)
+		end
 	end
 
 	-- Announce wave (skip players in arena 2 or riding dragon)
@@ -581,7 +590,7 @@ function enemy.reset_all()
 	enemy.boss_alive = nil
 
 	enemy.wave_active = false
-	enemy.current_level = 0  -- оставляем 0, так как таймер сам прибавит +1 при спавне
+	enemy.current_level = 0 -- оставляем 0, так как таймер сам прибавит +1 при спавне
 	enemy.wave_triggered = {}
 
 	-- Reset time to 08:00
@@ -624,7 +633,7 @@ end)
 -- /restart  — host command to manually reset the game in multiplayer
 minetest.register_chatcommand("restart", {
 	description = "Herstart het spel (reset golven en tijd) — alleen voor admins",
-	privs = {server = true},
+	privs = { server = true },
 	func = function(name)
 		minetest.log("action", "/restart was casted by " .. name)
 		enemy.reset_all()
@@ -695,7 +704,7 @@ minetest.register_globalstep(function(dtime)
 		elseif not exempt and not has_handle then
 			-- Left arena 2 or dismounted: resume BGM for this player
 			bgm.handles[pname] = minetest.sound_play(bgm.current,
-				{to_player = pname, gain = 0.8})
+				{ to_player = pname, gain = 0.8 })
 		end
 	end
 end)
@@ -704,7 +713,7 @@ end)
 local level_cooldown = 0
 
 minetest.register_globalstep(function(dtime)
-	if enemy.build_mode then return end  -- bouwmodus: geen waves
+	if enemy.build_mode then return end -- bouwmodus: geen waves
 	-- Если волна сейчас активна, сбрасываем таймер и ждем её завершения
 	if enemy.wave_active then
 		level_cooldown = 0
@@ -721,10 +730,10 @@ minetest.register_globalstep(function(dtime)
 
 	if level_cooldown >= 15.0 then
 		level_cooldown = 0
-		
+
 		-- Вычисляем следующий уровень (начиная с 1)
 		local next_level = enemy.current_level + 1
-		
+
 		-- Спавним волну нужного уровня
 		enemy.spawn_wave(next_level)
 	end
