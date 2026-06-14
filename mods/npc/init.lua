@@ -119,9 +119,9 @@ local function build_food_formspec(npc_name, coins)
         "label[" .. ix[5] .. "," .. name_y .. ";Fanta 6-Pack]" ..
         "label[" .. ix[5] .. "," .. price_y .. ";5 munten]" ..
         
-        "image_button[" .. ix[6] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_dragibus.png;buy_dragibus;]" ..
-        "tooltip[buy_dragibus;Dragibus — " .. heal[6] .. "]" ..
-        "label[" .. ix[6] .. "," .. name_y .. ";Dragibus]" ..
+        "image_button[" .. ix[6] .. "," .. btn_y .. ";" .. iw .. "," .. ih .. ";registered_skittles.png;buy_skittles;]" ..
+        "tooltip[buy_skittles;skittles — " .. heal[6] .. "]" ..
+        "label[" .. ix[6] .. "," .. name_y .. ";skittles]" ..
         "label[" .. ix[6] .. "," .. price_y .. ";5 munten]" ..
 
         "button_exit[4.8," .. close_y .. ";3.5,0.7;close;✖ Sluiten]"
@@ -305,7 +305,7 @@ local FOOD_ITEMS = {
 	buy_meat          = { item = "registered:meat", price = 8, name = "Vlees" },
 	-- Fanta 6-Pack: geeft 6x fanta_ammo (munitie voor de Fanta Bazooka)
 	buy_fanta_sixpack = { item = "registered:fanta_ammo", price = 5, name = "Fanta 6-Pack", amount = 6 },
-	buy_dragibus = { item = "registered:dragibus", price = 5, name = "Dragibus"}
+	buy_skittles = { item = "registered:skittles", price = 5, name = "skittles"}
 }
 
 minetest.register_on_player_receive_fields(function(player, formname, fields)

@@ -395,10 +395,10 @@ minetest.register_tool("registered:sword_dragonpower", {
 })
 
 -- Глобальный список всех брошенных конфет в мире для поиска студентами
-active_dragibus = {}
+active_skittles = {}
 
 -- Функция спавна 3 летящих конфет при броске (с разбросом)
-local function dragibus_shoot(itemstack, user, pointed_thing)
+local function skittles_shoot(itemstack, user, pointed_thing)
 	if not user or not user:is_player() then return itemstack end
 	local pname = user:get_player_name()
 	local pos = user:get_pos()
@@ -425,7 +425,7 @@ local function dragibus_shoot(itemstack, user, pointed_thing)
 		-- Нормализуем вектор, чтобы скорость броска оставалась одинаковой
 		spread_dir = vector.normalize(spread_dir)
 
-		local drag = minetest.add_entity(pos, "registered:dragibus")
+		local drag = minetest.add_entity(pos, "registered:skittles")
 		if drag then
 			drag:set_velocity(vector.multiply(spread_dir, speed))
 			local ent = drag:get_luaentity()
@@ -444,21 +444,21 @@ local function dragibus_shoot(itemstack, user, pointed_thing)
 
 	return itemstack
 end
--- Регистрация самого предмета "Конфета Dragibus" в инвентаре
-minetest.register_craftitem("registered:dragibus", {
-	description = "Dragibus",
-	inventory_image = "registered_dragibus.png",
+-- Регистрация самого предмета "Конфета skittles" в инвентаре
+minetest.register_craftitem("registered:skittles", {
+	description = "skittles",
+	inventory_image = "registered_skittles.png",
 	stack_max = 99,
-	on_secondary_use = dragibus_shoot,
-	on_place = dragibus_shoot,
+	on_secondary_use = skittles_shoot,
+	on_place = skittles_shoot,
 })
 
--- Регистрация летящей/лежащей на полу сущности Dragibus
-minetest.register_entity("registered:dragibus", {
+-- Регистрация летящей/лежащей на полу сущности skittles
+minetest.register_entity("registered:skittles", {
 	initial_properties = {
 		visual               = "sprite",
 		visual_size          = { x = 0.3, y = 0.3, z = 0.3 },
-		textures             = { "registered_dragibus.png" },
+		textures             = { "registered_skittles.png" },
 		physical             = true,
 		collide_with_objects = false,
 		collisionbox         = { -0.15, -0.15, -0.15, 0.15, 0.15, 0.15 },
@@ -475,9 +475,9 @@ minetest.register_entity("registered:dragibus", {
 		-- Защита от вечного лежания (удаляем через 11 секунд на всякий случай)
 		if self._lifetime > 11 then
 			local pos = self.object:get_pos()
-			for i, d in ipairs(active_dragibus) do
+			for i, d in ipairs(active_skittles) do
 				if d == self.object then
-					table.remove(active_dragibus, i)
+					table.remove(active_skittles, i)
 					break
 				end
 			end
@@ -516,7 +516,7 @@ minetest.register_entity("registered:dragibus", {
 					self.object:set_velocity(vector.new(0, 0, 0))
 					self.object:set_acceleration(vector.new(0, 0, 0))
 					-- Добавляем в глобальный список, чтобы студенты её увидели
-					table.insert(active_dragibus, self.object)
+					table.insert(active_skittles, self.object)
 					break
 				end
 			end

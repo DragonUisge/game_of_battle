@@ -308,13 +308,13 @@ minetest.register_entity("enemy:student", {
         end
 
         -- ══════════════════════════════════════════════════════════════
-        -- ЛОГИКА КОНФЕТЫ DRAGIBUS
+        -- ЛОГИКА КОНФЕТЫ skittles
         -- ══════════════════════════════════════════════════════════════
         local nearest_candy = nil
         local candy_dist = 25 -- Радиус, в котором студент замечает конфеты
         
         -- Проверяем глобальную таблицу конфет (защита от nil, если еще ничего не бросили)
-        local drag_list = active_dragibus or {}
+        local drag_list = active_skittles or {}
         
         for _, drag_obj in ipairs(drag_list) do
             if drag_obj and drag_obj:get_pos() then
