@@ -1265,7 +1265,7 @@ minetest.register_entity("boss:unfinished_weapon", {
 				maxexptime = 0.7,
 				minsize = 1,
 				maxsize = 2.5,
-				texture = "boss_rosanne_sketch.png",
+				texture = "boss_rosanne_stick.png",
 				glow = 4,
 			})
 		end
@@ -1347,7 +1347,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 				maxexptime = 0.8,
 				minsize = 1,
 				maxsize = 3,
-				texture = "boss_rosanne_sketch.png",
+				texture = "boss_rosanne_stick.png",
 				glow = 6,
 			})
 			minetest.sound_play("default_place_node_hard",
@@ -2018,7 +2018,7 @@ minetest.register_entity("boss:summoned_dragon", {
 						maxexptime = 0.9,
 						minsize = 3,
 						maxsize = 6,
-						texture = "draconis_fire_particle.png",
+						texture = "aura_particle.png^[colorize:#34c3eb:180",
 						glow = 14,
 					})
 				elseif estate == "ice" then
@@ -2180,7 +2180,7 @@ minetest.register_entity("boss:summoned_dragon", {
 				maxexptime = 0.8,
 				minsize = 3,
 				maxsize = 7,
-				texture = "draconis_fire_particle.png",
+				texture = "aura_particle.png^[colorize:#1a0033:200",
 				glow = 14,
 			})
 
@@ -3099,7 +3099,7 @@ minetest.register_entity("boss:victory_dragon", {
 
 	rider              = nil,
 	_phase             = "intro", -- intro / waiting / takeoff / flying / landing / landed
-	_phase_timer       = 2.5,  -- intro duration
+	_phase_timer       = 3,  -- intro duration
 	_anim_timer        = 0,
 	_current_anim      = "hover",
 	_flight_height     = 0, -- target y during flight
@@ -3314,8 +3314,8 @@ minetest.register_entity("boss:victory_dragon", {
 			-- Waterdragon-style diagonal flight: climb to cruise height, then level toward dest
 			local target_y = (pos.y < self._flight_height - 1) and self._flight_height or (dest.y + 2)
 			local vel_y = (target_y - pos.y) * 0.15 * 12
-			local vx = dir.x * 12
-			local vz = dir.z * 12
+			local vx = dir.x * 28
+			local vz = dir.z * 28
 			self.object:set_velocity(vector.new(vx, vel_y, vz))
 			set_anim("fly", { x = 401, y = 439 }, 35)
 

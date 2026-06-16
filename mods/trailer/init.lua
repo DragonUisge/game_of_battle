@@ -766,7 +766,7 @@ function trailer.start(player, level)
 		player:set_eye_offset(vector.new(0, 0, 0), vector.new(0, 0, 0))
 	end
 
-	-- Spawn the wave (default level 2 = Hugo with dragon summon)
+	-- Spawn the wave (default level 2 = Hugo with Dragon summon)
 	enemy.spawn_wave(level)
 
 	-- Replace normal BGM with trailer music (Dark Army Resurrection)
@@ -776,7 +776,7 @@ function trailer.start(player, level)
 		loop = true,
 	})
 
-	-- Poll every 0.5s: when boss (+ dragon) are dead → go to showcase
+	-- Poll every 0.5s: when boss (+ Dragon) are dead → go to showcase
 	local function check_fight_done()
 		if not trailer.active or trailer._phase ~= "fight" then return end
 
