@@ -3057,7 +3057,7 @@ local function victory_attach(dragon_obj, player)
 	-- Camera: 1/5 of waterdragon formula (scale=8): y=115*8/5=184, z=-280*8/5=-448
 	local scale = 8
 	player:set_eye_offset(
-		vector.new(0, 115 * scale / 5, -280 * scale / 5),
+		vector.new(0, 115 * scale / 5, -270 * scale / 5),
 		vector.new(0, 0, 0)
 	)
 	player:set_look_horizontal(dragon_obj:get_yaw() or 0)
@@ -3211,7 +3211,7 @@ minetest.register_entity("boss:victory_dragon", {
 
 		-- ── RETURN_FLIGHT: carry offender back to arena 1 ────────────
 		if self._phase == "return_flight" then
-			local dest       = vector.new(0, 3, 0)
+			local dest       = vector.new(3, 3, 3)
 			local dir        = vector.direction(pos, dest)
 			local hdist      = vector.distance(
 				vector.new(pos.x, 0, pos.z),
