@@ -742,6 +742,11 @@ minetest.register_globalstep(function(dtime)
 		local next_level = enemy.current_level + 1
 
 		-- Spawn the needed level
-		enemy.spawn_wave(next_level)
+		if #minetest.get_connected_players() == 0 then
+		minetest.log("action", "No players connected, wave skipped")
+			return
+		else
+			enemy.spawn_wave(next_level)
+		end
 	end
 end)

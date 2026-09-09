@@ -767,6 +767,10 @@ function trailer.start(player, level)
 	end
 
 	-- Spawn the wave (default level 2 = Hugo with Dragon summon)
+	if #minetest.get_connected_players() == 0 then
+		minetest.log("action", "No players connected, wave " .. level .. " skipped")
+		return
+	end
 	enemy.spawn_wave(level)
 
 	-- Replace normal BGM with trailer music (Dark Army Resurrection)
