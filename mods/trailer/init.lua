@@ -724,7 +724,7 @@ local TRAILER_BOSSES = {
 	[2] = { name = "Hugo", tex = "boss_hugo.png" },
 	[3] = { name = "Joachim", tex = "boss_joachim.png" },
 	[4] = { name = "Julian", tex = "boss_julian.png" },
-	[5] = { name = "Rosanne", tex = "boss_rosanne.png" },
+	[5] = { name = "Vanessa", tex = "boss_vanessa.png" },
 	[6] = { name = "Jan Willem", tex = "boss_janwillem.png" },
 	[7] = { name = "Margriet", tex = "boss_margriet.png" },
 }

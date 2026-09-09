@@ -14,7 +14,7 @@ local BOSSES = {
 	[2] = { name = "Hugo", hp = 150, dmg = 3, tex = "boss_hugo.png" },
 	[3] = { name = "Joachim", hp = 200, dmg = 4, tex = "boss_joachim.png", drop = "registered:sword_diamond" },
 	[4] = { name = "Julian", hp = 250, dmg = 5, tex = "boss_julian.png", drop = "registered:sword_ancient" },
-	[5] = { name = "Rosanne", hp = 300, dmg = 6, tex = "boss_rosanne.png" },
+	[5] = { name = "Vanessa", hp = 300, dmg = 6, tex = "boss_vanessa.png" },
 	[6] = { name = "Jan Willem", hp = 350, dmg = 7, tex = "boss_janwillem.png", drop = "registered:sword_elements" },
 	[7] = { name = "Margriet", hp = 450, dmg = 8, tex = "boss_margriet.png", drop = "registered:sword_dragonpower" },
 }
@@ -1215,13 +1215,13 @@ end
 -- Allowed weapons (blacklist: diamond, ancient, dragonpower, elements)
 -- ============================================================
 
-local ROSANNE_WEAPONS = {
+local VANESSA_WEAPONS = {
 	{ item = "registered:sword_wood",   dmg = 4, name = "Houten Zwaard" },
 	{ item = "registered:sword_steel",  dmg = 7, name = "Stalen Zwaard" },
 	{ item = "registered:sword_bronze", dmg = 9, name = "Bronzen Zwaard" },
 }
 
--- Unfinished weapon entity: floats and spins while Rosanne draws
+-- Unfinished weapon entity: floats and spins while Vanessa draws
 minetest.register_entity("boss:unfinished_weapon", {
 	initial_properties = {
 		visual = "sprite",
@@ -1265,18 +1265,18 @@ minetest.register_entity("boss:unfinished_weapon", {
 				maxexptime = 0.7,
 				minsize = 1,
 				maxsize = 2.5,
-				texture = "boss_rosanne_stick.png",
+				texture = "boss_vanessa_stick.png",
 				glow = 4,
 			})
 		end
 	end,
 })
 
--- Rosanne drawing logic
-local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
-	self._rosanne_timer = self._rosanne_timer - dtime
+-- Vanessa drawing logic
+local function vanessa_step(self, dtime, pos, nearest, nearest_dist)
+	self._vanessa_timer = self._vanessa_timer - dtime
 
-	if self._rosanne_phase == "normal" then
+	if self._vanessa_phase == "normal" then
 		-- Walk + melee, then trigger drawing phase
 		local ppos = nearest:get_pos()
 		local dir = vector.direction(pos, ppos)
@@ -1295,9 +1295,9 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			self.object:set_animation({ x = 189, y = 198 }, 30, 0, false)
 		end
 
-		if self._rosanne_timer <= 0 then
-			self._rosanne_phase   = "drawing"
-			self._rosanne_timer   = 3.5
+		if self._vanessa_timer <= 0 then
+			self._vanessa_phase   = "drawing"
+			self._vanessa_timer   = 3.5
 			self._drawing_spawned = false
 			-- Remove old weapon visual
 			if self._weapon_entity and self._weapon_entity:get_pos() then
@@ -1308,20 +1308,20 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			if self._draw_sound then
 				minetest.sound_stop(self._draw_sound)
 			end
-			self._draw_sound = minetest.sound_play("rosanne_draw",
+			self._draw_sound = minetest.sound_play("vanessa_draw",
 				{ pos = pos, gain = 1.0, max_hear_distance = 20, loop = true })
 			-- Random voice clip while drawing
-			local rosanne_clips = { "rosanne_doodle", "rosanne_tch" }
-			minetest.sound_play(rosanne_clips[math.random(1, #rosanne_clips)],
+			local vanessa_clips = { "vanessa_doodle", "vanessa_tch" }
+			minetest.sound_play(vanessa_clips[math.random(1, #vanessa_clips)],
 				{ pos = pos, gain = 1.2, max_hear_distance = 25 })
 			-- Jump/float up
 			self.object:set_velocity(vector.new(0, 5, 0))
 			for _, p in ipairs(minetest.get_connected_players()) do
 				minetest.chat_send_player(p:get_player_name(),
-					"Rosanne pakt haar potlood... ze tekent haar nieuwe wapen!")
+					"Vanessa pakt haar potlood... ze tekent haar nieuwe wapen!")
 			end
 		end
-	elseif self._rosanne_phase == "drawing" then
+	elseif self._vanessa_phase == "drawing" then
 		-- Float in place, run mine animation
 		self.object:set_velocity(vector.new(0, 0.2, 0))
 		self.object:set_animation({ x = 189, y = 198 }, 20, 0, true)
@@ -1329,7 +1329,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 		self.object:set_yaw(minetest.dir_to_yaw(vector.direction(pos, ppos)))
 
 		-- Spawn the unfinished weapon entity once, shortly after entry
-		if not self._drawing_spawned and self._rosanne_timer < 3.0 then
+		if not self._drawing_spawned and self._vanessa_timer < 3.0 then
 			self._drawing_spawned = true
 			local spawn_pos = vector.add(pos, vector.new(0, 1.8, 0))
 			local ent = minetest.add_entity(spawn_pos, "boss:unfinished_weapon")
@@ -1347,7 +1347,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 				maxexptime = 0.8,
 				minsize = 1,
 				maxsize = 3,
-				texture = "boss_rosanne_stick.png",
+				texture = "boss_vanessa_stick.png",
 				glow = 6,
 			})
 			minetest.sound_play("default_place_node_hard",
@@ -1360,7 +1360,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 		end
 
 		-- Drawing done — pick weapon and enter armed phase
-		if self._rosanne_timer <= 0 then
+		if self._vanessa_timer <= 0 then
 			-- Stop drawing sound
 			if self._draw_sound then
 				minetest.sound_stop(self._draw_sound)
@@ -1372,7 +1372,7 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			end
 
 			-- Pick random allowed weapon
-			local wdata = ROSANNE_WEAPONS[math.random(1, #ROSANNE_WEAPONS)]
+			local wdata = VANESSA_WEAPONS[math.random(1, #VANESSA_WEAPONS)]
 			self._drawn_weapon = wdata
 			self._damage = wdata.dmg
 
@@ -1411,10 +1411,10 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 			minetest.sound_play("default_place_node_hard",
 				{ pos = pos, gain = 0.8, max_hear_distance = 20 })
 
-			self._rosanne_phase = "armed"
-			self._rosanne_timer = 12.0 + math.random() * 8.0 -- redraw after 12–20 sec
+			self._vanessa_phase = "armed"
+			self._vanessa_timer = 12.0 + math.random() * 8.0 -- redraw after 12–20 sec
 		end
-	elseif self._rosanne_phase == "armed" then
+	elseif self._vanessa_phase == "armed" then
 		-- Fight with drawn weapon
 		local ppos = nearest:get_pos()
 		local dir = vector.direction(pos, ppos)
@@ -1434,15 +1434,15 @@ local function rosanne_step(self, dtime, pos, nearest, nearest_dist)
 		end
 
 		-- Redraw timer expired → go draw again
-		if self._rosanne_timer <= 0 then
-			self._rosanne_phase = "normal"
-			self._rosanne_timer = 0.1
+		if self._vanessa_timer <= 0 then
+			self._vanessa_phase = "normal"
+			self._vanessa_timer = 0.1
 		end
 	end
 end
 
 -- ============================================================
--- Margriet (level 7): summons Joachim, Rosanne or Jan Willem
+-- Margriet (level 7): summons Joachim, Vanessa or Jan Willem
 -- ============================================================
 local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 	local ppos = nearest:get_pos()
@@ -1497,7 +1497,7 @@ local function margriet_step(self, dtime, pos, nearest, nearest_dist)
 		})
 
 		if self._margriet_timer <= 0 then
-			-- Summon one random boss from: Joachim(3), Rosanne(5), Jan Willem(6)
+			-- Summon one random boss from: Joachim(3), Vanessa(5), Jan Willem(6)
 			local pool = { 3, 5, 6 }
 			local pick = pool[math.random(#pool)]
 			local offset = vector.new(math.random(-3, 3), 0, math.random(-3, 3))
@@ -1638,9 +1638,9 @@ minetest.register_entity("boss:teacher", {
 	_julian_pour_tick                   = 0,
 	_julian_drop_counter                = 0,
 
-	-- Rosanne-specific state
-	_rosanne_phase                      = "normal",
-	_rosanne_timer                      = 5.0,
+	-- Vanessa-specific state
+	_vanessa_phase                      = "normal",
+	_vanessa_timer                      = 5.0,
 	_drawn_weapon                       = nil,
 	_drawing_entity                     = nil,
 	_drawing_spawned                    = false,
@@ -1863,9 +1863,9 @@ minetest.register_entity("boss:teacher", {
 			return
 		end
 
-		-- Rosanne (level 5): drawing ability
+		-- Vanessa (level 5): drawing ability
 		if self._level == 5 then
-			rosanne_step(self, dtime, pos, nearest, nearest_dist)
+			vanessa_step(self, dtime, pos, nearest, nearest_dist)
 			return
 		end
 
@@ -2238,10 +2238,10 @@ function boss.set_level(obj, level)
 		lua._summoned_dragon = nil
 	end
 
-	-- Rosanne: initialize drawing state
+	-- Vanessa: initialize drawing state
 	if level == 5 then
-		lua._rosanne_phase   = "normal"
-		lua._rosanne_timer   = 5.0 + math.random() * 3.0
+		lua._vanessa_phase   = "normal"
+		lua._vanessa_timer   = 5.0 + math.random() * 3.0
 		lua._drawn_weapon    = nil
 		lua._drawing_entity  = nil
 		lua._drawing_spawned = false
@@ -2914,7 +2914,7 @@ local SPAWN_BY_NAME = {
 	enemy_boss_dragoncall = 2,
 	bram                  = 1,
 	julian                = 4,
-	rosanne               = 5,
+	vanessa               = 5,
 	jan_willem            = 6,
 	margriet              = 7,
 }
