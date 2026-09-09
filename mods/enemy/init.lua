@@ -457,6 +457,10 @@ minetest.register_entity("enemy:student", {
 -- Spawn a wave of students for a given level
 function enemy.spawn_wave(level)
 	if level > 7 then return end
+	if #minetest.get_connected_players() == 0 then
+		minetest.log("action", "No players connected, wave " .. level .. " skipped")
+		return
+	end
 	minetest.log("action", "Level spawned: " .. level)
 
 	enemy.current_level = level
