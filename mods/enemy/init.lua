@@ -12,6 +12,11 @@ minetest.register_chatcommand("bouwmodus", {
 	privs = { server = true },
 	func = function(name, param)
 		enemy.build_mode = not enemy.build_mode
+		gamelog.event("BUILD_MODE", {
+			player = name,
+			state  = enemy.build_mode and "aan" or "uit",
+			level  = enemy.current_level or 0,
+		}, minetest.get_player_by_name(name))
 		if enemy.build_mode then
 			-- Verwijder alle levende studenten
 			if enemy.alive_students then
@@ -338,6 +343,11 @@ minetest.register_entity("enemy:student", {
 		end
 
 		self._hp = self._hp - dmg
+		gamelog.damage_dealt(puncher, "student", dmg, {
+			target_hp = math.max(self._hp, 0),
+			level     = self._level,
+		})
+
 		if self._hp <= 0 then
 			-- Remove from alive list
 			for i, ref in ipairs(enemy.alive_students) do
@@ -346,6 +356,10 @@ minetest.register_entity("enemy:student", {
 					break
 				end
 			end
+			gamelog.kill(puncher, "student", {
+				level     = self._level,
+				remaining = math.max(#enemy.alive_students - 1, 0),
+			})
 			self.object:remove()
 			enemy.check_wave_clear()
 		end
@@ -438,7 +452,9 @@ minetest.register_entity("enemy:student", {
 		if nearest_dist < 2.0 and self._attack_cooldown <= 0 then
 			-- In trailer mode, punch the stunt double entity instead of set_hp
 			if nearest:is_player() then
-				nearest:set_hp(nearest:get_hp() - self._damage, { type = "punch" })
+				-- object meesturen: zo weet gamelog wie de schade veroorzaakte
+				nearest:set_hp(nearest:get_hp() - self._damage,
+					{ type = "punch", object = self.object })
 			else
 				nearest:punch(self.object, 1.0, { damage_groups = { fleshy = self._damage } }, vector.new(0, 0, 0))
 			end
@@ -458,10 +474,26 @@ minetest.register_entity("enemy:student", {
 function enemy.spawn_wave(level)
 	if level > 7 then return end
 	if #minetest.get_connected_players() == 0 then
-		minetest.log("action", "No players connected, wave " .. level .. " skipped")
+		-- maar één keer loggen: anders vult een lege server de log
+		if enemy._skip_logged ~= level then
+			enemy._skip_logged = level
+			gamelog.progress("WAVE_SKIPPED", { level = level, reason = "geen_spelers" })
+		end
 		return
 	end
-	minetest.log("action", "Level spawned: " .. level)
+	enemy._skip_logged = nil
+
+	local wave_players = {}
+	for _, p in ipairs(minetest.get_connected_players()) do
+		wave_players[#wave_players + 1] = p:get_player_name() .. ":" .. p:get_hp() ..
+			"hp/" .. p:get_meta():get_int("coins") .. "c"
+	end
+	gamelog.progress("WAVE_START", {
+		level    = level,
+		students = (level < 7) and 10 or 0,
+		boss     = (level == 3) and "boss:gladiator" or "boss:teacher",
+		party    = table.concat(wave_players, ","),
+	})
 
 	enemy.current_level = level
 	enemy.wave_active = true
@@ -542,16 +574,22 @@ function enemy.check_wave_clear()
 
 		-- Reward coins (all players), announce only to non-exempt
 		local reward = 10 + level * 2
+		local payouts = {}
 		for _, player in ipairs(minetest.get_connected_players()) do
 			local meta = player:get_meta()
 			local coins = meta:get_int("coins") + reward
 			meta:set_int("coins", coins)
+			payouts[#payouts + 1] = player:get_player_name() .. ":" .. coins
 			if not is_exempt(player) then
-				minetest.log("action", "Wave " .. level .. " is dead!")
 				minetest.chat_send_player(player:get_player_name(),
 					"Golf " .. level .. " verslagen! +" .. reward .. " munten (totaal: " .. coins .. ")")
 			end
 		end
+		gamelog.progress("WAVE_CLEARED", {
+			level   = level,
+			reward  = reward,
+			payouts = table.concat(payouts, ","),
+		})
 
 		if level >= 7 then
 			-- Game won!
@@ -559,13 +597,13 @@ function enemy.check_wave_clear()
 				if not is_exempt(player) then
 					minetest.chat_send_player(player:get_player_name(),
 						"*** Je hebt alle golven verslagen! ***")
-					minetest.log("action", "All waves are dead!")
 				end
 			end
+			gamelog.progress("GAME_WON", { final_level = level })
 			-- Spawn the victory dragon
 			if boss and boss.spawn_victory_dragon then
 				boss.spawn_victory_dragon()
-				minetest.log("action", "Teinetarnagh spawned!")
+				gamelog.progress("VICTORY_DRAGON_SUMMONED", {})
 			end
 		end
 	end
@@ -573,6 +611,11 @@ end
 
 -- Reset everything (called on player death)
 function enemy.reset_all()
+	gamelog.progress("GAME_RESET", {
+		level_reached = enemy.current_level or 0,
+		students_left = enemy.alive_students and #enemy.alive_students or 0,
+		boss_alive    = (enemy.boss_alive and enemy.boss_alive:get_pos()) and true or false,
+	})
 	enemy.stop_bgm()
 
 	-- Remove all living students
@@ -607,7 +650,11 @@ end
 minetest.register_on_dieplayer(function(player)
 	local dying_name = player:get_player_name()
 	local total_players = #minetest.get_connected_players()
-	minetest.log("action", dying_name .. " died!")
+	gamelog.event("DEATH_HANDLED", {
+		player = dying_name,
+		mode   = total_players > 1 and "multiplayer_respawn" or "solo_full_reset",
+		level  = enemy.current_level or 0,
+	}, player)
 
 	if total_players > 1 then
 		-- Multiplayer: penalise only the dead player, others continue
@@ -639,7 +686,7 @@ minetest.register_chatcommand("restart", {
 	description = "Herstart het spel (reset golven en tijd) — alleen voor admins",
 	privs = { server = true },
 	func = function(name)
-		minetest.log("action", "/restart was casted by " .. name)
+		gamelog.event("ADMIN_RESTART", { player = name })
 		enemy.reset_all()
 		for _, p in ipairs(minetest.get_connected_players()) do
 			local meta = p:get_meta()
@@ -743,7 +790,10 @@ minetest.register_globalstep(function(dtime)
 
 		-- Spawn the needed level
 		if #minetest.get_connected_players() == 0 then
-		minetest.log("action", "No players connected, wave skipped")
+			if enemy._skip_logged ~= next_level then
+				enemy._skip_logged = next_level
+				gamelog.progress("WAVE_SKIPPED", { level = next_level, reason = "geen_spelers" })
+			end
 			return
 		else
 			enemy.spawn_wave(next_level)

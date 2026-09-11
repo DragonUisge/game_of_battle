@@ -83,6 +83,13 @@ minetest.register_node("registered:bed", {
 	sounds = sound_wood()
 })
 
+minetest.register_node("registered:granite", {
+    description = "Graniet",
+	tiles = { "registered_granite.png" },
+	groups = {choppy = 1},
+	sounds = sound_stone()
+})
+
 -- ── Schedule Computer ──────────────────────────────────────────────────────
 -- Right-click opens the school timetable editor.
 -- Changes break times (when student waves spawn) and subject assignments.
@@ -182,6 +189,8 @@ minetest.register_node("registered:cobble", {
 	sounds = sound_stone(),
 	on_rightclick = function(pos, node, clicker, itemstack, pointed_thing)
 		if not clicker:is_player() then return end
+		gamelog.event("SCHEDULE_OPEN",
+			{ player = clicker:get_player_name(), at = pos }, clicker)
 		minetest.show_formspec(clicker:get_player_name(),
 			"schedule_computer", schedule_formspec())
 	end,
@@ -222,6 +231,17 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 	-- Allow new break times to fire even if the minute already passed
 	if enemy.refresh_schedule then enemy.refresh_schedule() end
 
+	local breaks = {}
+	for bn = 1, 3 do
+		local b = enemy.break_times[bn]
+		breaks[#breaks + 1] = string.format("%02d:%02d/%s", b.h, b.m, b.lesson or "pauze")
+	end
+	gamelog.event("SCHEDULE_SAVED", {
+		player   = player:get_player_name(),
+		breaks   = table.concat(breaks, ","),
+		subjects = table.concat(enemy.schedule, ",", 1, 7),
+	}, player)
+
 	-- ── Teinetarnagh reaction ──────────────────────────────────────────────
 	-- If the victory Dragon is alive, he grabs the player, flies them back
 	-- to arena 1, resets the schedule, then disappears.
@@ -245,6 +265,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 				"Dit rooster staat al eeuwen vast. Ik breng je terug.")
 
 			-- Carry the player back to arena 1
+			gamelog.event("SCHEDULE_REVERTED_BY_DRAGON",
+				{ player = player:get_player_name() }, player)
 			boss.return_player(player)
 			return
 		end
@@ -290,6 +312,9 @@ minetest.register_node("registered:water_source", {
 	groups = { water = 3, liquid = 3 },
 })
 minetest.register_alias("mapgen_water_source", "registered:water_source")
+-- v7 (de mapgen van de epictest-wereld) vraagt ook om rivierwater;
+-- zonder deze alias klaagt de engine bij elke start.
+minetest.register_alias("mapgen_river_water_source", "registered:water_source")
 
 -- Dry grass aliases (suppress NodeResolver warnings)
 for i = 1, 5 do
@@ -442,6 +467,8 @@ local function skittles_shoot(itemstack, user, pointed_thing)
 	minetest.sound_play("default_place_node_hard",
 		{ pos = pos, gain = 0.5, max_hear_distance = 15 })
 
+	gamelog.weapon_use(user, "skittles", { thrown = to_throw, left = current_count - 1 })
+
 	return itemstack
 end
 -- Регистрация самого предмета "Конфета skittles" в инвентаре
@@ -554,6 +581,8 @@ local function elements_cycle(itemstack, user)
 	itemstack:set_count(count)
 	minetest.chat_send_player(user:get_player_name(),
 		"Element: " .. ELEMENTS_LABEL[nxt])
+	gamelog.event("ELEMENT_SWITCH",
+		{ player = user:get_player_name(), from = cur, to = nxt }, user)
 	return itemstack
 end
 
@@ -1198,6 +1227,10 @@ minetest.register_tool("registered:appelflap_boomerang", {
 			boomobj:set_velocity(vector.multiply(dir, 18))
 			local ent = boomobj:get_luaentity()
 			if ent then ent._owner = user:get_player_name() end
+			gamelog.weapon_use(user, "appelflap_boomerang", { at = pos })
+		else
+			gamelog.problem("BOOMERANG_SPAWN_FAILED",
+				{ player = user:get_player_name(), at = pos })
 		end
 		itemstack:take_item(1)
 		return itemstack
@@ -1550,6 +1583,8 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 	-- Cooldown: at least 1.5 seconds between each shot
 	local now = minetest.get_us_time() / 1000000
 	if fanta_cooldown[pname] and now - fanta_cooldown[pname] < 1.5 then
+		gamelog.event("WEAPON_BLOCKED",
+			{ player = pname, weapon = "fanta_bazooka", reason = "cooldown" }, user)
 		return itemstack -- too fast, wait a moment!
 	end
 
@@ -1558,6 +1593,8 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 	if not inv:contains_item("main", "registered:fanta_ammo") then
 		minetest.chat_send_player(pname,
 			"Geen Fanta munitie! Koop een 6-pack bij de kantineguy.")
+		gamelog.event("WEAPON_BLOCKED",
+			{ player = pname, weapon = "fanta_bazooka", reason = "geen_munitie" }, user)
 		return itemstack
 	end
 
@@ -1586,6 +1623,15 @@ local function fanta_shoot(itemstack, user, pointed_thing)
 	-- Play shoot sound
 	minetest.sound_play("default_place_node_hard",
 		{ pos = pos, gain = 0.6, max_hear_distance = 15 })
+
+	-- Resterende munitie tellen, zodat je in de log ziet wanneer iemand droogstaat
+	local ammo_left = 0
+	for _, st in ipairs(inv:get_list("main") or {}) do
+		if st:get_name() == "registered:fanta_ammo" then
+			ammo_left = ammo_left + st:get_count()
+		end
+	end
+	gamelog.weapon_use(user, "fanta_bazooka", { ammo_left = ammo_left })
 
 	return itemstack
 end

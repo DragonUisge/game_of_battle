@@ -768,7 +768,7 @@ function trailer.start(player, level)
 
 	-- Spawn the wave (default level 2 = Hugo with Dragon summon)
 	if #minetest.get_connected_players() == 0 then
-		minetest.log("action", "No players connected, wave " .. level .. " skipped")
+		gamelog.progress("WAVE_SKIPPED", { level = level, reason = "geen_spelers", src = "trailer" })
 		return
 	end
 	enemy.spawn_wave(level)
@@ -987,7 +987,8 @@ minetest.register_chatcommand("trailer", {
 	func = function(name, param)
 		local player = minetest.get_player_by_name(name)
 		if not player then return false, "Speler niet gevonden." end
-		minetest.log("action", "/trailer was casted by " .. name .. " with param " .. param)
+		gamelog.event("ADMIN_TRAILER", { player = name, params = param },
+			minetest.get_player_by_name(name))
 
 		local parts = param:split(" ")
 		local cmd = parts[1] or ""

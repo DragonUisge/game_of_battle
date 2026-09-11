@@ -1672,6 +1672,10 @@ minetest.register_entity("boss:teacher", {
 			if puncher:is_player() then
 				minetest.chat_send_player(puncher:get_player_name(),
 					"Hugo is beschermd! Versla eerst de Draak!")
+				gamelog.event("HIT_BLOCKED", {
+					player = puncher:get_player_name(),
+					target = "Hugo", reason = "linked_met_draak",
+				}, puncher)
 			end
 			return true
 		end
@@ -1681,6 +1685,10 @@ minetest.register_entity("boss:teacher", {
 			if puncher:is_player() then
 				minetest.chat_send_player(puncher:get_player_name(),
 					"Margriet is beschermd! Versla eerst haar helper!")
+				gamelog.event("HIT_BLOCKED", {
+					player = puncher:get_player_name(),
+					target = "Margriet", reason = "linked_met_helper",
+				}, puncher)
 			end
 			return true
 		end
@@ -1757,16 +1765,37 @@ minetest.register_entity("boss:teacher", {
 			self._bram_timer = 1.8 -- seconds of ear-rummaging theatre
 		end
 
+		local boss_data = BOSSES[self._level] or BOSSES[1]
+		gamelog.damage_dealt(puncher, boss_data.name, dmg, {
+			target_hp  = math.max(self._hp, 0),
+			target_max = self._max_hp,
+			level      = self._level,
+			phase      = self._level == 2 and self._enemy_boss_dragoncall_phase
+				or (self._level == 7 and self._margriet_phase)
+				or (self._level == 5 and self._vanessa_phase)
+				or (self._level == 1 and self._bram_phase)
+				or "normal",
+		})
+
 		-- Hugo: trigger Dragon summon at 25% HP
 		if self._level == 2 and self._enemy_boss_dragoncall_phase ~= "summon" and self._enemy_boss_dragoncall_phase ~= "linked"
 			and self._hp > 0 and self._hp <= self._max_hp * 0.25 then
 			self._enemy_boss_dragoncall_phase = "summon"
 			self._enemy_boss_dragoncall_timer = 3.0 -- 3 second channeling
+			gamelog.progress("BOSS_PHASE", {
+				boss = boss_data.name, level = 2, phase = "summon", trigger = "hp_25pct",
+			})
 		end
 
 		if self._hp <= 0 then
 			local pos = self.object:get_pos()
 			local data = BOSSES[self._level] or BOSSES[1]
+			gamelog.kill(puncher, data.name, {
+				boss  = true,
+				level = self._level,
+				drop  = data.drop or "none",
+				at    = pos,
+			})
 			if pos and data.drop then
 				minetest.add_item(pos, data.drop)
 			end
@@ -2043,6 +2072,7 @@ minetest.register_entity("boss:summoned_dragon", {
 		if self._hp <= 0 then
 			-- Dragon dies — kill Hugo too
 			local pos = self.object:get_pos()
+			gamelog.kill(puncher, "Hugo's Draak", { boss = true, level = 2, at = pos })
 			if pos then
 				minetest.sound_play("dragon_roar2", { pos = pos, gain = 7.0, max_hear_distance = 60 })
 			end
@@ -2256,6 +2286,14 @@ function boss.set_level(obj, level)
 		lua._speed_mult = 1.0
 		lua._speed_timer = 0
 	end
+
+	gamelog.progress("BOSS_SPAWN", {
+		boss  = data.name,
+		level = level,
+		hp    = data.hp,
+		dmg   = data.dmg,
+		at    = obj:get_pos(),
+	})
 end
 
 -- ============================================================
@@ -2326,6 +2364,12 @@ local function glad_next_state(self)
 	self._glad_state       = new
 	self._glad_state_timer = 10.0 + math.random() * 4.0
 	glad_apply_state(self, new)
+
+	gamelog.progress("GLADIATOR_STATE", {
+		from = GLAD_STATES[idx],
+		to   = new,
+		hp   = math.max(0, self._hp),
+	})
 
 	-- Play transition sound
 	local snd = "gladiator_" .. new
@@ -2488,6 +2532,12 @@ minetest.register_entity("boss:gladiator", {
 		end
 
 		self._hp = self._hp - dmg
+		gamelog.damage_dealt(puncher, "Joachim", dmg, {
+			target_hp  = math.max(self._hp, 0),
+			target_max = self._max_hp,
+			state      = self._glad_state,
+			resist     = self._dmg_resist,
+		})
 
 		-- Update nametag
 		self.object:set_properties({
@@ -2497,6 +2547,9 @@ minetest.register_entity("boss:gladiator", {
 
 		if self._hp <= 0 then
 			local pos = self.object:get_pos()
+			gamelog.kill(puncher, "Joachim", {
+				boss = true, level = 3, state = self._glad_state, at = pos,
+			})
 			-- Drop: use Joachim's drop (sword_diamond) for level 3
 			if pos then
 				minetest.add_item(pos, "registered:sword_diamond")
@@ -2885,6 +2938,8 @@ minetest.register_globalstep(function(dtime)
 						{ pos = spawn_pos, gain = 1.0, max_hear_distance = 25 })
 					minetest.chat_send_player(pname,
 						"De Draak ontwaakt en vecht aan jouw zijde...")
+					gamelog.event("COMPANION_DRAGON_SPAWN",
+						{ player = pname, at = spawn_pos }, player)
 				end
 			end
 		else
@@ -2936,7 +2991,8 @@ minetest.register_chatcommand("spawn", {
 		end)(), ", "),
 	privs       = { server = true },
 	func        = function(name, param)
-		minetest.log("action", "/spawn was casted by " .. name .. " with params " .. param)
+		gamelog.event("ADMIN_SPAWN", { player = name, params = param },
+			minetest.get_player_by_name(name))
 		-- Parse: <boss_name> [count]
 		local pname, count_str = param:match("^%s*(%S+)%s*(%d*)%s*$")
 		if not pname then pname = param:match("^%s*(.-)%s*$") end
@@ -3061,6 +3117,8 @@ local function victory_attach(dragon_obj, player)
 		vector.new(0, 0, 0)
 	)
 	player:set_look_horizontal(dragon_obj:get_yaw() or 0)
+
+	gamelog.event("DRAGON_MOUNT", { player = pname, at = dragon_obj:get_pos() }, player)
 end
 
 local function victory_detach(dragon_ent, player)
@@ -3075,6 +3133,8 @@ local function victory_detach(dragon_ent, player)
 	})
 	player:set_eye_offset(data.eye_first, data.eye_third)
 	victory_riders[pname] = nil
+
+	gamelog.event("DRAGON_DISMOUNT", { player = pname }, player)
 
 	if dragon_ent and dragon_ent.rider == player then
 		dragon_ent.rider = nil
@@ -3431,6 +3491,7 @@ function boss.return_player(player)
 	victory_attach(vobj, player)
 	ent.rider = player
 	ent._phase = "return_flight"
+	gamelog.progress("PLAYER_RETURNED_BY_DRAGON", { player = player:get_player_name() })
 	ent._flight_height = vobj:get_pos().y + 20
 end
 
@@ -3469,7 +3530,8 @@ minetest.register_chatcommand("spawn_victory_dragon", {
 	description = "Spawn de Overwinnings-Draak voor test (spawnt naast jou)",
 	func = function(name)
 		local player = minetest.get_player_by_name(name)
-		minetest.log("action", "/spawn_victory_dragon was casted by " .. name)
+		gamelog.event("ADMIN_SPAWN_DRAGON", { player = name },
+			minetest.get_player_by_name(name))
 		if not player then return false, "Speler niet gevonden." end
 		boss.spawn_victory_dragon(player:get_pos())
 		return true, "De Draak is onderweg..."
@@ -3481,7 +3543,8 @@ minetest.register_chatcommand("floor", {
 	params      = "[<spelernaam>]",
 	description = "Teleporteer speler 2 blokken omlaag en bouw een stenen kooi. Zonder naam: jijzelf zakt door de vloer.",
 	func        = function(caller, param)
-		minetest.log("action", "/floor was casted by " .. caller .. " for " .. param)
+		gamelog.event("ADMIN_FLOOR", { player = caller, target = param ~= "" and param or caller },
+			minetest.get_player_by_name(caller))
 		local target_name = param ~= "" and param or nil
 
 		if not target_name then

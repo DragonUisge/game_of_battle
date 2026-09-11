@@ -12,7 +12,7 @@ npc._refs = {} -- track spawned NPC objectrefs
 function npc.spawn_npc(pos, name, texture)
 	local obj = minetest.add_entity(pos, "npc:npc")
 	if not obj then
-		minetest.log("error", "[npc] Failed to spawn NPC '" .. name .. "'")
+		gamelog.problem("NPC_SPAWN_FAILED", { npc = name, at = pos })
 		return nil
 	end
 
@@ -29,7 +29,7 @@ function npc.spawn_npc(pos, name, texture)
 	end
 
 	npc._refs[name] = obj
-	minetest.log("action", "[npc] Spawned NPC '" .. name .. "' at " .. minetest.pos_to_string(pos))
+	gamelog.event("NPC_SPAWN", { npc = name, at = pos, texture = texture or "npc_wapenverkoper.png" })
 	return obj
 end
 
@@ -184,6 +184,8 @@ minetest.register_entity("npc:npc", {
 
 		if not npc_name or npc_name == "" then return end
 
+		gamelog.event("NPC_TALK", { player = pname, npc = npc_name }, puncher)
+
 		-- Show greeting in chat
 		minetest.chat_send_player(pname,
 			"Hallo, " .. pname .. "! Kijk eens naar mijn waren.")
@@ -283,12 +285,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					meta:set_int("coins", coins)
 					minetest.chat_send_player(pname,
 						"Je hebt " .. info.name .. " gekocht! Munten over: " .. coins)
+					gamelog.purchase(player, info.item, info.price, true, "wapenwinkel")
 				else
 					minetest.chat_send_player(pname, "Je inventaris is vol!")
+					gamelog.purchase(player, info.item, info.price, false, "inventaris_vol")
 				end
 			else
 				minetest.chat_send_player(pname,
 					"Niet genoeg munten! Je hebt " .. coins .. ", maar " .. info.name .. " kost " .. info.price .. ".")
+				gamelog.purchase(player, info.item, info.price, false, "te_weinig_munten")
 			end
 			-- Re-show formspec with updated balance (don't close)
 			minetest.show_formspec(pname, "npc:shop", build_shop_formspec("Wapenverkoper", coins))
@@ -327,12 +332,15 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 					meta:set_int("coins", coins)
 					minetest.chat_send_player(pname,
 						"Je hebt " .. info.name .. " gekocht! Munten over: " .. coins)
+					gamelog.purchase(player, buy_item, info.price, true, "kantine")
 				else
 					minetest.chat_send_player(pname, "Je inventaris is vol!")
+					gamelog.purchase(player, buy_item, info.price, false, "inventaris_vol")
 				end
 			else
 				minetest.chat_send_player(pname,
 					"Niet genoeg munten! Je hebt " .. coins .. ", maar " .. info.name .. " kost " .. info.price .. ".")
+				gamelog.purchase(player, info.item, info.price, false, "te_weinig_munten")
 			end
 			-- Re-show formspec with updated balance (don't close)
 			minetest.show_formspec(pname, "npc:food_shop", build_food_formspec("Eetverkoper", coins))
